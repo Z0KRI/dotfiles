@@ -3,21 +3,35 @@
 # Archivo para guardar el estado del workspace original
 STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_last_normal_ws"
 
-# Obtener el nombre del workspace de la ventana activa
-win_ws=$(hyprctl -j activewindow | jq -r '.workspace.name // empty')
+# Buscamos si hay ALGUNA ventana guardada en el workspace especial
+# (Usamos startswith porque en Hyprland puede llamarse "special" o "special:special")
+hidden_window=$(hyprctl -j clients | jq -r '.[] | select(.workspace.name | startswith("special")) | .address' | head -n 1)
 
-# Si la ventana NO está en el "special workspace", la "minimizamos"
-if [[ "$win_ws" != "special" ]]; then
-    curr_id=$(hyprctl -j activeworkspace | jq -r '.id')
-    [[ -n "$curr_id" ]] && printf '%s\n' "$curr_id" > "$STATE_FILE"
-    hyprctl dispatch movetoworkspacesilent special
+if [[ -n "$hidden_window" ]]; then
+    # ==========================================
+    # CASO 1: Hay una ventana minimizada. La recuperamos.
+    # ==========================================
+    target_ws="1"
+    if [[ -f "$STATE_FILE" ]]; then
+        read -r target_ws < "$STATE_FILE"
+    fi
+
+    # La movemos de vuelta usando su dirección (address) y la enfocamos
+    hyprctl dispatch movetoworkspace "$target_ws,address:$hidden_window"
+    hyprctl dispatch focuswindow "address:$hidden_window"
+    
+    # Limpiamos el archivo para el siguiente uso
+    rm -f "$STATE_FILE"
     exit 0
 fi
 
-# Si ya está en el special, la devolvemos al workspace original
-target_ws="1"
-if [[ -f "$STATE_FILE" ]]; then
-    read -r target_ws < "$STATE_FILE"
-fi
+# ==========================================
+# CASO 2: No hay nada oculto. Minimizamos la ventana activa.
+# ==========================================
+curr_ws=$(hyprctl -j activeworkspace | jq -r '.id')
 
-hyprctl dispatch movetoworkspace "$target_ws"
+# Guardamos de dónde viene
+[[ -n "$curr_ws" ]] && printf '%s\n' "$curr_ws" > "$STATE_FILE"
+
+# La enviamos al exilio de forma silenciosa
+hyprctl dispatch movetoworkspacesilent special

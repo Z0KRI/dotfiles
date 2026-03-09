@@ -15,7 +15,7 @@ mpvpaper -vs -o "no-audio --loop" --layer overlay all "$VIDEO_PATH" &
 MPV_PID=$!
 
 # 3. Pequeña espera para que el video cargue antes del bloqueo
-sleep 0.6<
+sleep 0.6
 
 # 4. Ejecutar hyprlock (el script se detiene aquí hasta que desbloquees)
 hyprlock
