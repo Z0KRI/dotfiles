@@ -2,8 +2,18 @@
 
 set -e  # Exit on any error
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 # Get the directory where this script is located (the dotfiles repo root)
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$DOTFILES_DIR/hypr/themes/mac/scripts"
+
+DEPENDENCIES=(cmake cpio pkgconf git gcc base-devel rofi waybar font-manager ttf-jetbrains-mono-nerd)
 
 # Detect OS
 OS="unknown"
@@ -30,7 +40,7 @@ create_symlink() {
   local dest="$2"
   local desc="$3"
   
-  echo -e "${BLUE}Installing $desc...${NC}"
+  echo -e "${BLUE} Installing $desc...${NC}"
   
   # Create parent directory if it doesn't exist
   mkdir -p "$(dirname "$dest")"
@@ -46,14 +56,31 @@ create_symlink() {
   echo -e "${GREEN}  ✓ $desc installed${NC}"
 }
 
-echo -e "${BLUE}📁 Creating ~/.config directory if it doesn't exist...${NC}"
+echo -e "${BLUE} 🔍 Checking dependencies...${NC}"
+MISSING_DEPS=()
+
+for dep in "${DEPENDENCIES[@]}"; do
+    # pacman -Qi devuelve 0 si el paquete está instalado, 1 si no
+    if ! pacman -Qi "$dep" > /dev/null 2>&1; then
+        MISSING_DEPS+=("$dep")
+    fi
+done
+
+if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+    echo -e "${YELLOW} 📦 Installing missing dependencies: ${MISSING_DEPS[*]}${NC}"
+    sudo pacman -S "${MISSING_DEPS[@]}" --noconfirm
+else
+    echo -e "${GREEN} ✓ All the units have already been installed${NC}"
+fi
+
+echo -e "${BLUE} 📁 Creating ~/.config directory if it doesn't exist...${NC}"
 mkdir -p "$HOME/.config"
 
 # Check if omarchy configuration exists
 OMARCHY_EXISTS=false
 if [[ -d "$HOME/.local/share/omarchy" ]]; then
   OMARCHY_EXISTS=true
-  echo -e "${YELLOW}⚠️  Omarchy configuration detected - skipping ghostty, hyprland, rofi, waybar, btop, and cursor${NC}"
+  echo -e "${YELLOW} ⚠️  Omarchy configuration detected - skipping ghostty, hyprland, rofi, waybar, btop, and cursor${NC}"
 fi
 
 # Hyprland (Linux only)
@@ -61,8 +88,17 @@ if [[ "$OMARCHY_EXISTS" == false && "$OS" == "linux" && -d "$DOTFILES_DIR/hypr" 
   create_symlink "$DOTFILES_DIR/hypr" "$HOME/.config/hypr" "Hyprland window manager config"
 fi
 
-echo -e "${BLUE} Installing dependencies... ${NC}"
-sudo pacman -S cmake cpio pkgconf git gcc base-devel hyprland-headers rofi waybar --noconfirm
+# Waybar (Linux only)
+if [[ "$OMARCHY_EXISTS" == false && "$OS" == "linux" && -d "$DOTFILES_DIR/waybar" ]]; then
+  create_symlink "$DOTFILES_DIR/waybar" "$HOME/.config/waybar" "Waybar config"
+fi
 
 echo -e "${BLUE} Allowing the execution of scripts... ${NC}"
-chmod +x "$DOTFILES_DIR/hypr/themes/mac/scripts/*sh"
+
+if [ -d "$SCRIPT_PATH" ]; then
+    # Usamos find para evitar errores si no hay archivos .sh
+    find "$SCRIPT_PATH" -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
+    echo -e "${GREEN}  ✓ Scripts permissions updated${NC}"
+else
+    echo -e "${YELLOW}  ⚠️  Warning: Scripts directory not found at $SCRIPT_PATH${NC}"
+fi
