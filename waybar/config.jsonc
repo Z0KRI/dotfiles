@@ -1,0 +1,20 @@
+// -*- mode: jsonc -*-
+{
+    "layer": "top", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    "spacing": 0, // Gaps between modules (4px)
+    "modules-left": [
+        "custom/arch",
+        "hyprland/window"
+    ],
+    "modules-right": [
+        "hyprland/language",
+        "pulseaudio",
+        "network",
+        "custom/spotlight",
+        "clock"
+    ],
+    "include": [
+		"./modules.json"
+	]
+}

@@ -1,0 +1,59 @@
+{
+  "custom/arch": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "rofi -show drun"
+  },
+  "hyprland/window": {
+    "format": "{class}",
+    "separate-outputs": true,
+    "tooltip": false,
+    "rewrite": {
+      "firefox": "Firefox",
+      "^zen$": "Zen",
+      "google-chrome": "Chrome",
+      "^com.mitchellh.ghostty$": "Terminal",
+      "code-oss": "Code",
+      "org.gnome.Nautilus": "Files",
+      "font-manager": "Font Manager"
+    }
+  },
+  "clock": {
+    "interval": 60,
+    "format": "{:%a %e %b  %H:%M %p}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "on-click": "gnome-calendar"
+  },
+  "network": {
+    "tooltip": false,
+    "format-wifi": "",
+    "format-ethernet": "",
+    "format-linked": "{ifname} (No IP) ",
+    "format-disconnected": "",
+    "on-click": "nm-connection-editor"
+  },
+  "custom/spotlight": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "rofi -show drun -show-icons"
+  },
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "",
+    "format-source-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "",
+      "headset": "",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": ["", "", ""]
+    }
+  },
+  "hyprland/language": {
+    "format": "   {}",
+    "format-en": "EN",
+    "format-es": "ES"
+  }
+}
