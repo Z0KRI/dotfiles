@@ -11,6 +11,7 @@
     "rewrite": {
       "firefox": "Firefox",
       "^zen$": "Zen",
+      "^$": "Desktop",
       "google-chrome": "Chrome",
       "^com.mitchellh.ghostty$": "Terminal",
       "code-oss": "Code",
