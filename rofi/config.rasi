@@ -1,0 +1,64 @@
+/* ~/.config/rofi/config.rasi
+ *
+ * Define QUÉ busca rofi. La apariencia vive en spotlight.rasi.
+ */
+
+configuration {
+    /* Los tres modos que se dibujan como chips, en este orden.
+     *
+     * "combi" es el chip de Aplicaciones: no existe un modo "apps", lo que
+     * pides es la fusión de window+drun+run, y eso es exactamente combi.
+     * Al dejarlo solo en esta lista desaparecen los chips sueltos de
+     * window/drun/run/ssh, pero combi sigue siendo el modo por defecto.
+     *
+     * "recursivebrowser" lista archivos recursivamente desde el directorio
+     * actual; es lo más parecido a buscar archivos en Spotlight.
+     * (filebrowser, el otro interno, navega carpeta por carpeta.)
+     *
+     * "Portapapeles" es un modo script sobre cliphist. La sintaxis
+     * nombre:comando SOLO vale para scripts: escribir
+     * "Archivos:recursivebrowser" hace que rofi intente ejecutar
+     * "recursivebrowser" como programa y ni siquiera arranca.
+     *
+     * La ruta va ABSOLUTA: rofi no expande ~ dentro de config.rasi.
+     */
+    modes: "combi,recursivebrowser,Portapapeles:~/.config/rofi/scripts/clipboard.sh";
+
+    /* Lo que se fusiona dentro del chip de Aplicaciones.
+     * Primero las ventanas abiertas, luego las apps instaladas: así
+     * escribir "firefox" salta a la ventana existente en vez de abrir otra. */
+    combi-modes: "window,drun,run";
+
+    /* Sin esto cada fila arranca con "window "/"drun "/"run ", que es el
+     * prefijo de modo. Spotlight no muestra de dónde sale cada resultado. */
+    combi-hide-mode-prefix: true;
+
+    /* Etiquetas de los chips. Estos strings son los que se sustituyen por
+     * glifos de Lucide cuando definamos la fuente de los botones. */
+    display-combi:            ""; /* Apps */
+    display-recursivebrowser: ""; /* FIles */
+    display-Portapapeles:     ""; /* clipboard */
+
+    show-icons: true;
+    drun-display-format: "{name}";
+    drun-match-fields: "name,generic,exec,categories,keywords";
+
+    /* Búsqueda difusa, como Spotlight: "vsc" encuentra "Visual Studio Code" */
+    matching: "fuzzy";
+    sorting-method: "fzf";
+    sort: true;
+
+    terminal: "ghostty";
+
+    /* Sin barra lateral: Spotlight no la tiene */
+    sidebar-mode: false;
+
+    /* Enter sobre el resultado de la calculadora lo copia al portapapeles */
+    calc-command: "echo -n '{result}' | wl-copy";
+}
+
+/* Si algún día prefieres no arrastrar -theme en cada invocación,
+ * descomenta esta línea (va FUERA del bloque configuration) y el bind
+ * vuelve a ser solo "rofi -show combi".
+ */
+@theme "/home/zokri/.config/rofi/spotlight.rasi"

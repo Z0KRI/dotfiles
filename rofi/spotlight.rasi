@@ -77,8 +77,8 @@ inputbar {
 textbox-lupa {
     background-color: transparent;
     text-color:       @texto-suave;
-    content:          "⌕";        /* <- sustituir por el glifo de Lucide */
-    /* font:          "lucide 14"; */
+    content:          ""; 
+    font:          "lucide 14";
     vertical-align:   0.5;
     expand:           false;
 }
