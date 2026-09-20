@@ -15,6 +15,9 @@ local screenshotPath = p.screenshotPath
 -------------------
 
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
+hl.bind(mainMod .. " + 1", hl.dsp.exec_cmd("rofi -replace -show combi"))
+hl.bind(mainMod .. " + 2", hl.dsp.exec_cmd("rofi -replace -show recursivebrowser"))
+hl.bind(mainMod .. " + 3", hl.dsp.exec_cmd("rofi -replace -show Portapapeles"))
 
 
 -----------------------------

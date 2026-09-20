@@ -1,0 +1,18 @@
+/* ~/.config/rofi/spotlight-min.rasi
+ *
+ * Spotlight sin chips: solo la barra de búsqueda.
+ *
+ * Hereda TODO de spotlight.rasi y solo apaga el selector de modos, así
+ * que cualquier cambio de color o tamaño se hace en un único sitio.
+ * La ruta del @import va absoluta: rofi no expande ~ aquí.
+ *
+ * Ojo: esto oculta los chips, no desactiva los modos. Ctrl+Tab (o
+ * Shift+Right) sigue cambiando de sección, y el icono de la izquierda
+ * sigue reflejando en cuál estás.
+ */
+
+@import "/home/zokri/.config/rofi/spotlight.rasi"
+
+mode-switcher {
+    enabled: false;
+}

@@ -1,64 +1,88 @@
 /* ~/.config/rofi/config.rasi
  *
- * Define QUÉ busca rofi. La apariencia vive en spotlight.rasi.
+ * Rofi al estilo Spotlight.
  */
 
 configuration {
-    /* Los tres modos que se dibujan como chips, en este orden.
+
+    /* ---------------------------------------------------------------
+     * LOS TRES CHIPS
+     * ---------------------------------------------------------------
+     * combi           -> la búsqueda general (ver combi-modes abajo)
+     * recursivebrowser-> archivos, ya acotado
+     * Clipboard    -> modo script sobre cliphist
      *
-     * "combi" es el chip de Aplicaciones: no existe un modo "apps", lo que
-     * pides es la fusión de window+drun+run, y eso es exactamente combi.
-     * Al dejarlo solo en esta lista desaparecen los chips sueltos de
-     * window/drun/run/ssh, pero combi sigue siendo el modo por defecto.
+     * calc queda fuera: cada modo listado aquí dibuja un chip, y además
+     * rofi-calc necesita el hook _preprocess_input, que combi nunca
+     * invoca. Vive en su propia tecla, cuyo bind ya pasa -modes calc.
      *
-     * "recursivebrowser" lista archivos recursivamente desde el directorio
-     * actual; es lo más parecido a buscar archivos en Spotlight.
-     * (filebrowser, el otro interno, navega carpeta por carpeta.)
-     *
-     * "Portapapeles" es un modo script sobre cliphist. La sintaxis
-     * nombre:comando SOLO vale para scripts: escribir
-     * "Archivos:recursivebrowser" hace que rofi intente ejecutar
-     * "recursivebrowser" como programa y ni siquiera arranca.
-     *
-     * La ruta va ABSOLUTA: rofi no expande ~ dentro de config.rasi.
+     * Ruta ABSOLUTA: rofi no expande ~ dentro de este archivo.
      */
-    modes: "combi,recursivebrowser,Portapapeles:~/.config/rofi/scripts/clipboard.sh";
+    modes: "combi,recursivebrowser,Clipboard:~/.config/rofi/scripts/clipboard.sh";
 
-    /* Lo que se fusiona dentro del chip de Aplicaciones.
-     * Primero las ventanas abiertas, luego las apps instaladas: así
-     * escribir "firefox" salta a la ventana existente en vez de abrir otra. */
-    combi-modes: "window,drun,run";
+    /* ---------------------------------------------------------------
+     * LA LISTA ÚNICA (SUPER + SPACE)
+     * ---------------------------------------------------------------
+     * El orden importa, por tres motivos distintos:
+     *
+     * 1. "web" TIENE que ir primero. combi delega el texto que no
+     *    coincide con nada al PRIMER modo de esta lista
+     *    (source/modes/combi.c -> switchers[0]). Ese script no aporta
+     *    ninguna entrada, solo captura URLs, comandos y búsquedas.
+     *
+     * 2. "window" antes que "drun" hace que escribir "Firefox" salte a
+     *    la ventana ya abierta en vez de lanzar otra instancia.
+     *
+     * 3. "recursivebrowser" al final, o los archivos entierran a las apps.
+     *
+     * Ninguno de estos dibuja chip: los chips salen de "modes".
+     */
+    combi-modes: "web:~/.config/rofi/scripts/rofi_web.sh,window,drun,run,recursivebrowser";
 
-    /* Sin esto cada fila arranca con "window "/"drun "/"run ", que es el
-     * prefijo de modo. Spotlight no muestra de dónde sale cada resultado. */
+    /* ---------------------------------------------------------------
+     * ETIQUETAS
+     * ---------------------------------------------------------------
+     */
     combi-hide-mode-prefix: true;
+    display-combi:            ""; /* glifo lucide: search / sparkles */
+    display-recursivebrowser: ""; /* glifo lucide: folder */
+    display-Clipboard:     ""; /* glifo lucide: clipboard */
 
-    /* Etiquetas de los chips. Estos strings son los que se sustituyen por
-     * glifos de Lucide cuando definamos la fuente de los botones. */
-    display-combi:            ""; /* Apps */
-    display-recursivebrowser: ""; /* FIles */
-    display-Portapapeles:     ""; /* clipboard */
+    /* ---------------------------------------------------------------
+     * BÚSQUEDA
+     * ---------------------------------------------------------------
+     * Difusa, como Spotlight: "vsc" encuentra "Visual Studio Code".
+     */
+    matching: "fuzzy";
+    sorting-method: "fzf";
+    sort: true;
 
     show-icons: true;
     drun-display-format: "{name}";
     drun-match-fields: "name,generic,exec,categories,keywords";
-
-    /* Búsqueda difusa, como Spotlight: "vsc" encuentra "Visual Studio Code" */
-    matching: "fuzzy";
-    sorting-method: "fzf";
-    sort: true;
 
     terminal: "ghostty";
 
     /* Sin barra lateral: Spotlight no la tiene */
     sidebar-mode: false;
 
-    /* Enter sobre el resultado de la calculadora lo copia al portapapeles */
-    calc-command: "echo -n '{result}' | wl-copy";
+    /* ---------------------------------------------------------------
+     * ARCHIVOS
+     * ---------------------------------------------------------------
+     * Este bloque es global al modo: el recursivebrowser del chip y el
+     * de dentro de combi son el MISMO y comparten estos ajustes. No se
+     * pueden configurar por separado.
+     *
+     * Y aquí está el coste de meterlo en combi: ahora el escaneo ocurre
+     * en CADA pulsación de SUPER+SPACE, no solo al entrar al chip de
+     * archivos. El filter-regex deja de ser opcional. Si notas retraso
+     * al abrir, acota "directory" a /home/zokri/Projects.
+     */
+    recursivebrowser {
+        directory: "/";
+        filter-regex: "(.*/\\.git/.*|.*/node_modules/.*|.*/\\.cache/.*|.*/\\.local/share/.*|.*/\\.npm/.*|.*/\\.venv/.*)";
+        command: "xdg-open";
+    }
 }
 
-/* Si algún día prefieres no arrastrar -theme en cada invocación,
- * descomenta esta línea (va FUERA del bloque configuration) y el bind
- * vuelve a ser solo "rofi -show combi".
- */
 @theme "/home/zokri/.config/rofi/spotlight.rasi"
