@@ -60,6 +60,17 @@ hl.window_rule({
     border_color = "rgb(ff0000)",    -- borde rojo para identificarlo rápido
 })
 
+-- Gestor de archivos siempre flotante y centrado
+hl.window_rule({
+    name  = "nautilus-float",
+    match = { class = [[^org\.gnome\.Nautilus$]] },
+
+    float           = true,
+    size            = "60% 65%",
+    center          = true,
+    persistent_size = true,  -- recuerda el tamaño si lo redimensionas
+})
+
 -- Arregla problemas de arrastre con XWayland
 hl.window_rule({
     name  = "fix-xwayland-drags",
