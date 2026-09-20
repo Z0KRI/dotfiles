@@ -1,0 +1,185 @@
+/* ~/.config/rofi/spotlight.rasi
+ *
+ * Imitación del Spotlight de macOS Tahoe.
+ *
+ * Este archivo define SOLO la apariencia. Qué busca rofi (los modos,
+ * el combi, las etiquetas de los chips) vive en config.rasi.
+ *
+ * Uso:  rofi -show combi -theme ~/.config/rofi/spotlight.rasi
+ */
+
+* {
+    /* Paleta clara, como el Spotlight del sistema */
+    fondo:          #FFFFFFF2;
+    fondo-hover:    #00000010;
+    texto:          #1D1D1F;
+    texto-suave:    #86868B;
+    acento:         #0A84FF;
+    acento-suave:   #0A84FF22;
+
+    background-color: transparent;
+    text-color:       @texto;
+
+    /* Tipografía de TEXTO. Los iconos usan su propia fuente declarada
+     * widget por widget más abajo, para que Pango no resuelva por
+     * fallback: Lucide y las Nerd Fonts ocupan el mismo rango de uso
+     * privado y el mismo código puede salir como dos iconos distintos. */
+    font: "Inter 12";
+}
+
+window {
+    transparency: "real";
+    location:     center;
+    anchor:       center;
+    y-offset:     -12%;          /* Spotlight no está centrado del todo */
+
+    /* En px, no en %. Un 46% sobre un monitor grande daba una ventana
+     * de más de 1700px de ancho. Spotlight real ronda los 680px. */
+    width:            640px;
+    background-color: transparent;
+    border:           0;
+    padding:          0;
+    children:         [ mainbox ];
+}
+
+mainbox {
+    background-color: transparent;
+    spacing:          10px;
+    padding:          0;
+    children:         [ barra, listview ];
+}
+
+/* ---------------------------------------------------------------
+ * LA BARRA: píldora + chips circulares
+ * --------------------------------------------------------------- */
+barra {
+    /* Clave: sin esto la barra absorbe todo el alto que listview deja
+     * libre al encoger (dynamic: true) y la píldora sale deformada. */
+    expand:           false;
+    orientation:      horizontal;
+    spacing:          10px;
+    background-color: transparent;
+    children:         [ inputbar, mode-switcher ];
+}
+
+inputbar {
+    expand:           true;
+    background-color: @fondo;
+    border-radius:    22px;
+    padding:          11px 18px;
+    spacing:          10px;
+    /* Sin `prompt` a propósito: rofi le mete el nombre del modo por
+     * dentro y el `str:` del tema no lo pisa (de ahí el "combi" que
+     * salía). La lupa va en un textbox propio, que sí obedece. */
+    children:         [ textbox-lupa, entry, textbox-atajo ];
+}
+
+textbox-lupa {
+    background-color: transparent;
+    text-color:       @texto-suave;
+    content:          "⌕";        /* <- sustituir por el glifo de Lucide */
+    /* font:          "lucide 14"; */
+    vertical-align:   0.5;
+    expand:           false;
+}
+
+entry {
+    background-color:  transparent;
+    placeholder:       "Buscar";
+    placeholder-color: @texto-suave;
+    vertical-align:    0.5;
+    cursor:            text;
+}
+
+/* El chip de atajo a la derecha del campo. Cualquier widget cuyo
+ * nombre empiece por "textbox" es un textbox y acepta content. */
+textbox-atajo {
+    background-color: @fondo-hover;
+    text-color:       @texto-suave;
+    content:          "SUPER SPACE";
+    border-radius:    6px;
+    padding:          3px 8px;
+    vertical-align:   0.5;
+    expand:           false;
+}
+
+/* Los chips de categoría. rofi los genera desde los modos activos, así
+ * que la etiqueta sale de los display-* de config.rasi. */
+mode-switcher {
+    expand:           false;
+    orientation:      horizontal;
+    spacing:          8px;
+    background-color: transparent;
+}
+
+button {
+    background-color: @fondo;
+    text-color:       @texto-suave;
+    border-radius:    22px;
+    /* 44px está calculado para UN glifo. Con palabras completas la
+     * etiqueta se corta ("Apl…"); es lo esperado hasta poner iconos. */
+    width:            44px;
+    padding:          11px 0px;
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    cursor:           pointer;
+    /* font:          "lucide 15"; */
+}
+
+button selected {
+    background-color: @acento;
+    text-color:       #FFFFFF;
+}
+
+/* ---------------------------------------------------------------
+ * RESULTADOS
+ * --------------------------------------------------------------- */
+listview {
+    background-color: @fondo;
+    border-radius:    14px;
+    padding:          6px;
+    spacing:          1px;
+
+    lines:            6;
+    dynamic:          true;      /* encoge al filtrar */
+    scrollbar:        false;
+    fixed-height:     false;
+}
+
+element {
+    background-color: transparent;
+    border-radius:    8px;
+    padding:          7px 10px;
+    spacing:          10px;
+    cursor:           pointer;
+    children:         [ element-icon, element-text ];
+}
+
+element selected normal,
+element selected active {
+    background-color: @acento-suave;
+    text-color:       @texto;
+}
+
+element-icon {
+    size:             22px;
+    background-color: transparent;
+    vertical-align:   0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+}
+
+message {
+    background-color: @fondo;
+    border-radius:    14px;
+    padding:          10px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color:       @texto;
+}
