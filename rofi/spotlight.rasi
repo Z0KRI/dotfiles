@@ -68,6 +68,7 @@ inputbar {
     border-radius:    22px;
     padding:          11px 18px;
     spacing:          10px;
+    font: "lucide 13";
     /* Sin `prompt` a propósito: rofi le mete el nombre del modo por
      * dentro y el `str:` del tema no lo pisa (de ahí el "combi" que
      * salía). La lupa va en un textbox propio, que sí obedece. */
@@ -101,6 +102,7 @@ mode-switcher {
 }
 
 button {
+    font: "lucide 15";
     background-color: @fondo;
     text-color:       @texto-suave;
     border-radius:    22px;
