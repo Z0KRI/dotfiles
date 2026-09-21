@@ -10,7 +10,9 @@ M.mainMod = "SUPER" -- tecla "Windows" como modificador principal
 
 M.terminal     = "ghostty"
 M.fileManager  = "nautilus"
-M.menu = "rofi -show combi -theme ~/.config/rofi/spotlight-min.rasi"
+
+M.menuPath = "~/.config/rofi"
+M.menu = "rofi"
 
 -- $(xdg-user-dir PICTURES) se deja sin expandir a propósito: exec_cmd lanza
 -- el comando por shell, así que la expande al momento de ejecutarse (igual

@@ -18,7 +18,7 @@ configuration {
      *
      * Ruta ABSOLUTA: rofi no expande ~ dentro de este archivo.
      */
-    modes: "combi,recursivebrowser,Clipboard:~/.config/rofi/scripts/clipboard.sh";
+    modes: "combi,blocks,Clipboard:/home/zokri/.config/rofi/scripts/clipboard.sh";
 
     /* ---------------------------------------------------------------
      * LA LISTA ÚNICA (SUPER + SPACE)
@@ -37,7 +37,7 @@ configuration {
      *
      * Ninguno de estos dibuja chip: los chips salen de "modes".
      */
-    combi-modes: "web:~/.config/rofi/scripts/rofi_web.sh,window,drun,run,recursivebrowser";
+    combi-modes: "web:~/.config/rofi/scripts/rofi_web.sh,window,drun,run";
 
     /* ---------------------------------------------------------------
      * ETIQUETAS
@@ -45,7 +45,7 @@ configuration {
      */
     combi-hide-mode-prefix: true;
     display-combi:            ""; /* glifo lucide: search / sparkles */
-    display-recursivebrowser: ""; /* glifo lucide: folder */
+    display-blocks: ""; /* glifo lucide: folder */
     display-Clipboard:     ""; /* glifo lucide: clipboard */
 
     /* ---------------------------------------------------------------
@@ -76,13 +76,16 @@ configuration {
      * Y aquí está el coste de meterlo en combi: ahora el escaneo ocurre
      * en CADA pulsación de SUPER+SPACE, no solo al entrar al chip de
      * archivos. El filter-regex deja de ser opcional. Si notas retraso
-     * al abrir, acota "directory" a /home/zokri/Projects.
+     * al abrir, acota "directory" a ~/Projects.
      */
-    recursivebrowser {
-        directory: "/";
-        filter-regex: "(.*/\\.git/.*|.*/node_modules/.*|.*/\\.cache/.*|.*/\\.local/share/.*|.*/\\.npm/.*|.*/\\.venv/.*)";
-        command: "xdg-open";
+
+    show-icons: true;
+    window-format: "{t:70}";
+
+    window {
+        prefer-icon-theme: true;
+        fallback-icon: "application-x-executable";
     }
 }
 
-@theme "/home/zokri/.config/rofi/spotlight.rasi"
+@theme "~/.config/rofi/spotlight.rasi"
