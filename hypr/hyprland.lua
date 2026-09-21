@@ -21,12 +21,12 @@
 ------------------
 
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
-hl.monitor({
-    output   = "",
-    mode     = "preferred",
-    position = "auto",
-    scale    = "auto",
-})
+-- hl.monitor({
+--     output   = "",
+--     mode     = "preferred",
+--     position = "auto",
+--     scale    = "auto",
+-- })
 
 
 ---------------------
@@ -107,23 +107,23 @@ hl.config({
 ---- INPUT ----
 ---------------
 
-hl.config({
-    input = {
-        kb_layout  = "us",
-        kb_variant = "",
-        kb_model   = "",
-        kb_options = "",
-        kb_rules   = "",
+-- hl.config({
+--     input = {
+--         kb_layout  = "us",
+--         kb_variant = "",
+--         kb_model   = "",
+--         kb_options = "",
+--         kb_rules   = "",
 
-        follow_mouse = 1,
+--         follow_mouse = 1,
 
-        sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
+--         sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
 
-        touchpad = {
-            natural_scroll = false,
-        },
-    },
-})
+--         touchpad = {
+--             natural_scroll = false,
+--         },
+--     },
+-- })
 
 hl.gesture({
     fingers = 3,
@@ -154,3 +154,10 @@ require("theme.config.keybindings")
 
 -- Reglas de ventanas y de workspaces, en su propio módulo.
 require("theme.config.workspace_windows_rules")
+
+
+-----------------------------------
+---- CONFIG POR MÁQUINA (HOSTS) ----
+-----------------------------------
+require("hosts.init")
+
