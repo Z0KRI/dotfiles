@@ -14,10 +14,10 @@ local screenshotPath = p.screenshotPath
 ---- SPOTLIGHT ----
 -------------------
 
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu .. ' -show combi -theme ' .. p.menuPath .. "/spotlight-min.rasi"))
-hl.bind(mainMod .. " + 1", hl.dsp.exec_cmd(p.menu .. ' -replace -show combi'))
-hl.bind(mainMod .. " + 2", hl.dsp.exec_cmd(p.menu .. ' -replace -show blocks -blocks-wrap ' .. p.menuPath .. "/scripts/files.sh"))
-hl.bind(mainMod .. " + 3", hl.dsp.exec_cmd(p.menu .. ' -replace -show Clipboard'))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
+-- hl.bind(mainMod .. " + 1", hl.dsp.exec_cmd(p.menu .. ' -replace -show combi'))
+-- hl.bind(mainMod .. " + 2", hl.dsp.exec_cmd(p.menu .. ' -replace -show blocks -blocks-wrap ' .. p.menuPath .. "/scripts/files.sh"))
+-- hl.bind(mainMod .. " + 3", hl.dsp.exec_cmd(p.menu .. ' -replace -show Clipboard'))
 
 -----------------------------
 ---- SYSTEM FUNDAMENTALS ----

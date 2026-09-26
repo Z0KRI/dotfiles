@@ -6,7 +6,7 @@ import Quickshell
 Singleton {
     id: root
 
-    property bool isDark: true
+    property bool isDark: false
 
     readonly property QtObject colors: QtObject {
         // --- Colores de marca y acento ---
