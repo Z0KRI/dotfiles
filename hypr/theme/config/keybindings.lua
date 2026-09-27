@@ -1,12 +1,13 @@
--- ~/.config/hypr/themes/mac/config/keybindings.lua
+-- ~/.config/hypr/themes/config/keybindings.lua
 --
--- Migrado desde themes/mac/config/keybindigs.conf (hyprlang -> lua)
+-- Migrado desde themes/config/keybindigs.conf (hyprlang -> lua)
 -- Ref: https://wiki.hypr.land/Configuring/Basics/Binds/
 --      https://wiki.hypr.land/Configuring/Basics/Dispatchers/
 
 local p = require("theme.config.programs")
 
 local mainMod        = p.mainMod
+local scriptsDir     = p.scriptsDir
 local screenshotPath = p.screenshotPath
 
 
@@ -15,9 +16,7 @@ local screenshotPath = p.screenshotPath
 -------------------
 
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
--- hl.bind(mainMod .. " + 1", hl.dsp.exec_cmd(p.menu .. ' -replace -show combi'))
--- hl.bind(mainMod .. " + 2", hl.dsp.exec_cmd(p.menu .. ' -replace -show blocks -blocks-wrap ' .. p.menuPath .. "/scripts/files.sh"))
--- hl.bind(mainMod .. " + 3", hl.dsp.exec_cmd(p.menu .. ' -replace -show Clipboard'))
+
 
 -----------------------------
 ---- SYSTEM FUNDAMENTALS ----
@@ -27,8 +26,13 @@ hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exit())
 
 -- Cierra la ventana activa y, si el workspace queda vacío, vuelve al 1.
+-- (antes: scripts/close_window.sh)
 local function closeWindow()
     hl.dispatch(hl.dsp.window.close())
+
+    -- El cierre no es instantáneo: damos un respiro antes de contar ventanas.
+    -- hl.timer en lugar de sleep, porque las callbacks corren en el event
+    -- loop del compositor y un sleep congelaría el escritorio.
     hl.timer(function()
         local ws = hl.get_active_workspace()
         if ws and ws.is_empty then
@@ -84,6 +88,8 @@ local function maximizeOnFreeWorkspace()
 
     maximizedFrom[win.stable_id] = current.id
 
+    hl.dispatch(hl.dsp.window.set_prop({ prop = "sync_fullscreen", value = "false" }))
+
     hl.dispatch(hl.dsp.window.move({ workspace = target }))
 
     hl.timer(function()
@@ -92,7 +98,6 @@ local function maximizeOnFreeWorkspace()
 end
 
 hl.bind("CONTROL + " .. mainMod .. " + F", maximizeOnFreeWorkspace)
-
 
 hl.bind(mainMod .. " + E",      hl.dsp.exec_cmd(p.fileManager))
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(p.terminal))
