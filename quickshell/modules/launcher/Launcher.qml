@@ -1,40 +1,40 @@
 import Quickshell
 import Quickshell.Io
+
+import qs.domain.launcher
 import qs.core.components.templates
 
 Scope {
     id: root
 
-    property bool shown: false
-
     IpcHandler {
         target: "launcher"
 
         function toggle(): void {
-            root.shown = !root.shown;
+            LauncherControl.toggle();
         }
         function open(): void {
-            root.shown = true;
+            LauncherControl.open()
         }
         function close(): void {
-            root.shown = false;
+            LauncherControl.close()
         }
     }
 
     LazyLoader {
-        active: root.shown
+        active: LauncherControl.shown
 
         component: OverlayWindow {
             namespace: "z0-launcher"
-            onDismissed: root.shown = false
+            onDismissed: LauncherControl.close()
 
             LauncherPanel {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.topMargin: parent.height * 0.25
 
-                onDismissed: root.shown = false
-                onLaunched: root.shown = false
+                onDismissed: LauncherControl.close()
+                onLaunched: LauncherControl.close()
             }
         }
     }
