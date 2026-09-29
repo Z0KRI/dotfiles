@@ -1,32 +1,36 @@
--- ~/.config/hypr/themes/mac/config/workspace_windows_rules.lua
+-- ~/.config/hypr/theme/config/workspace_windows_rules.lua
 --
--- Migrado desde themes/mac/config/workspace_windows_rules.conf (hyprlang -> lua)
 -- Ref: https://wiki.hypr.land/Configuring/Basics/Window-Rules/
 --      https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 --
 -- El orden importa: las reglas se evalúan de arriba hacia abajo.
+
+-- La política de fullscreen automático y los workspaces primarios viven en su
+-- propio módulo, porque los hosts también necesitan declararlos.
+require("theme.config.workspaces")
 
 
 -------------------------
 ---- WORKSPACE RULES ----
 -------------------------
 
--- "Smart gaps" / "No gaps when only"
--- Descomenta el bloque completo si lo quieres.
--- hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
--- hl.workspace_rule({ workspace = "f[1]",   gaps_out = 0, gaps_in = 0 })
--- hl.window_rule({
---     name  = "no-gaps-wtv1",
---     match = { float = false, workspace = "w[tv1]" },
---     border_size = 0,
---     rounding    = 0,
--- })
--- hl.window_rule({
---     name  = "no-gaps-f1",
---     match = { float = false, workspace = "f[1]" },
---     border_size = 0,
---     rounding    = 0,
--- })
+-- "Smart gaps": si en un workspace solo hay UNA ventana en mosaico, se le
+-- quitan gaps, borde y esquinas.
+--
+-- OJO: r[2-99] asume que el primario es el 1, igual que hacía la tabla vieja.
+-- Los selectores de workspace son C++, no pueden consultar la tabla de
+-- primarios, así que esto no se puede hacer dinámico. En la máquina del
+-- trabajo, el workspace 2 es primario y aun así entra aquí.
+-- Es puramente cosmético: afecta a gaps y borde, no al mosaico.
+hl.workspace_rule({ workspace = "r[2-99]w[tv1]", gaps_in = 0, gaps_out = 0 })
+
+hl.window_rule({
+    name  = "solo-sin-adornos",
+    match = { float = false, workspace = "r[2-99]w[tv1]" },
+
+    border_size = 0,
+    rounding    = 0,
+})
 
 
 ----------------------
@@ -34,7 +38,6 @@
 ----------------------
 
 -- Ignora las peticiones de maximizar de todas las apps.
--- Guardamos el handle por si quieres desactivarla sin borrarla.
 local suppressMaximizeRule = hl.window_rule({
     name  = "suppress-maximize-events",
     match = { class = ".*" },
@@ -44,8 +47,6 @@ local suppressMaximizeRule = hl.window_rule({
 -- suppressMaximizeRule:set_enabled(false)
 
 -- Picture-in-Picture del navegador: flotante, fijado y en la esquina
--- El class real de Zen es app.zen_browser.zen (confirmado con hyprctl clients).
--- Strings [[...]] para no tener que escapar dos veces las barras del regex.
 hl.window_rule({
     name  = "browser-pip",
     match = {
@@ -56,8 +57,8 @@ hl.window_rule({
     float        = true,
     pin          = true,
     size         = "640 360",
-    move         = "20 20",          -- esquina superior izquierda
-    border_color = "rgb(ff0000)",    -- borde rojo para identificarlo rápido
+    move         = "20 20",
+    border_color = "rgb(ff0000)",
 })
 
 -- Gestor de archivos siempre flotante y centrado
@@ -68,7 +69,7 @@ hl.window_rule({
     float           = true,
     size            = "60% 65%",
     center          = true,
-    persistent_size = true,  -- recuerda el tamaño si lo redimensionas
+    persistent_size = true,
 })
 
 -- Arregla problemas de arrastre con XWayland
@@ -93,10 +94,4 @@ hl.window_rule({
 
     move  = "20 monitor_h-120",
     float = true,
-})
-
-hl.layer_rule({
-    name    = "rofi-no-anim",
-    match   = { namespace = "^rofi$" },
-    no_anim = true,
 })
