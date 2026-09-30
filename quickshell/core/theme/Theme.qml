@@ -87,4 +87,39 @@ Singleton {
             display: ""    
         })
     }
+
+    readonly property QtObject island: QtObject {
+        readonly property int minWidth: 180
+        readonly property int minHeight: 34
+
+        // El alto de la píldora. Lo comparten TODOS los ocupantes plegados:
+        // la island cambia de ancho al cambiar de inquilino, nunca de alto.
+        readonly property int pillHeight: 44
+
+        // El aire a los costados del contenido plegado.
+        readonly property int pillPadding: 14
+
+        readonly property int radius: 18
+        readonly property int expandedRadius: 40
+        readonly property int wing: 14
+
+        readonly property color bg: "#0b0b0e"
+        readonly property color fg: "#f2f2f7"
+        readonly property color muted: Qt.rgba(1, 1, 1, 0.55)
+        readonly property color track: Qt.rgba(1, 1, 1, 0.22)
+
+        // Entrada y salida desde el borde.
+        readonly property int enterDuration: 460
+        readonly property int exitDuration: 240
+        readonly property real enterOvershoot: 1.1
+
+        // El estirón. Una sola duración y un solo rebase para el ancho, el
+        // alto y el redondeo: si llegan a destiempo, parecen tres cosas.
+        readonly property int sizeDuration: 520
+        readonly property real sizeOvershoot: 0.9
+
+        // El relevo de una vista por otra. Corto a propósito: acompaña al
+        // estirón, no compite con él.
+        readonly property int contentDuration: 180
+    }
 }

@@ -7,6 +7,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.core.theme
+import qs.domain.island
 
 PanelWindow {
     id: root
@@ -30,6 +31,24 @@ PanelWindow {
 
     property bool revealed: !root.autoHide
 
+    // --- El hueco de la island ---
+    //
+    // La island vive en este mismo borde y, en pantalla completa, esta barra
+    // sube a la capa overlay y le queda por encima. Restarle su hueco es lo
+    // que hace que el ratón le llegue sin depender de quién quede encima ni
+    // del orden en que se construyeron las superficies.
+    //
+    // Solo en la pantalla donde la island se está dibujando: hay una barra por
+    // monitor y un solo rectángulo, así que sin esta pregunta la otra barra se
+    // agujerearía el centro para nada.
+    readonly property bool islandHere: IslandState.open
+        && root.screen !== null
+        && IslandState.screenName === root.screen.name
+
+    readonly property rect islandGap: root.islandHere
+        ? IslandState.bodyRect
+        : Qt.rect(0, 0, 0, 0)
+
     anchors {
         top: true
         left: true
@@ -47,10 +66,18 @@ PanelWindow {
     WlrLayershell.layer: root.aboveFullscreen ? WlrLayer.Overlay : WlrLayer.Top
 
     // Solo esta zona recibe el mouse; fuera de ella los clics pasan
-    // a las ventanas de abajo.
+    // a las ventanas de abajo. La región hija se resta de esta.
     mask: Region {
         width: root.width
         height: root.revealed ? root.height : root.revealStrip
+
+        Region {
+            x: root.islandGap.x
+            y: root.islandGap.y
+            width: root.islandGap.width
+            height: root.islandGap.height
+            intersection: Intersection.Subtract
+        }
     }
 
     onAutoHideChanged: {

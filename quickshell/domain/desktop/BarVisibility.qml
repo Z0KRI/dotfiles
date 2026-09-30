@@ -31,8 +31,8 @@ Singleton {
         return root.isFullscreen(screen);
     }
 
-    // When it's hidden on its own, it appears as a solid bar
+    // When it's hidden on its own, it appears as a solid bar.
     function solid(screen) {
-        return root.autoHide(screen);
+        return root.isFullscreen(screen) && !root.isPinned(screen);
     }
 }
