@@ -50,6 +50,8 @@
 --
 hl.on("hyprland.start", function ()
     hl.exec_cmd("wl-paste --watch cliphist store")
+    hl.exec_cmd("/usr/lib/mate-polkit/polkit-mate-authentication-agent-1")
+    -- hl.exec_cmd("systemctl --user start blueferry.service") // AGREGAR EN EL ARCHIVO DE HOSTS, NO EN EL GLOBAL
     hl.exec_cmd("qs")
 end)
 

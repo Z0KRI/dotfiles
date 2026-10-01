@@ -5,10 +5,13 @@
 // El volumen y el reproductor son ESTADOS: siempre hay un valor que leer. Una
 // notificación es un EVENTO, y los eventos llegan en ráfaga y hacen cola. Quien
 // decide cuándo se va no es un temporizador de retirada, es la cola.
+//
+// Todo lo que pinta sale ya tipado del dominio. Aquí no hay un solo `split`,
+// ni un emoji, ni un "si viene de BlueFerry entonces": eso vive en
+// NotificationTypes, que es el único archivo que hay que tocar cuando un
+// puente cambia de formato.
 
 import QtQuick
-import Quickshell
-import Quickshell.Widgets
 import qs.core.theme
 import qs.core.components.atoms
 import qs.domain.notifications
@@ -35,8 +38,12 @@ IslandOccupant {
     // El reloj de la cola.
     //
     // `repeat: true` y no `false`: un Timer sin repetición se apaga solo al
-    // disparar, y apagarse solo ROMPE el binding de `running` — a partir de
-    // ahí no vuelve a arrancar nunca.
+    // disparar, y apagarse solo ROMPE el binding de `running` — a partir de ahí
+    // no vuelve a arrancar nunca. Con repetición, cada vuelta pasa a la
+    // siguiente y el binding sigue vivo.
+    //
+    // Y al pararse se reinicia, así que quitar el ratón le da el tiempo
+    // completo otra vez en lugar de lo que quedara.
     Timer {
         interval: root.showFor
         repeat: true
@@ -44,48 +51,78 @@ IslandOccupant {
         onTriggered: Notifications.advance()
     }
 
-    // ── cerrado: icono y resumen ──────────────────────────────────
+    // ── plegado: símbolo, quién y qué ─────────────────────────────
     view: Component {
         Item {
             anchors.fill: parent
 
-            // La acción "default" de la especificación: lo que pasa al pulsar
-            // el cuerpo. En WhatsApp es abrir la conversación.
+            // Toda la píldora es la acción por defecto, cuando la hay. Sin
+            // `hoverEnabled` en ningún sitio: un TapHandler no roba el hover,
+            // y el de la superficie tiene que seguir llegando.
             TapHandler {
                 enabled: Notifications.hasDefaultAction
                 onTapped: Notifications.invokeDefault()
             }
 
-            IconImage {
-                id: icon
+            AppBadge {
+                id: badge
 
                 anchors.left: parent.left
                 anchors.leftMargin: 7
                 anchors.verticalCenter: parent.verticalCenter
 
-                implicitSize: Theme.island.artClosed
+                size: Theme.island.artClosed
 
-                source: Notifications.image.length > 0
-                    ? Notifications.image
-                    : Quickshell.iconPath(Notifications.appIcon, "dialog-information")
+                image: Notifications.image
+                icon: Notifications.icon
+                glyph: Notifications.glyph
+                fontFamily: Theme.font.mono
+                color: Theme.island.fg
+            }
+
+            // Quien manda el mensaje; si no hay remitente, la aplicación.
+            Label {
+                id: who
+
+                anchors.left: badge.right
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+
+                // Se queda con lo que necesite, pero nunca más de la mitad:
+                // un nombre largo no puede comerse el mensaje entero.
+                width: Math.min(who.implicitWidth, parent.width * 0.45)
+
+                text: Notifications.title.length > 0
+                    ? Notifications.title
+                    : Notifications.appName
+
+                color: Theme.island.fg
+                font.pixelSize: 12
+                font.bold: true
+                elide: Text.ElideRight
             }
 
             Label {
-                anchors.left: icon.right
-                anchors.leftMargin: 9
+                anchors.left: who.right
+                anchors.leftMargin: 7
                 anchors.right: parent.right
                 anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
 
-                text: Notifications.summary
-                color: Theme.island.fg
+                text: Notifications.message
+                color: Theme.island.muted
                 font.pixelSize: 12
+
+                // Texto plano: el servidor anuncia `bodyMarkupSupported: false`,
+                // así que lo que llega es texto y así se pinta. Lo que venía
+                // escapado ya lo desescapó el dominio.
+                textFormat: Text.PlainText
                 elide: Text.ElideRight
             }
         }
     }
 
-    // ── abierto: 640x190 ──────────────────────────────────────────
+    // ── desplegado: la tarjeta ────────────────────────────────────
     expandedView: Component {
         Item {
             anchors.fill: parent
@@ -94,27 +131,30 @@ IslandOccupant {
             anchors.rightMargin: 26
             anchors.bottomMargin: 22
 
-            IconImage {
-                id: bigIcon
+            AppBadge {
+                id: bigBadge
 
                 anchors.left: parent.left
                 anchors.top: parent.top
 
-                implicitSize: 56
+                size: 56
 
-                source: Notifications.image.length > 0
-                    ? Notifications.image
-                    : Quickshell.iconPath(Notifications.appIcon, "dialog-information")
+                image: Notifications.image
+                icon: Notifications.icon
+                glyph: Notifications.glyph
+                fontFamily: Theme.font.mono
+                color: Theme.island.fg
             }
 
             Column {
-                anchors.left: bigIcon.right
+                anchors.left: bigBadge.right
                 anchors.leftMargin: Theme.island.spacing
                 anchors.right: parent.right
                 anchors.top: parent.top
 
                 spacing: 4
 
+                // La aplicación de verdad: "WhatsApp", no "BlueFerry".
                 Label {
                     width: parent.width
                     text: Notifications.appName
@@ -123,9 +163,13 @@ IslandOccupant {
                     elide: Text.ElideRight
                 }
 
+                // El remitente. Se oculta cuando no hay: una notificación de
+                // sistema no tiene a nadie detrás, y una línea vacía se nota.
                 Label {
                     width: parent.width
-                    text: Notifications.summary
+                    visible: Notifications.title.length > 0
+
+                    text: Notifications.title
                     color: Theme.island.fg
                     font.pixelSize: 16
                     font.bold: true
@@ -134,12 +178,10 @@ IslandOccupant {
 
                 Label {
                     width: parent.width
-                    text: Notifications.body
+                    text: Notifications.message
                     color: Theme.island.muted
                     font.pixelSize: 13
 
-                    // Texto plano a propósito: el servidor no anuncia marcado,
-                    // así que lo que llega es texto y así se pinta.
                     textFormat: Text.PlainText
                     wrapMode: Text.WordWrap
                     maximumLineCount: 3
@@ -147,9 +189,13 @@ IslandOccupant {
                 }
             }
 
-            // Ni un solo `MouseArea` con `hoverEnabled` aquí dentro: uno que
-            // acepta hover se lo quita al detector que está debajo, y la
-            // tarjeta se cerraría justo al ir a pulsar el botón.
+            // Las acciones que manda la aplicación, y al final el descarte, que
+            // es nuestro y siempre está.
+            //
+            // HoverHandler y TapHandler, nunca un MouseArea con `hoverEnabled`:
+            // un MouseArea que acepta hover se lo queda, el detector de la
+            // superficie deja de verlo y la tarjeta se cierra justo cuando vas
+            // a pulsar el botón. Esto ya nos pasó.
             Row {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom

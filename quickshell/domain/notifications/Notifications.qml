@@ -3,6 +3,11 @@ pragma Singleton
 // Las REGLAS de las notificaciones: la cola de lo que se enseña y el historial
 // de lo que quedó.
 //
+// Lo que sale de aquí ya viene TIPADO —`appName`, `title`, `message`, `icon`,
+// `glyph`—, así que ninguna vista vuelve a leer el texto crudo del bus. Si
+// mañana aparece otro puente con otro formato, se añade un caso en
+// NotificationTypes y las vistas no se tocan.
+//
 // La island es un consumidor de esto, no su dueña. El día que exista el centro
 // de control, lee `history` desde aquí y no hay que mover nada.
 //
@@ -20,80 +25,90 @@ Singleton {
     // La que se está enseñando. null cuando no hay nada que enseñar.
     property var current: null
 
-    // Las que esperan turno: las que han llegado y todavía no han salido.
+    // Las que esperan turno.
     property var queue: []
 
     readonly property bool hasCurrent: root.current !== null
 
-    // El historial, de la más nueva a la más vieja. Sale de la lista del
-    // servidor, así que se poda solo: lo descartado desaparece.
+    // ── la actual, tipada ─────────────────────────────────────────
     //
-    // Las `transient` se quedan fuera: el que las manda pide explícitamente
-    // que no se guarden en ningún área de notificaciones.
+    // Una sola llamada y de ella salen todos los campos. El binding se vuelve
+    // a evaluar cuando cambia `current` y también cuando una aplicación
+    // REEMPLAZA el contenido de una notificación que ya estaba: `classify` lee
+    // `summary` y `body`, y QML apunta como dependencia todo lo que se lee
+    // mientras evalúa, aunque se lea dentro de una función.
+    readonly property var typed: NotificationTypes.classify(root.current)
+
+    readonly property string kind: root.typed.kind
+    readonly property string appName: root.typed.appName
+    readonly property string title: root.typed.title
+    readonly property string message: root.typed.message
+    readonly property string image: root.typed.image
+    readonly property string icon: root.typed.icon
+    readonly property string glyph: root.typed.glyph
+    readonly property bool fromPhone: root.typed.fromPhone
+
+    // ── el historial ──────────────────────────────────────────────
+    //
+    // De la más nueva a la más vieja, y ya tipado: el centro de control lo
+    // leerá de aquí y pintará igual que la island. Cada entrada lleva su
+    // `source`, que es la notificación de verdad, para poder descartarla o
+    // invocar sus acciones.
+    //
+    // Sale de la lista del servidor, así que se poda solo: lo descartado
+    // desaparece. Lo que entra lo decide `keep`, no `transient` — las del
+    // iPhone llegan marcadas como transitorias y aquí sí se guardan.
     readonly property var history: {
         const all = NotificationRepository.all
         const out = []
+
         for (let i = all.length - 1; i >= 0; --i) {
             const item = all[i]
-            if (item && !item.transient)
-                out.push(item)
+            if (!item)
+                continue
+
+            const entry = NotificationTypes.classify(item)
+            if (entry.keep)
+                out.push(entry)
         }
+
         return out
     }
 
     readonly property int count: root.history.length
 
-    // ── lo que la vista lee de la actual ──────────────────────────
-    //
-    // Muchas aplicaciones mandan el nombre vacío —Zen entre ellas— y lo único
-    // que las identifica es su entrada de escritorio. De "app.zen_browser.zen"
-    // sale "Zen", que es mejor que un hueco.
-    readonly property string appName: {
-        if (!root.hasCurrent)
-            return ""
-
-        const given = root.current.appName
-        if (given.length > 0)
-            return given
-
-        const entry = root.current.desktopEntry
-        if (entry.length === 0)
-            return ""
-
-        const parts = entry.split(".")
-        const last = parts[parts.length - 1]
-        return last.charAt(0).toUpperCase() + last.slice(1)
-    }
-
-    readonly property string summary: root.hasCurrent ? root.current.summary : ""
-    readonly property string body: root.hasCurrent ? root.current.body : ""
-    readonly property string image: root.hasCurrent ? root.current.image : ""
-    readonly property string appIcon: root.hasCurrent ? root.current.appIcon : ""
-
-    // ── las acciones ──────────────────────────────────────────────
-    //
-    // "default" NO es un botón: por especificación es lo que se invoca al
-    // pulsar el cuerpo de la notificación, y suele venir con el texto vacío.
-    // Dibujarla como botón deja un rectángulo sin etiqueta.
+    // ── acciones ──────────────────────────────────────────────────
     readonly property var allActions: root.hasCurrent ? root.current.actions : []
 
+    // La "default" no es un botón: es lo que pasa al tocar la notificación
+    // entera. Zen manda ["default", ""], sin texto, y si se pintara saldría un
+    // botón vacío. En los mensajes del iPhone es "Open conversation", que abre
+    // la conversación en el puente — por eso merece la pena distinguirla.
     readonly property var defaultAction: {
         const list = root.allActions
+
         for (let i = 0; i < list.length; ++i) {
             if (list[i] && list[i].identifier === "default")
                 return list[i]
         }
+
         return null
     }
 
+    // Las que sí son botones: todo lo que no es la default y tiene texto que
+    // poner dentro.
     readonly property var actions: {
         const list = root.allActions
         const out = []
+
         for (let i = 0; i < list.length; ++i) {
-            const item = list[i]
-            if (item && item.identifier !== "default" && item.text.length > 0)
-                out.push(item)
+            const action = list[i]
+
+            if (action && action.identifier !== "default"
+                    && String(action.text || "").length > 0)
+                out.push(action)
         }
+
         return out
     }
 
@@ -114,8 +129,10 @@ Singleton {
         root.queue = root.queue.concat([notification]);
     }
 
-    // Saca la primera viva de la cola. Devuelve null si no queda ninguna.
-    function takeFromQueue(): var {
+    // Saca la siguiente válida de la cola y la devuelve, o null si no queda
+    // ninguna. Salta los huecos: una notificación de la cola puede haber sido
+    // cerrada por su aplicación mientras esperaba turno.
+    function nextPending() {
         let rest = root.queue;
         let next = null;
 
@@ -130,48 +147,34 @@ Singleton {
         return next;
     }
 
-    // La más reciente de las que siguen sin atender, saltándose una.
-    function nextPending(excluding): var {
-        const list = root.history;
-        for (let i = 0; i < list.length; ++i) {
-            if (list[i] && list[i] !== excluding)
-                return list[i];
-        }
-        return null;
-    }
-
-    // Se le acabó el tiempo: la siguiente de la cola y punto. Si no queda
-    // ninguna, la island se retira — nadie estaba mirando.
+    // Se le acabó el tiempo. Si no queda ninguna, la island se retira sola
+    // porque el ocupante deja de estar activo.
     function advance(): void {
         const leaving = root.current;
-        const next = root.takeFromQueue();
+        const keep = leaving ? NotificationTypes.classify(leaving).keep : true;
 
-        root.current = next;
+        root.current = root.nextPending();
 
-        // Una transient no va al historial, así que si no se destruye aquí se
-        // queda viva para siempre sin que nadie la vea. `expire()` y no
-        // `dismiss()`: se acabó su tiempo, el usuario no la cerró.
-        if (leaving && leaving !== next && leaving.transient)
+        // Lo que no se guarda hay que destruirlo aquí: si no va al historial y
+        // nadie la cierra, se queda viva para siempre sin que nadie la vea.
+        // `expire()` y no `dismiss()`: se acabó su tiempo, el usuario no la
+        // cerró, y esa diferencia la ve la aplicación que la mandó.
+        if (leaving && leaving !== root.current && !keep)
             leaving.expire();
     }
 
-    // El usuario la cerró. Aquí SÍ se busca entre las pendientes: si está
-    // descartando es que está mirando, y retirar la island en ese momento lo
-    // deja esperando a que vuelva sola.
-    //
-    // El orden importa: primero se elige la siguiente y se pone, y solo
-    // después se destruye la vieja. Al revés, la poda automática vería una
-    // `current` muerta y se adelantaría a cerrar.
+    // El usuario la cerró de verdad: se destruye y sale del historial.
     function dismissCurrent(): void {
         const leaving = root.current;
+
         if (!leaving)
             return;
 
-        let next = root.takeFromQueue();
-        if (next === null)
-            next = root.nextPending(leaving);
-
-        root.current = next;
+        // El orden importa. Primero se decide quién entra y se pone, y solo
+        // después se destruye la que sale. Al revés, destruirla cambia la lista
+        // del servidor, `prune()` se dispara con `current` ya muerta, y la
+        // island se cierra entera en vez de pasar a la siguiente.
+        root.current = root.nextPending();
         leaving.dismiss();
     }
 
@@ -184,37 +187,41 @@ Singleton {
             return;
         }
 
+        root.queue = root.queue.filter(function (item) {
+            return item !== notification;
+        });
+
         notification.dismiss();
     }
 
     function dismissAll(): void {
         const all = NotificationRepository.all.slice();
+
         root.queue = [];
         root.current = null;
+
         for (let i = 0; i < all.length; ++i) {
             if (all[i])
                 all[i].dismiss();
         }
     }
 
-    // Invocar una acción destruye la notificación salvo que sea `resident`,
-    // así que se trata igual que un descarte: se elige la siguiente antes.
     function invoke(action): void {
         if (!action)
             return;
 
+        // La acción destruye la notificación salvo que sea `resident`, así que
+        // se sale de ella antes de invocarla.
         const owner = root.current;
-
-        let next = root.takeFromQueue();
-        if (next === null)
-            next = root.nextPending(owner);
-
-        root.current = next;
         action.invoke();
+
+        if (owner === root.current)
+            root.advance();
     }
 
     function invokeDefault(): void {
-        root.invoke(root.defaultAction);
+        if (root.hasDefaultAction)
+            root.invoke(root.defaultAction);
     }
 
     // ── mantenimiento ─────────────────────────────────────────────
