@@ -8,6 +8,9 @@
 //
 // Vive junto a sus implementaciones, y no en la carpeta de arriba, para que un
 // ocupante no tenga que importar el módulo que lo contiene.
+//
+// Y NO importa el tema a propósito. Esto define qué es un ocupante, no cómo se
+// ve; sus valores por defecto son parte del contrato.
 
 import QtQuick
 import qs.domain.island
@@ -28,8 +31,8 @@ QtObject {
     property bool active: false
 
     // ── plegado ───────────────────────────────────────────────────
-    property int contentWidth: 200
-    property int contentHeight: 36
+    property int contentWidth: 185
+    property int contentHeight: 32
 
     // La vista, instanciada por cada ventana. Al declararla DENTRO del archivo
     // del ocupante puede leer sus propiedades directamente: un Component se
@@ -40,11 +43,16 @@ QtObject {
     property bool expandable: false
     property bool expanded: false
 
-    property int expandedWidth: 420
+    property int expandedWidth: 640
     property int expandedHeight: 190
     property Component expandedView: null
 
     readonly property bool isExpanded: root.expandable && root.expanded
+
+    // TEMPORAL — ¿llega el estado desplegado a existir?
+    onIsExpandedChanged: console.log("[island]", root.name,
+                                     "desplegado:", root.isExpanded,
+                                     "| mide:", root.currentWidth, "x", root.currentHeight)
 
     // Lo que el cuerpo de la island tiene que medir y dibujar AHORA.
     readonly property int currentWidth: root.isExpanded ? root.expandedWidth
@@ -71,16 +79,24 @@ QtObject {
     // ── abrir al pasar el ratón ───────────────────────────────────
     //
     // Los dos retardos no son adorno. Sin el de entrada, cruzar la pantalla por
-    // arriba te abre la tarjeta de golpe; sin el de salida, rozar el borde de
-    // la island mientras bajas el ratón la cierra a media animación.
+    // arriba te abre la tarjeta de golpe; sin el de salida, rozar el borde
+    // mientras bajas el ratón la cierra a media animación. Los 300 ms de
+    // entrada son el `minimumHoverDuration` de Boring Notch.
     property bool expandOnHover: false
-    property int hoverEnterDelay: 180
+    property int hoverEnterDelay: 300
     property int hoverExitDelay: 380
 
     readonly property bool pointerInside: IslandState.hovered
                                           && IslandState.occupant === root.name
 
     onPointerInsideChanged: {
+        // TEMPORAL
+        console.log("[island]", root.name,
+                    "ratón dentro:", root.pointerInside,
+                    "| desplegable:", root.expandable,
+                    "| por hover:", root.expandOnHover,
+                    "| retardo:", root.hoverEnterDelay);
+
         if (!root.expandable || !root.expandOnHover)
             return;
 
@@ -98,7 +114,13 @@ QtObject {
         id: hoverIn
         interval: root.hoverEnterDelay
         repeat: false
-        onTriggered: root.expanded = true
+
+        onTriggered: {
+            // TEMPORAL — si esta línea no sale, el ratón se fue antes de los
+            // 300 ms y el temporizador se paró.
+            console.log("[island]", root.name, "dispara el despliegue");
+            root.expanded = true;
+        }
     }
 
     property Timer _hoverOut: Timer {

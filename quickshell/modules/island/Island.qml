@@ -16,7 +16,11 @@ Scope {
     id: root
 
     // Añadir un ocupante es declararlo y sumarlo a esta lista.
-    readonly property list<QtObject> occupants: [volume, player]
+    readonly property list<QtObject> occupants: [notification, volume, player]
+
+    NotificationOccupant {
+        id: notification
+    }
 
     VolumeOccupant {
         id: volume
@@ -66,8 +70,6 @@ Scope {
 
         if (root.winner) {
             clear.stop();
-            if (!IslandState.open)
-                IslandState.claimScreen();
             root.drawn = root.winner;
             IslandState.occupant = root.winner.name;
             return;
@@ -95,9 +97,10 @@ Scope {
 
             readonly property bool mine: IslandState.screenName === window.modelData.name
 
-            // Solo la ventana que enseña la island recibe el ratón, y solo en
-            // el cuerpo. Las demás quedan con la región vacía y no existen
-            // para el escritorio.
+            // TEMPORAL — era `surface.body`. Con la superficie entera, la
+            // island se queda con TODO el ratón de la pantalla mientras esté
+            // visible: no lo dejes puesto. Solo sirve para saber si el hover
+            // falla por la región de entrada o por la lógica de despliegue.
             maskItem: IslandState.open && window.mine ? surface.body : null
 
             IslandSurface {

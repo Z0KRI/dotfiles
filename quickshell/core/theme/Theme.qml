@@ -89,37 +89,48 @@ Singleton {
     }
 
     readonly property QtObject island: QtObject {
-        readonly property int minWidth: 180
-        readonly property int minHeight: 34
+        // Cerrada y abierta: las medidas reales de Boring Notch.
+        readonly property int minWidth: 185
+        readonly property int closedHeight: 32
+        readonly property int openWidth: 640
+        readonly property int openHeight: 190
 
-        // El alto de la píldora. Lo comparten TODOS los ocupantes plegados:
-        // la island cambia de ancho al cambiar de inquilino, nunca de alto.
-        readonly property int pillHeight: 44
+        // Las de arriba son las alas (cóncavas), las de abajo el cuerpo.
+        // Los cuatro valores crecen al desplegarse.
+        readonly property int closedTopRadius: 6
+        readonly property int closedBottomRadius: 14
+        readonly property int openTopRadius: 19
+        readonly property int openBottomRadius: 24
 
-        // El aire a los costados del contenido plegado.
+        // La carátula: 20/4 plegada, 90/13 desplegada.
+        readonly property int artClosed: 20
+        readonly property int artClosedRadius: 4
+        readonly property int artOpen: 90
+        readonly property int artOpenRadius: 13
+
+        readonly property int spacing: 16
         readonly property int pillPadding: 14
 
-        readonly property int radius: 18
-        readonly property int expandedRadius: 40
-        readonly property int wing: 14
-
-        readonly property color bg: "#0b0b0e"
+        readonly property color bg: "#000000"
         readonly property color fg: "#f2f2f7"
         readonly property color muted: Qt.rgba(1, 1, 1, 0.55)
         readonly property color track: Qt.rgba(1, 1, 1, 0.22)
 
-        // Entrada y salida desde el borde.
-        readonly property int enterDuration: 460
-        readonly property int exitDuration: 240
-        readonly property real enterOvershoot: 1.1
+        // Abrir rebasa un poco y vuelve; cerrar no rebasa nada. Son sus dos
+        // muelles: amortiguación 0.8 al abrir, 1.0 al cerrar. El 0.65 de
+        // rebase en OutBack da ese 1.5 % de sobrepaso, no el 10 % del valor
+        // por defecto de Qt.
+        readonly property int openDuration: 420
+        readonly property real openOvershoot: 0.65
+        readonly property int closeDuration: 380
 
-        // El estirón. Una sola duración y un solo rebase para el ancho, el
-        // alto y el redondeo: si llegan a destiempo, parecen tres cosas.
-        readonly property int sizeDuration: 520
-        readonly property real sizeOvershoot: 0.9
+        // Entrada y salida desde el borde de la pantalla.
+        readonly property int enterDuration: 420
+        readonly property int exitDuration: 260
 
-        // El relevo de una vista por otra. Corto a propósito: acompaña al
-        // estirón, no compite con él.
         readonly property int contentDuration: 180
+
+        // Su `minimumHoverDuration`.
+        readonly property int hoverDelay: 300
     }
 }

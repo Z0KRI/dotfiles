@@ -1,10 +1,8 @@
 // Lo que suena. A diferencia del volumen, este NO se va solo: mientras haya
-// pista se queda plegado en forma de píldora, y se despliega al pasarle el
-// ratón por encima.
+// pista se queda plegado en forma de notch, y se despliega al pasarle el ratón.
 //
-// Prioridad por debajo del volumen a propósito: subir el volumen interrumpe la
-// carátula un par de segundos y después la píldora vuelve sola. Salvo que esté
-// desplegado, que entonces manda él.
+// Las medidas son las de Boring Notch: 185x32 cerrado, 640x190 abierto, y la
+// carátula de 20px con radio 4 a 90px con radio 13.
 
 import QtQuick
 import Quickshell.Widgets
@@ -20,17 +18,15 @@ IslandOccupant {
 
     active: Player.hasTrack
 
-    // Mismo alto que el volumen: la island cambia de ancho al cambiar de
-    // inquilino, nunca de alto.
-    contentWidth: 190
-    contentHeight: Theme.island.pillHeight
+    contentWidth: Theme.island.minWidth
+    contentHeight: Theme.island.closedHeight
 
     expandable: true
     expandOnHover: true
-    expandedWidth: 420
-    expandedHeight: 200
+    expandedWidth: Theme.island.openWidth
+    expandedHeight: Theme.island.openHeight
 
-    // ── plegado: carátula a la izquierda, visualizador a la derecha ──
+    // ── cerrado: carátula a la izquierda, visualizador a la derecha ──
     view: Component {
         Item {
             anchors.fill: parent
@@ -39,12 +35,12 @@ IslandOccupant {
                 id: cover
 
                 anchors.left: parent.left
-                anchors.leftMargin: 7
+                anchors.leftMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
 
-                width: parent.height - 14
-                height: width
-                radius: 9
+                width: Theme.island.artClosed
+                height: Theme.island.artClosed
+                radius: Theme.island.artClosedRadius
                 color: Theme.island.track
 
                 Image {
@@ -53,11 +49,6 @@ IslandOccupant {
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
-
-                    // Decodificar la carátula a su tamaño real y no a los
-                    // 1000×1000 que manda el reproductor. Sin esto, cada
-                    // cambio de pista descomprime una imagen enorme para
-                    // pintarla en 30 píxeles, justo cuando hay animación.
                     sourceSize.width: 64
                     sourceSize.height: 64
                 }
@@ -68,7 +59,7 @@ IslandOccupant {
             // el positionador, pero sí contra un padre propio.
             Row {
                 anchors.right: parent.right
-                anchors.rightMargin: Theme.island.pillPadding
+                anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 3
 
@@ -81,7 +72,7 @@ IslandOccupant {
                         required property int index
 
                         width: 3
-                        height: 18
+                        height: 16
 
                         Rectangle {
                             id: bar
@@ -94,7 +85,7 @@ IslandOccupant {
                             color: Theme.island.fg
 
                             // Quieto, cuatro puntos. Sonando, un visualizador.
-                            height: Player.isPlaying ? 4 + bar.level * 12 : 4
+                            height: Player.isPlaying ? 4 + bar.level * 10 : 4
 
                             SequentialAnimation on level {
                                 running: Player.isPlaying
@@ -123,83 +114,80 @@ IslandOccupant {
         }
     }
 
-    // ── desplegado: carátula grande, tiempos y transporte ───────────
+    // ── abierto: 640x190, la vista principal de Boring Notch ────────
     expandedView: Component {
         Item {
             anchors.fill: parent
+            anchors.topMargin: Theme.island.openTopRadius
+            anchors.leftMargin: 26
+            anchors.rightMargin: 26
+            anchors.bottomMargin: 22
 
             // `position` no se actualiza sola. Mientras esta vista exista,
             // alguien tiene que pedirle al reproductor que lo diga.
             Component.onCompleted: Player.watchPosition()
             Component.onDestruction: Player.unwatchPosition()
 
-            Item {
-                id: header
+            ClippingRectangle {
+                id: bigCover
 
                 anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+
+                width: Theme.island.artOpen
+                height: Theme.island.artOpen
+                radius: Theme.island.artOpenRadius
+                color: Theme.island.track
+
+                Image {
+                    anchors.fill: parent
+                    source: Player.artUrl
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    sourceSize.width: 180
+                    sourceSize.height: 180
+                }
+            }
+
+            Column {
+                id: header
+
+                anchors.left: bigCover.right
+                anchors.leftMargin: Theme.island.spacing
                 anchors.right: parent.right
                 anchors.top: parent.top
-                anchors.margins: 18
 
-                height: 64
+                spacing: 2
 
-                ClippingRectangle {
-                    id: bigCover
-
-                    width: 64
-                    height: 64
-                    radius: 14
-                    color: Theme.island.track
-
-                    Image {
-                        anchors.fill: parent
-                        source: Player.artUrl
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        cache: true
-                        sourceSize.width: 128
-                        sourceSize.height: 128
-                    }
+                Label {
+                    width: parent.width
+                    text: Player.title
+                    color: Theme.island.fg
+                    font.pixelSize: 17
+                    font.bold: true
+                    elide: Text.ElideRight
                 }
 
-                Column {
-                    anchors.left: bigCover.right
-                    anchors.leftMargin: 14
-                    anchors.right: parent.right
-                    anchors.verticalCenter: bigCover.verticalCenter
-
-                    spacing: 3
-
-                    Label {
-                        width: parent.width
-                        text: Player.headline
-                        color: Theme.island.fg
-                        font.pixelSize: 15
-                        font.bold: true
-                        elide: Text.ElideRight
-                    }
-
-                    Label {
-                        width: parent.width
-                        text: Player.playingOn
-                        color: Theme.island.muted
-                        font.pixelSize: 13
-                        elide: Text.ElideRight
-                    }
+                Label {
+                    width: parent.width
+                    text: Player.artist
+                    color: Theme.island.muted
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
                 }
             }
 
             Item {
                 id: timeline
 
-                anchors.left: parent.left
+                anchors.left: bigCover.right
+                anchors.leftMargin: Theme.island.spacing
                 anchors.right: parent.right
-                anchors.leftMargin: 18
-                anchors.rightMargin: 18
                 anchors.top: header.bottom
-                anchors.topMargin: 18
+                anchors.topMargin: 16
 
-                height: 14
+                height: 16
                 visible: Player.hasTimeline
 
                 Label {
@@ -208,7 +196,7 @@ IslandOccupant {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 34
+                    width: 38
                     text: Player.elapsed
                     color: Theme.island.muted
                     font.pixelSize: 11
@@ -220,7 +208,7 @@ IslandOccupant {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 34
+                    width: 38
                     text: Player.remaining
                     color: Theme.island.muted
                     font.pixelSize: 11
@@ -229,9 +217,9 @@ IslandOccupant {
 
                 Rectangle {
                     anchors.left: elapsed.right
-                    anchors.leftMargin: 8
+                    anchors.leftMargin: 10
                     anchors.right: remaining.left
-                    anchors.rightMargin: 8
+                    anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
 
                     height: 5
@@ -242,7 +230,7 @@ IslandOccupant {
                         width: parent.width * Player.progress
                         height: parent.height
                         radius: parent.radius
-                        color: Theme.island.muted
+                        color: Theme.island.fg
 
                         // El reloj late una vez por segundo; la animación
                         // rellena el hueco para que no avance a saltos.
@@ -257,15 +245,14 @@ IslandOccupant {
             }
 
             Row {
-                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.horizontalCenter: timeline.horizontalCenter
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 20
 
-                spacing: 32
+                spacing: 38
 
                 Item {
-                    width: 44
-                    height: 34
+                    width: 46
+                    height: 36
 
                     opacity: Player.canGoPrevious ? 1 : 0.35
 
@@ -277,17 +264,19 @@ IslandOccupant {
                         font.pixelSize: 20
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: Player.canGoPrevious
+                    HoverHandler {
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Player.previous()
+                    }
+
+                    TapHandler {
+                        enabled: Player.canGoPrevious
+                        onTapped: Player.previous()
                     }
                 }
 
                 Item {
-                    width: 44
-                    height: 34
+                    width: 46
+                    height: 36
 
                     opacity: Player.canControl ? 1 : 0.35
 
@@ -299,17 +288,19 @@ IslandOccupant {
                         font.pixelSize: 26
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: Player.canControl
+                    HoverHandler {
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Player.togglePlaying()
+                    }
+
+                    TapHandler {
+                        enabled: Player.canControl
+                        onTapped: Player.togglePlaying()
                     }
                 }
 
                 Item {
-                    width: 44
-                    height: 34
+                    width: 46
+                    height: 36
 
                     opacity: Player.canGoNext ? 1 : 0.35
 
@@ -321,11 +312,13 @@ IslandOccupant {
                         font.pixelSize: 20
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: Player.canGoNext
+                    HoverHandler {
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Player.next()
+                    }
+
+                    TapHandler {
+                        enabled: Player.canGoNext
+                        onTapped: Player.next()
                     }
                 }
             }
