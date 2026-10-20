@@ -20,6 +20,11 @@ PopupWindow {
     // borde derecho del botón y crece hacia la izquierda.
     property bool alignRight: false
 
+    // Apariencia del panel. Por defecto, la de tus menús.
+    property color panelColor: Qt.alpha(Theme.colors.base100, 0.85)
+    property color panelBorder: Theme.glass.border
+    property int panelRadius: 10
+
     // "¿Está abierto?" es visible y nada más: una sola fuente de verdad.
     function open(): void { root.visible = true; }
     function close(): void { root.visible = false; }
@@ -58,11 +63,10 @@ PopupWindow {
             NumberAnimation { duration: 140 }
         }
 
-        // Mismo fondo que tu launcher, un poco más opaco para leer bien.
-        color: Qt.alpha(Theme.colors.base100, 0.85)
-        radius: 10
+        color: root.panelColor
+        radius: root.panelRadius
         border.width: 1
-        border.color: Theme.glass.border
+        border.color: root.panelBorder
 
         focus: true
         Keys.onEscapePressed: root.close()

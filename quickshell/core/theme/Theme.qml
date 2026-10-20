@@ -54,6 +54,12 @@ Singleton {
         readonly property int large: 16
     }
 
+    // Movimiento: el rebote que usan botones, interruptores y deslizadores.
+    readonly property QtObject motion: QtObject {
+        readonly property int duration: 300
+        readonly property var spring: [0.55, -0.04, 0.3, 1.44, 1, 1]
+    }
+
     // “Glass” style bar.
     readonly property QtObject glass: QtObject {
         // Píldora
@@ -71,6 +77,22 @@ Singleton {
         readonly property int itemSize: 30
         readonly property color hover: Qt.rgba(1, 1, 1, 0.12)
         readonly property color active: Qt.rgba(0, 0, 0, 0.30)
+
+        // Contenido sobre vidrio: íconos y texto de la barra y del Centro de
+        // control. Fijo en blanco: el vidrio es oscuro en ambos modos, y
+        // base100 se invierte con isDark.
+        readonly property color content: "#ffffff"
+        readonly property color contentMuted: Qt.rgba(1, 1, 1, 0.6)
+
+        // Centro de control (estilo Tahoe).
+        readonly property color panel: Qt.rgba(0.12, 0.12, 0.14, 0.55)
+        readonly property color tile: Qt.rgba(1, 1, 1, 0.12)
+        readonly property color tileHover: Qt.rgba(1, 1, 1, 0.18)
+        readonly property color control: Qt.rgba(1, 1, 1, 0.18)   // círculo apagado
+        readonly property color controlOn: "#ffffff"               // círculo encendido
+        readonly property color track: Qt.rgba(1, 1, 1, 0.25)      // pista de deslizador
+        readonly property int panelRadius: 28
+        readonly property int tileRadius: 22
     }
 
     readonly property QtObject systemIcons: QtObject {
@@ -83,10 +105,29 @@ Singleton {
         readonly property string squirrel: ""
         readonly property string search: ""
         readonly property string calendar: ""
-        readonly property string controlCenter: ""
+        readonly property string controlCenter: ""
         readonly property string lock: ""
         readonly property string chevronLeft: ""
         readonly property string chevronRight: ""
+
+        readonly property string mic: ""
+        readonly property string micOff: ""
+        readonly property string sunDim: ""
+        readonly property string sun: ""
+        readonly property string moon: ""
+        readonly property string darkMode: ""
+        readonly property string stayAwake: ""
+        readonly property string screenshot: ""
+        readonly property string colorPicker: ""
+        readonly property string audioOutput: ""
+        readonly property string music: ""
+
+        readonly property var media: ({
+            play: "",
+            pause: "",
+            previous: "",
+            next: ""
+        })
 
         readonly property var volume: ({
             muted: "",

@@ -1,6 +1,7 @@
 // MOLÉCULA: opción de una lista de "elige una" (salidas de audio,
 // redes Wi-Fi, dispositivos Bluetooth). Estilo Tahoe: el ícono va en un
 // círculo que se pinta de acento cuando la opción está elegida.
+// Opcionales: subtítulo (segunda línea) e ícono a la derecha (ej. candado).
 
 import QtQuick
 import qs.core.theme
@@ -11,60 +12,89 @@ Surface {
 
     property string icon: ""
     property string text: ""
+    property string subtitle: ""
+    property string trailingIcon: ""
     property bool selected: false
+
+    // Color de texto e íconos: el del tema en menús, blanco sobre vidrio.
+    property color contentColor: Theme.colors.base800
 
     signal triggered()
 
     width: parent ? parent.width : implicitWidth
-    implicitHeight: 36
-    implicitWidth: row.implicitWidth + Theme.spacing.sm * 2
-    radius: 8
+    implicitWidth: 240
+    implicitHeight: root.subtitle !== "" ? 44 : 36
+    radius: 10
 
     color: hover.hovered
-           ? Qt.alpha(Theme.colors.base800, 0.08)
-           : Qt.alpha(Theme.colors.base800, 0)
+           ? Qt.alpha(root.contentColor, 0.1)
+           : Qt.alpha(root.contentColor, 0)
 
     Behavior on color {
         ColorAnimation { duration: 120 }
     }
 
-    Row {
-        id: row
+    // Círculo del ícono: acento si está elegida, tenue si no.
+    Rectangle {
+        id: badge
 
         anchors.left: parent.left
         anchors.leftMargin: Theme.spacing.sm
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Theme.spacing.sm
+        width: 26
+        height: 26
+        radius: 13
+        color: root.selected ? Theme.colors.accent : Qt.alpha(root.contentColor, 0.15)
 
-        // Círculo del ícono: acento si está elegida, gris si no.
-        Rectangle {
-            id: badge
-
-            width: 26
-            height: 26
-            radius: 13
-            color: root.selected ? Theme.colors.accent : Qt.alpha(Theme.colors.base800, 0.12)
-
-            Behavior on color {
-                ColorAnimation { duration: Theme.motion.duration }
-            }
-
-            Icon {
-                anchors.centerIn: parent
-                icon: root.icon
-                size: 13
-                color: root.selected ? Theme.colors.base100 : Theme.colors.base800
-            }
+        Behavior on color {
+            ColorAnimation { duration: Theme.motion.duration }
         }
 
+        Icon {
+            anchors.centerIn: parent
+            icon: root.icon
+            size: 13
+            color: root.selected ? Theme.glass.controlOn : root.contentColor
+        }
+    }
+
+    Column {
+        anchors.left: badge.right
+        anchors.leftMargin: Theme.spacing.sm
+        anchors.right: trailing.visible ? trailing.left : parent.right
+        anchors.rightMargin: Theme.spacing.sm
+        anchors.verticalCenter: parent.verticalCenter
+
         Label {
-            anchors.verticalCenter: parent.verticalCenter
-            // No más ancho que la fila: los nombres largos se recortan con "…".
-            width: Math.min(implicitWidth, root.width - badge.width - Theme.spacing.sm * 3)
+            width: parent.width
             text: root.text
+            color: root.contentColor
             elide: Text.ElideRight
             font.weight: root.selected ? Font.DemiBold : Font.Normal
         }
+
+        Label {
+            width: parent.width
+            visible: root.subtitle !== ""
+            text: root.subtitle
+            color: root.contentColor
+            opacity: 0.6
+            font.pixelSize: Theme.font.small
+            elide: Text.ElideRight
+        }
+    }
+
+    Icon {
+        id: trailing
+
+        visible: root.trailingIcon !== ""
+        anchors.right: parent.right
+        anchors.rightMargin: Theme.spacing.sm
+        anchors.verticalCenter: parent.verticalCenter
+        icon: root.trailingIcon
+        size: 12
+        color: root.contentColor
+        opacity: 0.5
     }
 
     HoverHandler {

@@ -19,13 +19,15 @@ Item {
     // Hacia afuera: hay un menú abierto, la barra no debe esconderse.
     readonly property bool popupOpen: systemMenu.visible
                                       || soundMenu.visible
+                                      || controlCenter.visible
                                       || clockMenu.visible
 
     // Márgenes: flotando, un poco de aire arriba; sólida, lo mínimo.
     readonly property int topGap: root.solid ? 2 : 6
     readonly property int bottomGap: root.solid ? 2 : 1
 
-    readonly property color iconColor: Theme.colors.base100
+    // Íconos y texto sobre el vidrio: blancos en ambos modos.
+    readonly property color iconColor: Theme.glass.content
     readonly property int iconSize: 14
 
     implicitHeight: Math.max(leftGroup.implicitHeight, rightGroup.implicitHeight)
@@ -47,10 +49,10 @@ Item {
             onClicked: systemMenu.toggle()
 
             Icon {
-                icon: Theme.systemIcons.arch['icon']
-                size: Theme.systemIcons.arch['size']
+                icon: Theme.systemIcons.arch.icon
+                size: Theme.systemIcons.arch.size
                 color: root.iconColor
-                font.family: Theme.systemIcons.arch['family']
+                font.family: Theme.systemIcons.arch.family
             }
         }
 
@@ -75,23 +77,6 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: root.topGap
 
-        // Sound
-        BarItem {
-            id: soundButton
-
-            active: soundMenu.visible
-            onClicked: soundMenu.toggle()
-            onScrolled: steps => Audio.nudge(steps)
-
-            Icon {
-                icon: Theme.systemIcons.volume[Audio.level]
-                size: root.iconSize
-                color: root.iconColor
-                font.family: Theme.font.icon
-            }
-        }
-
-        // Spotlight
         BarItem {
             active: LauncherControl.shown
             onClicked: LauncherControl.toggle()
@@ -104,7 +89,22 @@ Item {
             }
         }
 
-        // Clock
+        // Centro de control.
+        BarItem {
+            id: controlCenterButton
+
+            active: controlCenter.visible
+            onClicked: controlCenter.toggle()
+
+            Icon {
+                icon: Theme.systemIcons.controlCenter
+                size: root.iconSize
+                color: root.iconColor
+                font.family: Theme.font.icon
+            }
+        }
+
+        // Reloj: fecha corta y hora. Al hacer clic, calendario.
         BarItem {
             id: clockButton
 
@@ -123,9 +123,9 @@ Item {
         anchorItem: archButton
     }
 
-    SoundMenu {
-        id: soundMenu
-        anchorItem: soundButton
+    ControlCenter {
+        id: controlCenter
+        anchorItem: controlCenterButton
     }
 
     ClockMenu {
