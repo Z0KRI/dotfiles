@@ -47,10 +47,10 @@ Item {
             onClicked: systemMenu.toggle()
 
             Icon {
-                icon: "󰣇"
-                size: 20
+                icon: Theme.systemIcons.arch['icon']
+                size: Theme.systemIcons.arch['size']
                 color: root.iconColor
-                font.family: Theme.font.iconNerd
+                font.family: Theme.systemIcons.arch['family']
             }
         }
 
@@ -97,7 +97,7 @@ Item {
             onClicked: LauncherControl.toggle()
 
             Icon {
-                icon: ""
+                icon: Theme.systemIcons.search
                 size: root.iconSize
                 color: root.iconColor
                 font.family: Theme.font.icon

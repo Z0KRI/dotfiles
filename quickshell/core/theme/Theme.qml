@@ -74,6 +74,20 @@ Singleton {
     }
 
     readonly property QtObject systemIcons: QtObject {
+        readonly property var arch: ({
+            icon: "󰣇",
+            size: 25,
+            family: root.font.iconNerd
+        })
+
+        readonly property string squirrel: ""
+        readonly property string search: ""
+        readonly property string calendar: ""
+        readonly property string controlCenter: ""
+        readonly property string lock: ""
+        readonly property string chevronLeft: ""
+        readonly property string chevronRight: ""
+
         readonly property var volume: ({
             muted: "",
             low: "",
@@ -81,10 +95,29 @@ Singleton {
             high: ""   
         })
 
+        readonly property var wifi: ({
+            high: "",
+            medium: "",
+            low: "",
+            none: "",
+            off: ""
+        })
+
+        readonly property var bluetooth: ({
+            on: "",
+            off: ""
+        })
+
         readonly property var device: ({
             speaker: "",   
             headphones: "",
-            display: ""    
+            display: "",
+            phone: "",
+            keyboard: "",
+            mouse: "",
+            gamepad: "",
+            laptop: "",
+            bluetooth: ""
         })
     }
 

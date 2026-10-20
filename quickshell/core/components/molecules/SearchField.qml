@@ -44,7 +44,7 @@ Surface {
     Icon {
         id: searchIcon
         
-        icon: ""
+        icon: Theme.systemIcons.search
 
         size: parent.height * 0.5
         anchors.left: parent.left

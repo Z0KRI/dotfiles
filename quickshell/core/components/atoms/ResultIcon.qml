@@ -29,7 +29,7 @@ Item {
 
         Icon {
             anchors.centerIn: parent
-            icon: ""
+            icon: Theme.systemIcons.squirrel
             size: parent.height * 0.7
             color: Theme.colors.primary
         }

@@ -3,6 +3,7 @@
 
 import QtQuick
 import Quickshell
+import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.organisms
@@ -46,7 +47,7 @@ DropdownWindow {
 
     MenuItem {
         visible: Clock.hasCalendarApp
-        icon: ""   // Lucide: calendar
+        icon: Theme.systemIcons.calendar
         text: "Abrir Calendario"
         onTriggered: root.run(() => Clock.openCalendarApp())
     }
