@@ -38,6 +38,9 @@ Singleton {
     // `summary` y `body`, y QML apunta como dependencia todo lo que se lee
     // mientras evalúa, aunque se lea dentro de una función.
     readonly property var typed: NotificationTypes.classify(root.current)
+    
+    readonly property bool replyable: root.typed.replyable
+    readonly property bool holds: root.typed.holds
 
     readonly property string kind: root.typed.kind
     readonly property string appName: root.typed.appName
@@ -116,6 +119,33 @@ Singleton {
     readonly property bool hasDefaultAction: root.defaultAction !== null
 
     // ── la cola ───────────────────────────────────────────────────
+
+    // La puerta de entrada: lo que llega del servidor pasa por aquí antes de
+    // tocar la cola. Qué se hace con cada una lo decide NotificationSettings
+    // (No molestar, avisos apagados, apps silenciadas).
+    function receive(notification): void {
+        if (!notification)
+            return;
+
+        const typed = NotificationTypes.classify(notification);
+
+        // Las llamadas no se apuntan como app: tienen su propia regla.
+        if (typed.kind !== "call")
+            NotificationSettings.remember(typed.appName, typed.fromPhone);
+
+        const verdict = NotificationSettings.decide(typed);
+
+        if (verdict === "show") {
+            root.show(notification);
+            return;
+        }
+
+        // "keep": no se toca. Sigue viva en el servidor y por eso sale en el
+        // historial. "drop": se expira aquí, por la misma razón que en
+        // advance(): si nadie la cierra, se queda viva para siempre.
+        if (verdict === "drop")
+            notification.expire();
+    }
 
     function show(notification): void {
         if (!notification)
@@ -243,7 +273,7 @@ Singleton {
     Connections {
         target: NotificationRepository
 
-        function onArrived(notification) { root.show(notification); }
+        function onArrived(notification) { root.receive(notification); }
 
         // Las reemitidas al recargar no se enseñan: ya se vieron en su momento.
         // Se quedan en el historial, que sale de la lista del servidor.

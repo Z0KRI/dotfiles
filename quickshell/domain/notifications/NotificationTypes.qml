@@ -3,71 +3,36 @@ pragma Singleton
 // TIPAR: convertir lo que llega por el bus —tres cadenas de texto libre— en un
 // objeto con campos fijos que la vista pueda pintar sin preguntar de dónde vino.
 //
-// Hace falta porque el estándar de notificaciones no tiene sitio para "quién
-// manda el mensaje" ni para "qué aplicación del teléfono es". Solo tiene
-// app_name, summary y body, así que cada puente mete lo que puede donde puede.
+// BlueFerry manda CUATRO formatos por el mismo canal y los distingue un emoji
+// al principio del resumen (src/blueferry/sinks/libnotify.py):
 //
-// Un detalle de diseño, que es el que hace esto mantenible: las REGLAS son
-// código (un caso por cada formato que conocemos) y las TABLAS son datos (qué
-// glifo le toca a cada app). Las reglas son pocas y cambian cuando cambia un
-// puente; las tablas crecen cada vez que instalas algo nuevo en el teléfono.
+//   📱  app del teléfono (ANCS)  summary="📱 App"            body="remitente — mensaje"
+//   💬  mensaje (MAP)            summary="💬 quien"           body="texto"
+//   📞  llamada                  summary="📞 Incoming call"   body="nombre\nnúmero"
+//   🔋  batería baja             summary="🔋 ..."             body="texto"
+//
+// Aquí viven las REGLAS. Los símbolos están en el tema (AppGlyphs): cambiar el
+// glifo de WhatsApp no cambia nada de cómo se interpreta una notificación.
 
 import QtQuick
 import Quickshell
+import qs.core.theme
 
 Singleton {
     id: root
 
-    // ── quién es quién ────────────────────────────────────────────
     readonly property string bridge: "BlueFerry"
 
-    // Los emojis NO se escriben literales a propósito. Dos razones: en el
-    // origen son dos unidades UTF-16 y aquí solo hace falta el número, y es
-    // justo el carácter que tu fuente no sabe pintar (la caja ◇ de la captura).
-    readonly property int markApp: 0x1F4F1      // 📱 → notificación de una app
-    readonly property int markChat: 0x1F4AC     // 💬 → mensaje
+    // Los emojis NO se escriben literales: en el origen son dos unidades
+    // UTF-16, aquí solo hace falta el número, y encima es justo el carácter que
+    // tu fuente no sabe pintar (la caja ◇ de la captura).
+    readonly property int markApp: 0x1F4F1      // 📱
+    readonly property int markChat: 0x1F4AC     // 💬
+    readonly property int markCall: 0x1F4DE     // 📞
+    readonly property int markBattery: 0x1F50B  // 🔋
 
     // Lo que BlueFerry pone entre remitente y mensaje: " — " (raya, no guion).
     readonly property string joiner: " \u2014 "
-
-    // Cuando no reconocemos la app: una campana.
-    readonly property string fallbackGlyph: "\uf0f3"
-
-    // ── la tabla ──────────────────────────────────────────────────
-    //
-    // Se recorre en orden y gana la primera que encaje, así que lo específico
-    // va arriba. `match` se compara en minúsculas y por trozo, no completo:
-    // "WhatsApp Business" encaja con "whatsapp".
-    //
-    // Aquí es donde vas añadiendo lo que use tu teléfono.
-    readonly property var glyphs: [
-        { match: "whatsapp",   glyph: "\uf232" },
-        { match: "telegram",   glyph: "\uf2c6" },
-        { match: "instagram",  glyph: "\uf16d" },
-        { match: "messenger",  glyph: "\uf09a" },
-        { match: "facebook",   glyph: "\uf09a" },
-        { match: "twitter",    glyph: "\uf099" },
-        { match: "slack",      glyph: "\uf198" },
-        { match: "spotify",    glyph: "\uf1bc" },
-        { match: "youtube",    glyph: "\uf167" },
-        { match: "gmail",      glyph: "\uf0e0" },
-        { match: "mail",       glyph: "\uf0e0" },
-        { match: "correo",     glyph: "\uf0e0" },
-        { match: "calendar",   glyph: "\uf073" },
-        { match: "calendario", glyph: "\uf073" },
-        { match: "wallet",     glyph: "\uf09d" },
-        { match: "cartera",    glyph: "\uf09d" },
-        { match: "phone",      glyph: "\uf095" },
-        { match: "teléfono",   glyph: "\uf095" },
-        { match: "mensaje",    glyph: "\uf075" },
-        { match: "message",    glyph: "\uf075" },
-        { match: "signal",     glyph: "\uf075" },
-        { match: "discord",    glyph: "\uf075" },
-        { match: "zen",        glyph: "\uf269" },
-        { match: "firefox",    glyph: "\uf269" },
-        { match: "chrom",      glyph: "\uf268" },
-        { match: "code",       glyph: "\uf121" }
-    ]
 
     // ── lo vacío ──────────────────────────────────────────────────
     //
@@ -81,8 +46,10 @@ Singleton {
             message: "",
             image: "",
             icon: "",
-            glyph: root.fallbackGlyph,
+            glyph: AppGlyphs.fallback,
             fromPhone: false,
+            replyable: false,
+            holds: false,
             keep: false,
             source: null
         };
@@ -91,11 +58,9 @@ Singleton {
     // ── utilidades ────────────────────────────────────────────────
 
     // Quita del principio los emojis, los selectores de variación y el espacio
-    // que viene detrás, y deja el nombre limpio.
-    //
-    // No se busca el emoji concreto: se tira todo lo que esté por encima del
-    // texto normal. Así sigue funcionando si BlueFerry cambia de icono, y un
-    // nombre que empieza por "+" (un número de teléfono) se queda intacto.
+    // que viene detrás. No busca el emoji concreto: tira todo lo que esté por
+    // encima del texto normal, así sigue funcionando si BlueFerry cambia de
+    // icono, y un nombre que empieza por "+" se queda intacto.
     function strip(text) {
         let s = String(text || "");
 
@@ -114,23 +79,20 @@ Singleton {
         return s.trim();
     }
 
-    // El primer carácter como número, para saber de qué formato se trata.
     function mark(text) {
         const s = String(text || "");
         return s.length > 0 ? s.codePointAt(0) : 0;
     }
 
-    // El camino inverso al `escape()` de BlueFerry. Solo hace falta en los
-    // mensajes: el puente los escapa porque el campo `body` del estándar
-    // acepta marcado, pero tu servidor anuncia `bodyMarkupSupported: false` y
-    // los pinta como texto plano, así que un "&" te llegaría escrito "&amp;".
+    // El camino inverso al `escape()` de BlueFerry, que escapa como HTML los
+    // mensajes y las llamadas —no las notificaciones de apps— porque el campo
+    // `body` del estándar acepta marcado. Tu servidor anuncia
+    // `bodyMarkupSupported: false` y pinta texto plano, así que sin esto un "&"
+    // te llega escrito "&amp;".
     //
-    // NO se puede llamar `unescape`: eso es una función global de JavaScript
-    // —como `escape` o `eval`— y QML no deja declarar un método que la tape.
-    // Mismo choque que `transient`, pero del lado de JS.
-    //
-    // El `&amp;` va el ÚLTIMO. Si fuera el primero, un "&amp;lt;" acabaría
-    // convertido en "<" en vez de en "&lt;".
+    // NO se puede llamar `unescape`: es una global de JavaScript y QML no deja
+    // taparla. El `&amp;` va el ÚLTIMO: si fuera el primero, "&amp;lt;"
+    // acabaría en "<" en vez de en "&lt;".
     function unescapeMarkup(text) {
         return String(text || "")
             .replace(/&lt;/g, "<")
@@ -142,24 +104,10 @@ Singleton {
             .replace(/&amp;/g, "&");
     }
 
-    function glyphFor(appName) {
-        const name = String(appName || "").toLowerCase();
-        const table = root.glyphs;
-
-        for (let i = 0; i < table.length; ++i) {
-            if (name.indexOf(table[i].match) !== -1)
-                return table[i].glyph;
-        }
-
-        return root.fallbackGlyph;
-    }
-
-    // Resuelve un nombre de icono del tema a una ruta, y devuelve "" si ese
-    // icono NO EXISTE.
-    //
-    // Ese segundo argumento es el que mata el cuadriculado magenta: sin él,
-    // `iconPath` devuelve una ruta igualmente, la Image falla al cargarla y Qt
-    // pinta su marca de imagen rota.
+    // Resuelve un nombre de icono del tema a una ruta, y devuelve "" si NO
+    // EXISTE. Ese segundo argumento es el que mata el cuadriculado magenta: sin
+    // él, `iconPath` devuelve una ruta igualmente, la Image falla al cargarla y
+    // Qt pinta su marca de imagen rota.
     function iconFor(name) {
         if (!name)
             return "";
@@ -167,7 +115,7 @@ Singleton {
         return Quickshell.iconPath(String(name), true);
     }
 
-    // Deja presentable un desktop-entry: "app.zen_browser.zen" → "Zen".
+    // "app.zen_browser.zen" → "Zen".
     function fromEntry(entry) {
         const parts = String(entry || "").split(".");
         const last = parts.length > 0 ? parts[parts.length - 1] : "";
@@ -179,8 +127,6 @@ Singleton {
     }
 
     // ── las reglas ────────────────────────────────────────────────
-    //
-    // El punto de entrada. Todo lo que pinta la island sale de aquí.
     function classify(n) {
         if (!n)
             return root.none();
@@ -191,23 +137,78 @@ Singleton {
         return root.fromDesktop(n);
     }
 
-    // Lo del iPhone. Dos formatos, y los distingue el primer carácter del
-    // resumen.
     function fromBridge(n) {
         const summary = String(n.summary || "");
         const body = String(n.body || "");
+        const kind = root.mark(summary);
 
-        // ── SMS / iMessage: "💬 remitente" + mensaje ──
-        if (root.mark(summary) === root.markChat) {
+        // ── llamada entrante ──
+        //
+        // El cuerpo trae nombre y número en dos líneas. Si el contacto no
+        // tiene nombre, viene una sola.
+        if (kind === root.markCall) {
+            const lines = root.unescapeMarkup(body).split("\n");
+
+            return {
+                kind: "call",
+                appName: root.unescapeMarkup(root.strip(summary)),
+                title: (lines[0] || "").trim(),
+                message: lines.length > 1 ? (lines[1] || "").trim() : "",
+                image: String(n.image || ""),
+                icon: "",
+                glyph: AppGlyphs.glyph("", "call"),
+                fromPhone: true,
+                replyable: false,
+
+                // RETIENE la isla: no se pasa a la siguiente mientras suena.
+                // BlueFerry la manda con `expire_timeout = 0` y la cierra él
+                // cuando deja de sonar, así que el temporizador de la cola no
+                // tiene nada que decidir aquí.
+                holds: true,
+
+                // Fuera del historial a propósito: las llamadas tienen su
+                // propio registro (PBAP), no son notificaciones viejas.
+                keep: false,
+                source: n
+            };
+        }
+
+        // ── SMS / iMessage ──
+        if (kind === root.markChat) {
             return {
                 kind: "phone-message",
                 appName: "Mensajes",
-                title: root.strip(summary),
+
+                // El remitente también viene escapado en esta rama.
+                title: root.unescapeMarkup(root.strip(summary)),
                 message: root.unescapeMarkup(body),
                 image: String(n.image || ""),
                 icon: "",
-                glyph: "\uf075",
+                glyph: AppGlyphs.glyph("", "phone-message"),
                 fromPhone: true,
+
+                // Lo único a lo que se puede contestar desde aquí: BlueFerry
+                // sabe mandar SMS e iMessage, no un WhatsApp.
+                replyable: true,
+                holds: false,
+                keep: true,
+                source: n
+            };
+        }
+
+        // ── batería del teléfono ──
+        if (kind === root.markBattery) {
+            return {
+                kind: "phone-battery",
+                appName: "iPhone",
+                title: root.strip(summary),
+                message: body,
+                image: "",
+                icon: "",
+                glyph: AppGlyphs.glyph("", "phone-battery"),
+                fromPhone: true,
+                replyable: false,
+                holds: false,
                 keep: true,
                 source: n
             };
@@ -217,10 +218,9 @@ Singleton {
         const app = root.strip(summary);
         const cut = body.indexOf(root.joiner);
 
-        // Se busca la PRIMERA raya, no todas: si el mensaje lleva otra dentro,
-        // se queda donde está. Y si no hay ninguna, es que la notificación no
-        // traía título propio: entonces todo el cuerpo es el mensaje y no hay
-        // remitente que poner.
+        // La PRIMERA raya, no todas: si el mensaje lleva otra dentro, se queda
+        // donde está. Y si no hay ninguna, la notificación no traía título
+        // propio: todo el cuerpo es el mensaje y no hay remitente.
         const title = cut > 0 ? body.slice(0, cut) : "";
         const message = cut > 0 ? body.slice(cut + root.joiner.length) : body;
 
@@ -231,31 +231,30 @@ Singleton {
             message: message.trim(),
             image: String(n.image || ""),
 
-            // Vacío a propósito: el icono que manda el puente es el mismo
-            // teléfono genérico para todo, y el glifo de la app concreta dice
-            // mucho más de un vistazo.
+            // Vacío a propósito: el icono del puente es el mismo teléfono
+            // genérico para todo, y el glifo de la app dice mucho más.
             icon: "",
-            glyph: root.glyphFor(app),
+            glyph: AppGlyphs.glyph(app, "phone-app"),
             fromPhone: true,
+            replyable: false,
+            holds: false,
 
-            // BlueFerry las manda `transient`, que significa "no la guardes en
-            // ningún historial". Aquí se decide lo contrario a propósito: ver
-            // en el centro de control lo que pasó en el teléfono mientras no
-            // mirabas es justo para lo que sirve. Ponlo a `false` si prefieres
-            // respetar lo que pide el puente.
+            // BlueFerry las manda `transient` ("no la guardes"). Aquí se decide
+            // lo contrario: ver en el centro de control lo que pasó en el
+            // teléfono mientras no mirabas es justo para lo que sirve. Ponlo a
+            // `false` si prefieres respetar lo que pide el puente.
             keep: true,
             source: n
         };
     }
 
-    // Todo lo demás: lo que corre en esta máquina.
     function fromDesktop(n) {
         const raw = String(n.appName || "");
         const entry = String(n.desktopEntry || "");
         const app = raw.length > 0 ? raw : root.fromEntry(entry);
 
-        // Tres intentos para el icono, de lo más preciso a lo más genérico.
-        // Zen manda `appIcon` vacío pero sí manda desktop-entry, y de ahí sale.
+        // Tres intentos, de lo más preciso a lo más genérico. Zen manda
+        // `appIcon` vacío pero sí manda desktop-entry, y de ahí sale.
         const icon = root.iconFor(n.appIcon)
             || root.iconFor(entry)
             || root.iconFor(app.toLowerCase());
@@ -267,11 +266,13 @@ Singleton {
             message: String(n.body || ""),
             image: String(n.image || ""),
             icon: icon,
-            glyph: root.glyphFor(app.length > 0 ? app : entry),
+            glyph: AppGlyphs.glyph(app.length > 0 ? app : entry, "desktop"),
             fromPhone: false,
+            replyable: false,
+            holds: false,
 
-            // Aquí sí se respeta: una app de escritorio que pide no ser
-            // guardada sabe lo que dice (un aviso de volumen, por ejemplo).
+            // Aquí sí se respeta: una app que pide no ser guardada sabe lo que
+            // dice (un aviso de volumen, por ejemplo).
             keep: !n.transient,
             source: n
         };
