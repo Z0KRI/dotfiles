@@ -38,13 +38,12 @@ hl.window_rule({
 ----------------------
 
 -- Ignora las peticiones de maximizar de todas las apps.
-local suppressMaximizeRule = hl.window_rule({
+hl.window_rule({
     name  = "suppress-maximize-events",
     match = { class = ".*" },
 
     suppress_event = "maximize",
 })
--- suppressMaximizeRule:set_enabled(false)
 
 -- Picture-in-Picture del navegador: flotante, fijado y en la esquina
 hl.window_rule({

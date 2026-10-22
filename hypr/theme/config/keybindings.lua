@@ -1,14 +1,16 @@
--- ~/.config/hypr/themes/config/keybindings.lua
+-- ~/.config/hypr/theme/config/keybindings.lua
 --
--- Migrado desde themes/config/keybindigs.conf (hyprlang -> lua)
+-- Migrado desde themes/mac/config/keybindigs.conf (hyprlang -> lua)
 -- Ref: https://wiki.hypr.land/Configuring/Basics/Binds/
 --      https://wiki.hypr.land/Configuring/Basics/Dispatchers/
+--
+-- OJO: si dos binds usan la misma combinación, Hyprland ejecuta LOS DOS.
+-- Antes de agregar uno, busca que la combinación esté libre.
 
-local p = require("theme.config.programs")
+local p  = require("theme.config.programs")
+local ws = require("theme.config.workspaces")
 
-local mainMod        = p.mainMod
-local scriptsDir     = p.scriptsDir
-local screenshotPath = p.screenshotPath
+local mainMod = p.mainMod
 
 
 -------------------
@@ -43,8 +45,8 @@ local function closeWindow()
     -- hl.timer en lugar de sleep, porque las callbacks corren en el event
     -- loop del compositor y un sleep congelaría el escritorio.
     hl.timer(function()
-        local ws = hl.get_active_workspace()
-        if ws and ws.is_empty then
+        local active = hl.get_active_workspace()
+        if active and active.is_empty then
             hl.dispatch(hl.dsp.focus({ workspace = 1 }))
         end
     end, { timeout = 100, type = "oneshot" })
@@ -86,8 +88,8 @@ local function maximizeOnFreeWorkspace()
     if not current then return end
 
     local taken = {}
-    for _, ws in pairs(hl.get_workspaces()) do
-        taken[ws.id] = true
+    for _, w in pairs(hl.get_workspaces()) do
+        taken[w.id] = true
     end
 
     local target = current.id + 1
@@ -97,6 +99,8 @@ local function maximizeOnFreeWorkspace()
 
     maximizedFrom[win.stable_id] = current.id
 
+    -- Apagar sync_fullscreen ANTES: así la app nunca se entera de que está en
+    -- fullscreen y no lo guarda para la próxima vez que la abras.
     hl.dispatch(hl.dsp.window.set_prop({ prop = "sync_fullscreen", value = "false" }))
 
     hl.dispatch(hl.dsp.window.move({ workspace = target }))
@@ -116,6 +120,7 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(p.terminal))
 ---- MOVING BETWEEN WORKSPACES --
 ---------------------------------
 
+-- Como Ctrl + flechas en macOS.
 hl.bind("CONTROL + left",  hl.dsp.focus({ workspace = "m-1" }))
 hl.bind("CONTROL + right", hl.dsp.focus({ workspace = "m+1" }))
 
@@ -124,18 +129,21 @@ hl.bind("CONTROL + right", hl.dsp.focus({ workspace = "m+1" }))
 ---- SCREENSHOTS ----
 ---------------------
 
-hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd("hyprshot -m output -o " .. screenshotPath))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("hyprshot -m region -o " .. screenshotPath))
+-- Las hace tu shell (qs), igual que el botón del Centro de control:
+-- Imágenes/Capturas/Captura_<fecha>.png y al portapapeles.
+hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.exec_cmd(p.capture .. " screen"))  -- como Cmd+Shift+3
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd(p.capture .. " region"))  -- como Win+Shift+S
 
 
 --------------------------------------------
 ---- MOVE ACTIVE WINDOW TO A WORKSPACE -----
 --------------------------------------------
 
--- SUPER + SHIFT + [0-9]  (el 0 mapea al workspace 10)
+-- SUPER + ALT + [0-9]  (el 0 mapea al workspace 10)
+-- Con ALT y no con SHIFT: SUPER + SHIFT + 3 es la captura de pantalla.
 for i = 1, 10 do
     local key = i % 10
-    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+    hl.bind(mainMod .. " + ALT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
 
@@ -143,7 +151,14 @@ end
 ---- WINDOW ACTIONS -----
 -------------------------
 
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+-- Flotar/desflotar cambia cuántas ventanas hay en mosaico, y Hyprland no
+-- emite ningún evento por eso: la política de fullscreen automático
+-- (workspaces.lua) se repasa desde aquí.
+hl.bind(mainMod .. " + V", function()
+    hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    ws.repasar()
+end)
+
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())          -- dwindle
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle
 
@@ -162,9 +177,9 @@ hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
 ---- SPECIAL WORKSPACE (SCRATCHPAD) ----
 ----------------------------------------
 
-hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
--- OJO: este bind choca con el screenshot de región de arriba (ver notas)
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + S",       hl.dsp.workspace.toggle_special("magic"))
+-- Con ALT, igual que mover a un workspace: SUPER + SHIFT + S es la captura.
+hl.bind(mainMod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 
 -------------------------------
@@ -211,7 +226,8 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 -- equivalente a bindel: locked = funciona con la pantalla bloqueada,
 --                       repeating = se repite si mantienes la tecla
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"),   { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),   { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),  { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),{ locked = true, repeating = true })
+-- "-l 1" = tope en 100 %, la misma regla que tu shell (domain/audio/Audio.qml).
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })

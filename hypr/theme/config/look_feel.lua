@@ -1,4 +1,4 @@
--- ~/.config/hypr/themes/mac/config/look_feel.lua
+-- ~/.config/hypr/theme/config/look_feel.lua
 --
 -- Migrado desde themes/mac/config/look_feel.conf (hyprlang -> lua)
 -- Ref: https://wiki.hypr.land/Configuring/Basics/Variables/
@@ -13,8 +13,6 @@ hl.config({
         gaps_in  = 5,
         gaps_out = 10,
 
-        -- OJO: tenías -1, que está fuera del rango documentado (ver notas).
-        -- Si lo que querías era "sin borde", el valor explícito es 0.
         border_size = -1,
 
         col = {
@@ -77,7 +75,6 @@ hl.config({
 
 -- Curvas. Ref: https://wiki.hypr.land/Configuring/Advanced-and-Cool/Animations/
 hl.curve("easeOutQuint",   { type = "bezier", points = { {0.23, 1},    {0.32, 1} } })
-hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1} } })
 hl.curve("linear",         { type = "bezier", points = { {0, 0},       {1, 1}    } })
 hl.curve("almostLinear",   { type = "bezier", points = { {0.5, 0.5},   {0.75, 1} } })
 hl.curve("quick",          { type = "bezier", points = { {0.15, 0},    {0.1, 1}  } })
@@ -101,15 +98,6 @@ hl.animation({ leaf = "windows",       enabled = true, speed = 7,    bezier = "a
 hl.animation({ leaf = "windowsOut",    enabled = true, speed = 7,    bezier = "default",      style = "popin 80%" })
 hl.animation({ leaf = "fade",          enabled = true, speed = 7,    bezier = "default" })
 hl.animation({ leaf = "workspaces",    enabled = true, speed = 6,    bezier = "appleCurve",   style = "slide" })
-
--- Alternativa que tenías comentada (el set por defecto de Hyprland):
--- hl.animation({ leaf = "border",        enabled = true, speed = 5.39, bezier = "easeOutQuint" })
--- hl.animation({ leaf = "windows",       enabled = true, speed = 4.79, bezier = "easeOutQuint" })
--- hl.animation({ leaf = "windowsOut",    enabled = true, speed = 1.49, bezier = "linear",       style = "popin 87%" })
--- hl.animation({ leaf = "fade",          enabled = true, speed = 3.03, bezier = "quick" })
--- hl.animation({ leaf = "workspaces",    enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
--- hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
--- hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
 
 
 -----------------
