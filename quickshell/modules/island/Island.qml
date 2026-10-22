@@ -36,12 +36,15 @@ Scope {
     //
     // Usa `effectivePriority` y no `priority`: un ocupante desplegado se sube
     // solo por encima de todos mientras lo estés usando.
+    //
+    // Un ocupante apagado en Ajustes (volumen o música) no compite: sigue
+    // vivo y sabiendo su estado, solo que no se le da la isla.
     readonly property var winner: {
         let best = null
         const list = root.occupants
         for (let i = 0; i < list.length; ++i) {
             const candidate = list[i]
-            if (!candidate.active)
+            if (!candidate.active || !IslandOccupants.allows(candidate.name))
                 continue
             if (best === null
                     || candidate.effectivePriority > best.effectivePriority)
@@ -110,6 +113,7 @@ Scope {
 
                 occupant: root.drawn
                 shown: IslandState.open && window.mine
+                owner: window.mine          // ← nueva
             }
         }
     }

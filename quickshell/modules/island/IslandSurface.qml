@@ -20,6 +20,15 @@ Item {
     // ¿está dentro de la pantalla?
     property bool shown: false
 
+    // ¿esta superficie es la DUEÑA de la island?
+    //
+    // Hay una por pantalla y el estado de la island es uno solo. Sin esto, la
+    // que no enseña nada publica un rectángulo vacío en el mismo sitio que la
+    // que sí, gana la última en evaluarse, y el orden es el de
+    // Quickshell.screens — que no cambia. Resultado: la barra de un monitor
+    // concreto nunca resta el hueco y se queda el ratón. Fijo, no aleatorio.
+    property bool owner: false
+
     readonly property bool expanded: root.occupant ? root.occupant.isExpanded : false
 
     // Lo que la feature usa de máscara: la zona, no la silueta.
@@ -45,7 +54,18 @@ Item {
         return Qt.rect(Math.round((root.width - w) / 2), 0, w, h)
     }
 
-    onTargetRectChanged: IslandState.bodyRect = root.targetRect
+    // Publicar es privilegio de la dueña. Y hay que publicar también al
+    // CONVERTIRSE en dueña: cuando la island salta de monitor, el rectángulo
+    // no cambia de valor —mismo tamaño, misma posición, las dos pantallas son
+    // de 1920— así que `onTargetRectChanged` no se dispara, y sin la segunda
+    // línea el hueco se quedaría abierto en la pantalla anterior.
+    onTargetRectChanged: root.publish()
+    onOwnerChanged: root.publish()
+
+    function publish(): void {
+        if (root.owner)
+            IslandState.bodyRect = root.targetRect;
+    }
 
     // ── la zona ───────────────────────────────────────────────────
     //
