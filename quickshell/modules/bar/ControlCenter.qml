@@ -54,13 +54,29 @@ DropdownWindow {
             WifiControl.stopScan();
     }
 
+    // El panel se crea al abrirse y se destruye al cerrarse (BarContent).
+    // Lo que enciende al abrirse lo apaga al cerrarse, y por si lo destruyen
+    // abierto (desconectar el monitor), también al morir.
+    property bool watching: false
+
     onVisibleChanged: {
         if (root.visible) {
             root.page = "home";
-            PhoneService.watch();
-        } else {
+            if (!root.watching) {
+                PhoneService.watch();
+                root.watching = true;
+            }
+        } else if (root.watching) {
             PhoneService.unwatch();
+            root.watching = false;
         }
+    }
+
+    Component.onDestruction: {
+        if (root.watching)
+            PhoneService.unwatch();
+        if (root.wantsScan)
+            WifiControl.stopScan();
     }
 
     // Cierra el panel y abre Ajustes en esa sección.

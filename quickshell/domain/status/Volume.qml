@@ -13,7 +13,6 @@ import qs.data.audio
 Singleton {
     id: root
 
-    readonly property bool ready: AudioRepository.ready
     readonly property bool muted: AudioRepository.muted
     readonly property int percent: Math.round(AudioRepository.volume * 100)
 
@@ -31,14 +30,6 @@ Singleton {
         : root.percent + "%"
 
     signal changed()
-
-    function setPercent(value): void {
-        AudioRepository.setVolume(value / 100);
-    }
-
-    function toggleMuted(): void {
-        AudioRepository.setMuted(!AudioRepository.muted);
-    }
 
     Connections {
         target: AudioRepository

@@ -1,6 +1,7 @@
 // Lo que va dentro de UNA barra. Declara su propia altura.
 
 import QtQuick
+import Quickshell
 import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
@@ -8,7 +9,6 @@ import qs.core.components.organisms
 import qs.domain.launcher
 import qs.domain.desktop
 import qs.domain.time
-import qs.domain.audio
 
 Item {
     id: root
@@ -16,12 +16,31 @@ Item {
     required property var screen
     property bool solid: false
 
+    // ── Los menús ───────────────────────────────────────────
+    //
+    // Existen solo mientras están abiertos (LazyLoader), igual que Spotlight y
+    // Ajustes. Hay una barra por monitor: sin esto serían tres menús completos
+    // por pantalla —el Centro de control con sus cuatro páginas— esperando en
+    // memoria todo el día para abrirse de vez en cuando.
+    property bool systemMenuOpen: false
+    property bool controlCenterOpen: false
+    property bool clockMenuOpen: false
+
     // Hacia afuera: hay un menú abierto, la barra no debe esconderse.
-    // (Aquí seguía `soundMenu`, que ya no existe: el error rompía todo el
-    // binding y la barra se escondía aunque tuvieras un menú abierto.)
-    readonly property bool popupOpen: systemMenu.visible
-                                      || controlCenter.visible
-                                      || clockMenu.visible
+    readonly property bool popupOpen: root.systemMenuOpen
+                                      || root.controlCenterOpen
+                                      || root.clockMenuOpen
+
+    // Abrir crea el menú; cerrar lo cierra (visible = false) y su
+    // onVisibleChanged baja la bandera, que es lo que lo destruye. Cerrar
+    // siempre por ahí garantiza que el menú se entere de que se cierra
+    // (el Centro de control apaga la búsqueda de Wi-Fi al cerrarse).
+    function toggleMenu(loader, isOpen, open): void {
+        if (isOpen && loader.item)
+            loader.item.close();
+        else
+            open();
+    }
 
     // Márgenes: flotando, un poco de aire arriba; sólida, lo mínimo.
     readonly property int topGap: root.solid ? 2 : 6
@@ -46,8 +65,9 @@ Item {
         BarItem {
             id: archButton
 
-            active: systemMenu.visible
-            onClicked: systemMenu.toggle()
+            active: root.systemMenuOpen
+            onClicked: root.toggleMenu(systemMenu, root.systemMenuOpen,
+                                       () => root.systemMenuOpen = true)
 
             Icon {
                 icon: Theme.systemIcons.arch.icon
@@ -96,8 +116,9 @@ Item {
         BarItem {
             id: controlCenterButton
 
-            active: controlCenter.visible
-            onClicked: controlCenter.toggle()
+            active: root.controlCenterOpen
+            onClicked: root.toggleMenu(controlCenter, root.controlCenterOpen,
+                                       () => root.controlCenterOpen = true)
 
             Icon {
                 icon: Theme.systemIcons.controlCenter
@@ -111,8 +132,9 @@ Item {
         BarItem {
             id: clockButton
 
-            active: clockMenu.visible
-            onClicked: clockMenu.toggle()
+            active: root.clockMenuOpen
+            onClicked: root.toggleMenu(clockMenu, root.clockMenuOpen,
+                                       () => root.clockMenuOpen = true)
 
             Label {
                 text: Clock.label
@@ -121,18 +143,43 @@ Item {
         }
     }
 
-    SystemMenu {
+    // Se crean cerrados y se abren al terminar de crearse: así la animación
+    // de entrada se ve (un Behavior no anima el valor inicial). Al cerrarse,
+    // la bandera baja en el siguiente ciclo (callLater): primero el menú
+    // termina de reaccionar a su propio cierre y después se destruye.
+    LazyLoader {
         id: systemMenu
-        anchorItem: archButton
+        active: root.systemMenuOpen
+
+        SystemMenu {
+            anchorItem: archButton
+            visible: false
+            Component.onCompleted: open()
+            onVisibleChanged: if (!visible) Qt.callLater(() => root.systemMenuOpen = false)
+        }
     }
 
-    ControlCenter {
+    LazyLoader {
         id: controlCenter
-        anchorItem: controlCenterButton
+        active: root.controlCenterOpen
+
+        ControlCenter {
+            anchorItem: controlCenterButton
+            visible: false
+            Component.onCompleted: open()
+            onVisibleChanged: if (!visible) Qt.callLater(() => root.controlCenterOpen = false)
+        }
     }
 
-    ClockMenu {
+    LazyLoader {
         id: clockMenu
-        anchorItem: clockButton
+        active: root.clockMenuOpen
+
+        ClockMenu {
+            anchorItem: clockButton
+            visible: false
+            Component.onCompleted: open()
+            onVisibleChanged: if (!visible) Qt.callLater(() => root.clockMenuOpen = false)
+        }
     }
 }

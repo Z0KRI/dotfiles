@@ -2,10 +2,6 @@ import QtQuick
 import qs.core.theme
 import qs.core.components.molecules
 
-import QtQuick
-import qs.core.theme
-import qs.core.components.molecules
-
 ListView {
     id: root
 

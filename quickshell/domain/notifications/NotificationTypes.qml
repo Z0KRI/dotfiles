@@ -26,7 +26,6 @@ Singleton {
     // Los emojis NO se escriben literales: en el origen son dos unidades
     // UTF-16, aquí solo hace falta el número, y encima es justo el carácter que
     // tu fuente no sabe pintar (la caja ◇ de la captura).
-    readonly property int markApp: 0x1F4F1      // 📱
     readonly property int markChat: 0x1F4AC     // 💬
     readonly property int markCall: 0x1F4DE     // 📞
     readonly property int markBattery: 0x1F50B  // 🔋

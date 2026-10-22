@@ -18,9 +18,6 @@ Singleton {
     onVolumeChanged: root.changed()
     onMutedChanged: root.changed()
 
-    // ¿hay un sink con audio utilizable?
-    readonly property bool ready: !!root.sink?.audio
-
     // Salidas de hardware (bocinas, audífonos, HDMI), no programas.
     readonly property var outputs: Pipewire.nodes.values
         .filter(node => node.isSink && !node.isStream && node.audio)

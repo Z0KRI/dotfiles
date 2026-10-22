@@ -1,3 +1,11 @@
+// TEMPLATE: ventana de capa transparente para la isla, pegada al borde
+// superior y centrada. No empuja ventanas, vive en la capa overlay (encima de
+// la pantalla completa) y solo recibe el ratón dentro de `maskItem`.
+//
+// Mide lo que le diga quien la usa (implicitWidth/Height), no la pantalla
+// entera: cada ventana mapeada tiene sus búferes del tamaño de la ventana, y
+// uno de 1920×1080 transparente son ~8 MB por búfer para dibujar un notch.
+
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -11,10 +19,8 @@ PanelWindow {
 
     default property alias content: contentHolder.data
 
+    // Solo arriba: layer-shell la centra en horizontal.
     anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
 
     color: "transparent"
 

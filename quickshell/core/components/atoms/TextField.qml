@@ -9,8 +9,8 @@ TextInput {
     color: Theme.colors.baseContent
     selectionColor: Theme.colors.accent
     selectedTextColor: Theme.colors.base100
-    // Tipografía
-    font.family: Theme.font.family
+    // Tipografía: la misma que Label (Theme.font no tiene "family").
+    font.family: Theme.font.ui
     font.pixelSize: Theme.font.large
     verticalAlignment: TextInput.AlignVCenter
     clip: true

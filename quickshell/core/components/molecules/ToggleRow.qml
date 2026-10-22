@@ -3,7 +3,6 @@
 // divisoria) se hereda tal cual.
 
 import QtQuick
-import qs.core.theme
 import qs.core.components.atoms
 
 SettingsRow {

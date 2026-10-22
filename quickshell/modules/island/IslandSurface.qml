@@ -2,8 +2,8 @@
 // que lo son todo — el tamaño, la entrada desde el borde y el relevo de una
 // vista por otra.
 //
-// Ocupa la ventana entera para poder centrar el cuerpo, pero lo único que
-// recibe el ratón es `body`.
+// Ocupa la ventana entera (que mide lo justo para la isla desplegada) para
+// poder centrar el cuerpo, pero lo único que recibe el ratón es `body`.
 
 import QtQuick
 import qs.core.theme
@@ -39,6 +39,11 @@ Item {
     // colchón hace que acercarse por abajo también cuente.
     readonly property int hitPadding: 12
 
+    // Dónde empieza esta superficie en la pantalla. La ventana ya no es de
+    // pantalla completa, y la barra necesita el hueco en coordenadas de
+    // PANTALLA, no de la ventana de la isla.
+    property real originX: 0
+
     // ── el hueco que la barra tiene que respetar ──────────────────
     //
     // Se calcula con el tamaño de DESTINO y no con el animado: si siguiera la
@@ -51,7 +56,7 @@ Item {
         const w = root.occupant.currentWidth + root.hitPadding * 2
         const h = Math.max(root.occupant.currentHeight + root.hitPadding, 48)
 
-        return Qt.rect(Math.round((root.width - w) / 2), 0, w, h)
+        return Qt.rect(root.originX + Math.round((root.width - w) / 2), 0, w, h)
     }
 
     // Publicar es privilegio de la dueña. Y hay que publicar también al

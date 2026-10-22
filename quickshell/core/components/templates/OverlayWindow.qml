@@ -1,7 +1,10 @@
+// TEMPLATE: ventana de capa que cubre la pantalla y se queda con el teclado
+// (Spotlight). Un clic fuera del contenido avisa con `dismissed`, y el
+// contenido entra con el mismo rebote que la isla.
+
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import qs.core.theme
 
 PanelWindow {
     id: root

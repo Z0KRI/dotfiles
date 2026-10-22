@@ -48,6 +48,14 @@ ControlTile {
             source: root.artUrl
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+
+            // Se decodifica al tamaño en que se ve (con margen para HiDPI), no
+            // al original: una carátula de 640×640 son 1.6 MB en memoria para
+            // pintar 38 px. Y 64 es el mismo tamaño que pide la isla plegada,
+            // así las dos comparten la misma copia en la caché de imágenes.
+            sourceSize.width: 64
+            sourceSize.height: 64
+
             visible: status === Image.Ready
         }
     }

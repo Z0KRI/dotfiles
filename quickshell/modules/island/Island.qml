@@ -89,6 +89,17 @@ Scope {
         onTriggered: root.drawn = null
     }
 
+    // ── las ventanas ──────────────────────────────────────────────
+    //
+    // Una por pantalla, pero solo existe para el compositor (mapeada, con sus
+    // búferes) la que está dibujando la isla, y solo mientras dibuja algo. Sin
+    // ocupante no hay ventana: la isla vacía no gasta memoria.
+    //
+    // Miden lo justo para la isla desplegada, con aire para el rebote de la
+    // animación (OutBack se pasa un poco del tamaño final).
+    readonly property int frameWidth: Theme.island.openWidth + 96
+    readonly property int frameHeight: Theme.island.openHeight + 64
+
     Variants {
         model: Quickshell.screens
 
@@ -100,10 +111,27 @@ Scope {
 
             readonly property bool mine: IslandState.screenName === window.modelData.name
 
-            // TEMPORAL — era `surface.body`. Con la superficie entera, la
-            // island se queda con TODO el ratón de la pantalla mientras esté
-            // visible: no lo dejes puesto. Solo sirve para saber si el hover
-            // falla por la región de entrada o por la lógica de despliegue.
+            // Cuando la isla se va a otro monitor, esta se queda lo que dura
+            // la salida, para que se vea irse en vez de desaparecer de golpe.
+            readonly property bool drawing: window.mine || linger.running
+
+            onMineChanged: {
+                if (!window.mine)
+                    linger.restart();
+            }
+
+            Timer {
+                id: linger
+                interval: Theme.island.exitDuration + 80
+            }
+
+            visible: window.drawing && root.drawn !== null
+
+            implicitWidth: root.frameWidth
+            implicitHeight: root.frameHeight
+
+            // Solo la ventana que enseña la island recibe el ratón, y solo en
+            // la zona.
             maskItem: IslandState.open && window.mine ? surface.body : null
 
             IslandSurface {
@@ -111,9 +139,14 @@ Scope {
 
                 anchors.fill: parent
 
-                occupant: root.drawn
+                // Las ventanas que no dibujan no cargan la vista: si no, el
+                // visualizador de la música seguiría animándose en todas.
+                occupant: window.drawing ? root.drawn : null
                 shown: IslandState.open && window.mine
-                owner: window.mine          // ← nueva
+                owner: window.mine
+
+                // El mismo cálculo que hace el compositor para centrarla.
+                originX: Math.round((window.modelData.width - root.frameWidth) / 2)
             }
         }
     }

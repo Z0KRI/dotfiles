@@ -14,9 +14,6 @@ Item {
     default property alias content: column.data
     property alias spacing: column.spacing
 
-    // Para que una página lleve el scroll a cierta fila (ej. al buscar).
-    readonly property alias flickable: flick
-
     Flickable {
         id: flick
 

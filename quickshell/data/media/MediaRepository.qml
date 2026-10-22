@@ -31,7 +31,6 @@ Singleton {
     readonly property string title: root.hasPlayer ? root.player.trackTitle : ""
     readonly property string artist: root.hasPlayer ? root.player.trackArtist : ""
     readonly property string artUrl: root.hasPlayer ? root.player.trackArtUrl : ""
-    readonly property string identity: root.hasPlayer ? root.player.identity : ""
 
     readonly property bool hasLength: root.hasPlayer
                                       && root.player.lengthSupported

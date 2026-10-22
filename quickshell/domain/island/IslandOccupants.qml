@@ -11,6 +11,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.data.hyprland
 import qs.data.system
 
 Singleton {
@@ -19,6 +20,12 @@ Singleton {
     readonly property bool volume: PreferencesRepository.islandVolume
     readonly property bool player: PreferencesRepository.islandPlayer
     readonly property bool expandOnHover: PreferencesRepository.islandExpandOnHover
+
+    // ¿hay una app en pantalla completa donde sale la isla (el monitor
+    // enfocado)? La música es un ocupante permanente y ahí se calla: encima de
+    // un vídeo o un juego sería una mancha fija. Una notificación de cuatro
+    // segundos sí sale.
+    readonly property bool fullscreen: HyprlandRepository.focusedHasFullscreen
 
     // ¿Puede salir este ocupante? Los que no están en la lista, siempre.
     function allows(name): bool {

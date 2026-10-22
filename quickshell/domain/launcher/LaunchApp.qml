@@ -1,3 +1,8 @@
+// CASO DE USO: abrir una app desde Spotlight (o desde otro dominio, como el
+// reloj o los botones de "Configuración avanzada…").
+// Reglas:
+//   - Se anota en el historial antes de abrirla.
+
 pragma Singleton
 
 import Quickshell

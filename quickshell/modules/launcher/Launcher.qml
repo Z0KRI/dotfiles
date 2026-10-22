@@ -1,3 +1,9 @@
+// La feature de Spotlight. Siempre viva, pero la ventana solo existe
+// mientras está abierta (LazyLoader).
+//
+// Por IPC, para el atajo:
+//   qs ipc call launcher open|close|toggle
+
 import Quickshell
 import Quickshell.Io
 
@@ -14,10 +20,10 @@ Scope {
             LauncherControl.toggle();
         }
         function open(): void {
-            LauncherControl.open()
+            LauncherControl.open();
         }
         function close(): void {
-            LauncherControl.close()
+            LauncherControl.close();
         }
     }
 

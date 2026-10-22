@@ -18,7 +18,8 @@ import qs.data.phone
 Singleton {
     id: root
 
-    readonly property bool available: PhoneBridge.ready
+    // Instalado basta: el puente arranca solo con la primera respuesta.
+    readonly property bool available: PhoneBridge.installed
 
     // Lo último que pasó, para poder enseñarlo en la isla.
     property string lastError: ""
@@ -118,14 +119,5 @@ Singleton {
     function _fail(message): void {
         root.sending = false;
         root.lastError = String(message || "");
-    }
-
-    // ── llamadas ──────────────────────────────────────────────────
-    //
-    // Contestar y colgar NO pasan por aquí: llegan como acciones de la
-    // notificación de la llamada, y de eso se encarga el servidor de
-    // notificaciones que ya tienes. Esto solo enciende la función.
-    function setCallsEnabled(enabled): void {
-        PhoneBridge.call("set_calls_enabled", { enabled: !!enabled });
     }
 }

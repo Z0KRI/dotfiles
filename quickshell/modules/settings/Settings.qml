@@ -37,10 +37,10 @@ Scope {
     }
 
     // Despierta al arrancar los dominios que APLICAN una preferencia guardada
-    // (modo oscuro, acento y vidrio; luz nocturna). Un singleton se crea la
-    // primera vez que alguien lo toca: si nadie los tocara hasta abrir
+    // (modo oscuro, acento y vidrio; brillo; luz nocturna). Un singleton se
+    // crea la primera vez que alguien lo toca: si nadie los tocara hasta abrir
     // Ajustes, tu luz nocturna no volvería sola después de reiniciar.
-    readonly property var awake: [Appearance.dark, NightLight.enabled]
+    readonly property var awake: [Appearance.dark, Brightness.value, NightLight.enabled]
 
     LazyLoader {
         active: SettingsControl.shown

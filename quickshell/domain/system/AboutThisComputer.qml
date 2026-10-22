@@ -17,7 +17,6 @@ Singleton {
     id: root
 
     readonly property var info: SystemInfoRepository.info
-    readonly property bool loaded: SystemInfoRepository.loaded
 
     readonly property string hostName: root.info.host || "—"
     readonly property string system: root.info.os || "Linux"

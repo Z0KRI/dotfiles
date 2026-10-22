@@ -8,7 +8,6 @@
 
 import QtQuick
 import qs.core.theme
-import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.organisms
 import qs.domain.phone
@@ -51,7 +50,7 @@ SettingsPage {
             title: "Responder desde la isla"
             subtitle: Phone.available
                 ? "Escribe la respuesta en la notificación desplegada."
-                : "Necesita blueferry-quickshell-bridge (paquete blueferry-quickshell)."
+                : "Necesita blueferry-quickshell-bridge (viene en el paquete blueferry-backend)."
             value: Phone.available ? "Disponible" : "No disponible"
         }
     }

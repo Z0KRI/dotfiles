@@ -49,11 +49,6 @@ QtObject {
 
     readonly property bool isExpanded: root.expandable && root.expanded
 
-    // TEMPORAL — ¿llega el estado desplegado a existir?
-    onIsExpandedChanged: console.log("[island]", root.name,
-                                     "desplegado:", root.isExpanded,
-                                     "| mide:", root.currentWidth, "x", root.currentHeight)
-
     // Lo que el cuerpo de la island tiene que medir y dibujar AHORA.
     readonly property int currentWidth: root.isExpanded ? root.expandedWidth
                                                         : root.contentWidth
@@ -90,13 +85,6 @@ QtObject {
                                           && IslandState.occupant === root.name
 
     onPointerInsideChanged: {
-        // TEMPORAL
-        console.log("[island]", root.name,
-                    "ratón dentro:", root.pointerInside,
-                    "| desplegable:", root.expandable,
-                    "| por hover:", root.expandOnHover,
-                    "| retardo:", root.hoverEnterDelay);
-
         // `IslandOccupants.expandOnHover` es el interruptor de Ajustes, para
         // todos a la vez; `root.expandOnHover`, lo que quiere cada ocupante
         // (una llamada nunca se abre por hover). Tienen que estar los dos.
@@ -118,12 +106,7 @@ QtObject {
         interval: root.hoverEnterDelay
         repeat: false
 
-        onTriggered: {
-            // TEMPORAL — si esta línea no sale, el ratón se fue antes de los
-            // 300 ms y el temporizador se paró.
-            console.log("[island]", root.name, "dispara el despliegue");
-            root.expanded = true;
-        }
+        onTriggered: root.expanded = true
     }
 
     property Timer _hoverOut: Timer {
@@ -149,11 +132,6 @@ QtObject {
         root.active = true;
         if (root.ephemeral)
             retreat.restart();
-    }
-
-    function retreatNow(): void {
-        retreat.stop();
-        root.active = false;
     }
 
     property Timer _retreat: Timer {

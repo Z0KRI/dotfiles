@@ -66,7 +66,8 @@ SettingsPage {
 
                 required property var modelData
 
-                icon: NotificationTypes.glyphFor(app.modelData.name)
+                // La tabla de glifos vive en el tema (AppGlyphs), no en las reglas.
+                icon: AppGlyphs.forApp(app.modelData.name)
                 iconFamily: Theme.font.mono
                 tint: app.modelData.phone ? "#30b94d" : "#8e8e93"
                 title: app.modelData.name

@@ -5,7 +5,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import qs.data.hyprland
 
 Singleton {
     id: root
@@ -31,9 +31,8 @@ Singleton {
     // llegaba nunca. Y el salto no ocurre, porque mientras tengas el ratón
     // encima de la island ese monitor ya es el enfocado.
     readonly property string screenName: {
-        const monitor = Hyprland.focusedMonitor
-        if (monitor && monitor.name)
-            return monitor.name
+        if (HyprlandRepository.focusedMonitorName)
+            return HyprlandRepository.focusedMonitorName
 
         return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : ""
     }

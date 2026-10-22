@@ -49,7 +49,6 @@ Singleton {
     readonly property string image: root.typed.image
     readonly property string icon: root.typed.icon
     readonly property string glyph: root.typed.glyph
-    readonly property bool fromPhone: root.typed.fromPhone
 
     // ── el historial ──────────────────────────────────────────────
     //
@@ -79,6 +78,13 @@ Singleton {
     }
 
     readonly property int count: root.history.length
+
+    // Tope del historial. Cada notificación guardada vive en memoria (con su
+    // imagen, si trae), y las del iPhone se guardan todas: sin tope, el
+    // historial crecería hasta que lo borraras a mano. Pasado el tope se
+    // expiran las más viejas, como si se les hubiera acabado el tiempo.
+    readonly property int historyLimit: 100
+    property bool _trimming: false
 
     // ── acciones ──────────────────────────────────────────────────
     readonly property var allActions: root.hasCurrent ? root.current.actions : []
@@ -115,7 +121,6 @@ Singleton {
         return out
     }
 
-    readonly property bool hasActions: root.actions.length > 0
     readonly property bool hasDefaultAction: root.defaultAction !== null
 
     // ── la cola ───────────────────────────────────────────────────
@@ -208,22 +213,6 @@ Singleton {
         leaving.dismiss();
     }
 
-    function dismiss(notification): void {
-        if (!notification)
-            return;
-
-        if (notification === root.current) {
-            root.dismissCurrent();
-            return;
-        }
-
-        root.queue = root.queue.filter(function (item) {
-            return item !== notification;
-        });
-
-        notification.dismiss();
-    }
-
     function dismissAll(): void {
         const all = NotificationRepository.all.slice();
 
@@ -268,6 +257,35 @@ Singleton {
 
         if (root.hasCurrent && all.indexOf(root.current) === -1)
             root.advance();
+
+        root.trimHistory();
+    }
+
+    // La lista del servidor va de la más vieja a la más nueva. Expirar una
+    // cambia esa lista y vuelve a llamar a prune(): la bandera evita que esa
+    // vuelta anidada expire otra vez las mismas.
+    function trimHistory(): void {
+        if (root._trimming)
+            return;
+
+        const all = NotificationRepository.all;
+        const kept = [];
+
+        for (let i = 0; i < all.length; ++i) {
+            const item = all[i];
+            if (item && item !== root.current && root.queue.indexOf(item) === -1
+                    && NotificationTypes.classify(item).keep)
+                kept.push(item);
+        }
+
+        const extra = kept.length - root.historyLimit;
+        if (extra <= 0)
+            return;
+
+        root._trimming = true;
+        for (let i = 0; i < extra; ++i)
+            kept[i].expire();
+        root._trimming = false;
     }
 
     Connections {

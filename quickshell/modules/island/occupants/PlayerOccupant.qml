@@ -14,7 +14,7 @@ import Quickshell.Widgets
 import qs.core.theme
 import qs.core.components.atoms
 import qs.domain.media
-import qs.domain.desktop
+import qs.domain.island
 
 IslandOccupant {
     id: root
@@ -22,9 +22,9 @@ IslandOccupant {
     name: "player"
     priority: 40
 
-    // Si ya tienes el detector de pantalla completa en BarVisibility, cambia
-    // esta línea por el tuyo y borra Fullscreen.qml.
-    readonly property bool allowed: !Fullscreen.onFocused
+    // La regla vive en el dominio de la isla (IslandOccupants.fullscreen) y
+    // lee el mismo dato de Hyprland que usa la barra: una sola fuente.
+    readonly property bool allowed: !IslandOccupants.fullscreen
 
     active: Player.hasTrack && root.allowed
 
@@ -87,7 +87,8 @@ IslandOccupant {
                         Rectangle {
                             id: bar
 
-                            property real level: 0
+                            // Sin valor inicial: la animación es su única fuente (empieza en 0).
+                            property real level
 
                             anchors.centerIn: parent
                             width: parent.width

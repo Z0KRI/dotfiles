@@ -23,15 +23,6 @@ Singleton {
     readonly property string artist: MediaRepository.artist
     readonly property string artUrl: MediaRepository.artUrl
 
-    // "Título • Artista", y solo el título cuando no hay artista.
-    readonly property string headline: root.artist.length > 0
-        ? root.title + " • " + root.artist
-        : root.title
-
-    readonly property string playingOn: MediaRepository.identity.length > 0
-        ? "Sonando en " + MediaRepository.identity
-        : ""
-
     readonly property bool hasTimeline: MediaRepository.hasLength
 
     readonly property real progress: root.hasTimeline

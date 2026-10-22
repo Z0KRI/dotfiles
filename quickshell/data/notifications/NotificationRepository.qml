@@ -52,15 +52,6 @@ Singleton {
         keepOnReload: true
 
         onNotification: function (notification) {
-            // TEMPORAL — quítalo cuando sepamos qué pasa con Zen.
-            console.log("[island]",
-                        "app:", JSON.stringify(notification.appName),
-                        "entry:", JSON.stringify(notification.desktopEntry),
-                        "summary:", JSON.stringify(notification.summary),
-                        "lastGeneration:", notification.lastGeneration,
-                        "transient:", notification.transient,
-                        "acciones:", notification.actions.length);
-
             notification.tracked = true;
 
             if (notification.lastGeneration) {

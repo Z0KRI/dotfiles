@@ -7,7 +7,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.core.theme
-import qs.domain.island
 
 PanelWindow {
     id: root
@@ -21,7 +20,7 @@ PanelWindow {
     property bool reserveSpace: true
     property bool aboveFullscreen: false
     property bool solid: false
-    property color solidColor: Theme.colors.base800 // TODO: definir un color para la barra
+    property color solidColor: Theme.glass.solid
 
     // Mientras sea true, la barra no se esconde (ej. un menú abierto).
     property bool keepRevealed: false
@@ -31,23 +30,15 @@ PanelWindow {
 
     property bool revealed: !root.autoHide
 
-    // --- El hueco de la island ---
+    // --- Un hueco en la región de entrada ---
     //
-    // La island vive en este mismo borde y, en pantalla completa, esta barra
-    // sube a la capa overlay y le queda por encima. Restarle su hueco es lo
-    // que hace que el ratón le llegue sin depender de quién quede encima ni
-    // del orden en que se construyeron las superficies.
+    // Algo que vive en este mismo borde puede pedirle a la barra que no se
+    // quede con el ratón dentro de un rectángulo. El template no sabe qué es
+    // (hoy es la isla): eso lo decide quien lo usa, en modules/bar/Bar.qml.
+    // Así core no depende de ningún dominio.
     //
-    // Solo en la pantalla donde la island se está dibujando: hay una barra por
-    // monitor y un solo rectángulo, así que sin esta pregunta la otra barra se
-    // agujerearía el centro para nada.
-    readonly property bool islandHere: IslandState.open
-        && root.screen !== null
-        && IslandState.screenName === root.screen.name
-
-    readonly property rect islandGap: root.islandHere
-        ? IslandState.bodyRect
-        : Qt.rect(0, 0, 0, 0)
+    // Qt.rect(0, 0, 0, 0) = sin hueco.
+    property rect cutout: Qt.rect(0, 0, 0, 0)
 
     anchors {
         top: true
@@ -72,10 +63,10 @@ PanelWindow {
         height: root.revealed ? root.height : root.revealStrip
 
         Region {
-            x: root.islandGap.x
-            y: root.islandGap.y
-            width: root.islandGap.width
-            height: root.islandGap.height
+            x: root.cutout.x
+            y: root.cutout.y
+            width: root.cutout.width
+            height: root.cutout.height
             intersection: Intersection.Subtract
         }
     }

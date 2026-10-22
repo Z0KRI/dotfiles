@@ -17,7 +17,6 @@ Singleton {
 
     // clave → texto, tal cual salió del sistema.
     property var info: ({})
-    readonly property bool loaded: Object.keys(root.info).length > 0
 
     function refresh(): void {
         if (!probe.running) {

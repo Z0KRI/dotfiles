@@ -19,11 +19,7 @@ DropdownWindow {
 
     menuWidth: 250
 
-    // Cierra el menú y ejecuta la acción.
-    function run(action): void {
-        root.close();
-        action();
-    }
+    // root.run(acción) cierra el menú y luego la ejecuta (viene de DropdownWindow).
 
     MenuItem {
         icon: Theme.systemIcons.info

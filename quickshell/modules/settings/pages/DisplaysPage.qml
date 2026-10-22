@@ -4,7 +4,6 @@
 
 import QtQuick
 import qs.core.theme
-import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.organisms
 import qs.domain.desktop

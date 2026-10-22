@@ -6,10 +6,15 @@ pragma Singleton
 // Quickshell no tiene un tipo QML para D-Bus genérico, así que no se puede
 // llamar a io.weirdware.BlueFerry directamente. BlueFerry resuelve eso con un
 // ejecutable puente que habla JSON por líneas: una línea por petición, una por
-// respuesta. Se mantiene vivo todo el rato, no se arranca uno por llamada.
+// respuesta.
 //
 // Por stdin y no por argumentos: lo que escribes en argv lo lee cualquier
 // proceso de tu usuario en /proc. Un mensaje privado no va por ahí.
+//
+// El puente es un proceso de Python (decenas de MB) y solo hace falta para
+// responder mensajes. Por eso NO vive todo el rato: arranca con la primera
+// petición y se apaga solo tras un rato sin uso. Al arrancar la shell solo se
+// comprueba que esté instalado, con un proceso que dura milisegundos.
 
 import QtQuick
 import Quickshell
@@ -20,41 +25,45 @@ Singleton {
 
     readonly property string executable: "/usr/bin/blueferry-quickshell-bridge"
 
-    // ¿el puente está vivo? Si BlueFerry no está instalado, esto se queda en
-    // false y toda la feature se apaga sola en lugar de dar errores.
-    readonly property bool ready: bridge.running && root._started
+    // ¿se puede usar? = está instalado. Si BlueFerry no está, la función de
+    // responder se apaga sola en lugar de dar errores.
+    property bool installed: false
 
-    property bool _started: false
+    // Cuánto se queda vivo el puente después de la última respuesta. Si
+    // contestas varios mensajes seguidos, no se arranca uno por cada uno.
+    readonly property int idleTimeout: 120000
+
     property int _nextId: 1
 
     // id → { ok: function, fail: function }. Las peticiones son asíncronas y
     // pueden volver desordenadas, así que cada una se guarda con su número.
     property var _pending: ({})
 
-    signal event(string name, var data)
-    signal failed(string method, string message)
+    // Lo que se pidió antes de que el proceso terminara de arrancar.
+    property var _outbox: []
 
     // ── pedir ─────────────────────────────────────────────────────
     //
     // `onOk` y `onFail` son opcionales. Devuelve el id por si quieres
     // descartar una respuesta vieja.
     function call(method, args, onOk, onFail) {
-        if (!bridge.running)
-            bridge.running = true;
-
         const id = root._nextId++;
 
         root._pending[id] = {
-            method: method,
             ok: onOk || null,
             fail: onFail || null
         };
 
-        bridge.write(JSON.stringify({
-            id: id,
-            method: method,
-            args: args || {}
-        }) + "\n");
+        const line = JSON.stringify({ id: id, method: method, args: args || {} }) + "\n";
+
+        idle.stop();
+
+        if (bridge.running) {
+            bridge.write(line);
+        } else {
+            root._outbox = root._outbox.concat([line]);
+            bridge.running = true;
+        }
 
         return id;
     }
@@ -63,21 +72,25 @@ Singleton {
     function _line(text): void {
         let payload = null;
 
+        // Una línea que no es JSON no es una respuesta: no hay a quién
+        // avisarle, así que se descarta.
         try {
             payload = JSON.parse(text);
         } catch (error) {
-            root.failed("", "el puente de BlueFerry devolvió datos inválidos");
             return;
         }
 
         // Los eventos no llevan id: son avisos del teléfono, no respuestas.
-        if (typeof payload.event === "string") {
-            root.event(payload.event, payload.data);
+        // Hoy nadie los usa (las notificaciones llegan por el bus), así que
+        // se ignoran.
+        if (typeof payload.event === "string")
             return;
-        }
 
         const waiting = root._pending[payload.id];
         delete root._pending[payload.id];
+
+        if (Object.keys(root._pending).length === 0)
+            idle.restart();
 
         if (payload.ok === true) {
             if (waiting && waiting.ok)
@@ -85,33 +98,40 @@ Singleton {
             return;
         }
 
-        const method = payload.method || (waiting ? waiting.method : "");
-        const message = payload.error || "la petición a BlueFerry falló";
-
         if (waiting && waiting.fail)
-            waiting.fail(message);
+            waiting.fail(payload.error || "la petición a BlueFerry falló");
+    }
 
-        root.failed(method, message);
+    // ¿Está instalado? Una sola vez, al arrancar.
+    Process {
+        command: ["test", "-x", root.executable]
+        running: true
+        onExited: (exitCode, exitStatus) => root.installed = exitCode === 0
     }
 
     Process {
         id: bridge
 
         command: [root.executable]
-        running: true
         stdinEnabled: true
 
         stdout: SplitParser {
             onRead: function (line) { root._line(line); }
         }
 
-        onStarted: root._started = true
+        onStarted: {
+            const lines = root._outbox;
+            root._outbox = [];
+            for (let i = 0; i < lines.length; ++i)
+                bridge.write(lines[i]);
+        }
 
-        // Si BlueFerry no está instalado o el demonio se cae, no se reintenta
-        // en bucle: se apaga y `ready` queda en false. Quien lo necesite, lo
-        // vuelve a arrancar con la siguiente llamada a `call()`.
+        // Al apagarlo por inactividad no queda nada pendiente. Si se cae con
+        // peticiones en vuelo (BlueFerry sin desbloquear, el demonio caído),
+        // se avisa a cada una; no se reintenta en bucle: la siguiente llamada
+        // lo vuelve a arrancar.
         onExited: function (code, status) {
-            root._started = false;
+            idle.stop();
 
             const ids = Object.keys(root._pending);
             for (let i = 0; i < ids.length; ++i) {
@@ -121,6 +141,13 @@ Singleton {
             }
 
             root._pending = ({});
+            root._outbox = [];
         }
+    }
+
+    Timer {
+        id: idle
+        interval: root.idleTimeout
+        onTriggered: bridge.running = false
     }
 }

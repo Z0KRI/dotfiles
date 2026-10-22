@@ -1,3 +1,11 @@
+// CASO DE USO: el nombre de la app activa en la barra (como el menú de la
+// app en macOS).
+// Reglas:
+//   - Sin ventana: "Desktop".
+//   - Algunas apps tienen un nombre corto fijo (la tabla de abajo; la clase se
+//     ve con `hyprctl clients`).
+//   - Las demás, el nombre de su .desktop; si no hay, la clase tal cual.
+
 pragma Singleton
 
 import Quickshell
@@ -11,7 +19,7 @@ Singleton {
 
     readonly property var names: [
         [/^firefox$/, "Firefox"],
-        [/^zen$/, "Zen"],
+        [/^(zen|app\.zen_browser\.zen)$/, "Zen"],
         [/^google-chrome$/, "Chrome"],
         [/^com\.mitchellh\.ghostty$/, "Terminal"],
         [/^code-oss$/, "Code"],

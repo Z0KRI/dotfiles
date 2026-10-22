@@ -118,6 +118,12 @@ Singleton {
         readonly property color content: "#ffffff"
         readonly property color contentMuted: Qt.rgba(1, 1, 1, 0.6)
 
+        // La barra sólida (cuando se oculta sola). Oscura en los dos modos por
+        // lo mismo que `content`: los íconos de la barra son siempre blancos.
+        // En claro conserva el azul marino de siempre; antes era base800, que
+        // en oscuro se invierte a casi blanco y dejaba los íconos sin verse.
+        readonly property color solid: root.isDark ? "#1c1c1e" : "#0f172a"
+
         // Centro de control (estilo Tahoe).
         readonly property color panel: Qt.rgba(0.12, 0.12, 0.14, root.glassAlpha(0.55))
         readonly property color tile: Qt.rgba(1, 1, 1, 0.12)
@@ -296,7 +302,6 @@ Singleton {
         readonly property int artOpenRadius: 13
 
         readonly property int spacing: 16
-        readonly property int pillPadding: 14
 
         readonly property color bg: "#000000"
         readonly property color fg: "#f2f2f7"
@@ -316,8 +321,5 @@ Singleton {
         readonly property int exitDuration: 260
 
         readonly property int contentDuration: 180
-
-        // Su `minimumHoverDuration`.
-        readonly property int hoverDelay: 300
     }
 }

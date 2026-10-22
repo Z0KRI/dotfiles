@@ -22,6 +22,15 @@ Singleton {
         refreshRate: monitor.lastIpcObject?.refreshRate ?? 0
     }))
 
+    // El monitor enfocado (el que tiene el ratón con follow_mouse).
+    readonly property string focusedMonitorName: Hyprland.focusedMonitor?.name ?? ""
+
+    // `hasFullscreen` es propiedad del workspace en Quickshell 0.3, y
+    // Quickshell la relee solo cuando Hyprland emite `fullscreen`: no hace
+    // falta escuchar eventos a mano.
+    readonly property bool focusedHasFullscreen:
+        Hyprland.focusedMonitor?.activeWorkspace?.hasFullscreen ?? false
+
     function monitorFor(screen) {
         if (!screen)
             return null;

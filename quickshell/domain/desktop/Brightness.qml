@@ -32,11 +32,24 @@ Singleton {
     }
 
     onGammaChanged: root.schedule()
-    Component.onCompleted: root.schedule()
+
+    Component.onCompleted: {
+        root.schedule();
+        // hyprsunset arranca a la par que tu shell (autostart de Hyprland).
+        // Si todavía no estaba escuchando, este segundo intento lo alcanza.
+        // Es la misma regla que la luz nocturna.
+        retry.start();
+    }
 
     Timer {
         id: throttle
         interval: 60
+        onTriggered: HyprsunsetRepository.setGamma(root.gamma)
+    }
+
+    Timer {
+        id: retry
+        interval: 3000
         onTriggered: HyprsunsetRepository.setGamma(root.gamma)
     }
 }

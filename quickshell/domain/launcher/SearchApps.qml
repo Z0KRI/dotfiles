@@ -1,3 +1,11 @@
+// CASO DE USO: buscar apps en Spotlight.
+// Reglas:
+//   - Sin texto: todas, las más usadas primero y luego alfabético.
+//   - Con texto: coincidencia difusa en nombre (pesa 3), nombre genérico (2)
+//     y descripción (1), más un extra por uso (logarítmico: abrir una app 100
+//     veces no la deja fija arriba para siempre).
+//   - Sin coincidencia, no sale aunque la uses mucho.
+
 pragma Singleton
 
 import Quickshell
