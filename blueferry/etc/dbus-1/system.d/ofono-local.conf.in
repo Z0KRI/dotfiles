@@ -1,0 +1,19 @@
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<!--
+  Plantilla: blueferry/install.sh cambia @USER@ por tu usuario y la COPIA a
+  /etc/dbus-1/system.d/ofono-local.conf (a /etc se copia, no se enlaza: lo lee
+  el bus del sistema al arrancar, antes de que exista tu sesión).
+
+  oFono solo admite a root y a sesiones at_console. Sin esto BlueFerry no
+  puede levantar el módem del iPhone y reporta las llamadas como "unavailable".
+
+  OJO con lo que concede: CUALQUIER proceso de este usuario puede controlar
+  oFono por completo (llamar, contestar, colgar), no solo BlueFerry. Es el
+  precio de no correr nada como root; no hay forma de limitarlo a un ejecutable.
+-->
+<busconfig>
+  <policy user="@USER@">
+    <allow send_destination="org.ofono"/>
+  </policy>
+</busconfig>
