@@ -20,7 +20,7 @@ ClippingRectangle {
     implicitWidth: 500
     implicitHeight: content.implicitHeight + Theme.spacing.sm
 
-    color: Qt.alpha(Theme.colors.base100, 0.85)
+    color: Theme.glass.menu
     radius: Theme.radius.lg
 
     onResultsChanged: {

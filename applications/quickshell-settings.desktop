@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Ajustes
+GenericName=Ajustes del sistema
+Comment=Configura tu shell: apariencia, barra, isla, sonido, Wi-Fi y más
+Exec=qs ipc call settings open
+Icon=preferences-system
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=ajustes;configuracion;preferencias;settings;quickshell;
+StartupNotify=false

@@ -1,6 +1,11 @@
 // Lo que suena. A diferencia del volumen, este NO se va solo: mientras haya
 // pista se queda plegado en forma de notch, y se despliega al pasarle el ratón.
 //
+// Y justo por eso es el único que se calla en pantalla completa. Un ocupante
+// permanente encima de un vídeo o un juego es una mancha fija; una notificación
+// de cuatro segundos no. La decisión vive en `active`, que es la propiedad que
+// contesta a "¿tengo algo que enseñar ahora mismo?".
+//
 // Las medidas son las de Boring Notch: 185x32 cerrado, 640x190 abierto, y la
 // carátula de 20px con radio 4 a 90px con radio 13.
 
@@ -9,6 +14,7 @@ import Quickshell.Widgets
 import qs.core.theme
 import qs.core.components.atoms
 import qs.domain.media
+import qs.domain.desktop
 
 IslandOccupant {
     id: root
@@ -16,7 +22,11 @@ IslandOccupant {
     name: "player"
     priority: 40
 
-    active: Player.hasTrack
+    // Si ya tienes el detector de pantalla completa en BarVisibility, cambia
+    // esta línea por el tuyo y borra Fullscreen.qml.
+    readonly property bool allowed: !Fullscreen.onFocused
+
+    active: Player.hasTrack && root.allowed
 
     contentWidth: Theme.island.minWidth
     contentHeight: Theme.island.closedHeight
@@ -334,5 +344,13 @@ IslandOccupant {
             if (!Player.hasTrack)
                 root.collapse();
         }
+    }
+
+    // Lo mismo al entrar en pantalla completa: se repliega además de retirarse.
+    // Sin esto, `expanded` se queda en true mientras nadie lo ve, y al salir de
+    // pantalla completa la isla volvería abierta de golpe en 640x190.
+    onAllowedChanged: {
+        if (!root.allowed)
+            root.collapse();
     }
 }

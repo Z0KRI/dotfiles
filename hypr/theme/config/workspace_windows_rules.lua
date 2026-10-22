@@ -72,6 +72,22 @@ hl.window_rule({
     persistent_size = true,
 })
 
+-- Ajustes de tu shell (Quickshell): flotante y centrado, como los Ajustes
+-- del Sistema de macOS. Quickshell abre sus ventanas con la clase
+-- org.quickshell; el título es lo que distingue a esta.
+-- Confírmalo con la ventana abierta: hyprctl clients | grep -A4 Ajustes
+hl.window_rule({
+    name  = "quickshell-settings",
+    match = {
+        class = [[^org\.quickshell$]],
+        title = [[^Ajustes$]],
+    },
+
+    float  = true,
+    size   = "860 620",
+    center = true,
+})
+
 -- Arregla problemas de arrastre con XWayland
 hl.window_rule({
     name  = "fix-xwayland-drags",

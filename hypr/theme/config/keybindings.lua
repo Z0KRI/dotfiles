@@ -18,6 +18,15 @@ local screenshotPath = p.screenshotPath
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
 
 
+-----------------
+---- AJUSTES ----
+-----------------
+
+-- Como Cmd + , en macOS. "comma" es el nombre de la tecla (keysym), y es
+-- la misma en el teclado latam.
+hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd(p.settings))
+
+
 -----------------------------
 ---- SYSTEM FUNDAMENTALS ----
 -----------------------------

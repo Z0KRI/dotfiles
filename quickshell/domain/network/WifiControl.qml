@@ -6,6 +6,10 @@
 //   - Una red con contraseña que nunca has usado no se conecta desde aquí:
 //     se avisa y se ofrece la configuración de red.
 //   - Señal en 3 niveles: fuerte, media y débil.
+//   - Se buscan redes mientras alguien mire la lista (el Centro de control
+//     o Ajustes) y el Wi-Fi esté encendido. Con un contador, no con un
+//     sí/no: si los dos miran y uno se cierra, el otro sigue viendo la lista
+//     al día.
 
 pragma Singleton
 
@@ -71,6 +75,12 @@ Singleton {
     // Red que pidió contraseña al intentar entrar ("" si ninguna).
     property string passwordNeededFor: ""
 
+    property int scanWatchers: 0
+
+    // Igual que la búsqueda de Bluetooth: se deriva, no se ordena.
+    readonly property bool scanning: root.scanWatchers > 0 && root.powered
+    onScanningChanged: NetworkRepository.setScanning(root.scanning)
+
     readonly property var settingsApp: AppRepository.entryFor("nm-connection-editor")
     readonly property bool hasSettingsApp: root.settingsApp !== null
 
@@ -82,9 +92,13 @@ Singleton {
         root.setPowered(!root.powered);
     }
 
-    function setScanning(on): void {
-        NetworkRepository.setScanning(on);
-        if (!on)
+    function startScan(): void {
+        root.scanWatchers++;
+    }
+
+    function stopScan(): void {
+        root.scanWatchers = Math.max(0, root.scanWatchers - 1);
+        if (root.scanWatchers === 0)
             root.passwordNeededFor = "";
     }
 
@@ -100,6 +114,10 @@ Singleton {
 
         root.passwordNeededFor = "";
         NetworkRepository.connectTo(name);
+    }
+
+    function disconnect(name): void {
+        NetworkRepository.disconnectFrom(name);
     }
 
     function openSettings(): void {

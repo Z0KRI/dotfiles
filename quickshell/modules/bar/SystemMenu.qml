@@ -3,10 +3,12 @@
 
 import QtQuick
 import Quickshell
+import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.templates
 import qs.domain.session
+import qs.domain.settings
 
 DropdownWindow {
     id: root
@@ -24,15 +26,24 @@ DropdownWindow {
     }
 
     MenuItem {
-        icon: ""   // Lucide: info
+        icon: Theme.systemIcons.info
         text: "Acerca de este equipo"
-        enabled: false   // su ventana la haremos después
+        onTriggered: root.run(() => SettingsControl.open("about"))
     }
 
     Separator {}
 
     MenuItem {
-        icon: ""   // Lucide: circle-x
+        icon: Theme.systemIcons.settings
+        text: "Ajustes del sistema…"
+        shortcut: "Super ,"
+        onTriggered: root.run(() => SettingsControl.open(""))
+    }
+
+    Separator {}
+
+    MenuItem {
+        icon: Theme.systemIcons.forceQuit
         text: "Forzar salida"
         onTriggered: root.run(() => SessionActions.forceQuit())
     }
@@ -40,19 +51,19 @@ DropdownWindow {
     Separator {}
 
     MenuItem {
-        icon: ""   // Lucide: moon
+        icon: Theme.systemIcons.moon
         text: "Reposo"
         onTriggered: root.run(() => SessionActions.suspend())
     }
 
     MenuItem {
-        icon: ""   // Lucide: rotate-ccw
+        icon: Theme.systemIcons.restart
         text: "Reiniciar"
         onTriggered: root.run(() => SessionActions.reboot())
     }
 
     MenuItem {
-        icon: ""   // Lucide: power
+        icon: Theme.systemIcons.power
         text: "Apagar equipo"
         onTriggered: root.run(() => SessionActions.powerOff())
     }
@@ -60,13 +71,13 @@ DropdownWindow {
     Separator {}
 
     MenuItem {
-        icon: ""   // Lucide: lock
+        icon: Theme.systemIcons.lock
         text: "Bloquear pantalla"
         onTriggered: root.run(() => SessionActions.lock())
     }
 
     MenuItem {
-        icon: ""   // Lucide: log-out
+        icon: Theme.systemIcons.logout
         text: "Cerrar sesión de " + SessionActions.userName
         onTriggered: root.run(() => SessionActions.logout())
     }

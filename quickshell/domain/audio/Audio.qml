@@ -51,6 +51,10 @@ Singleton {
             AudioRepository.setMuted(false);
     }
 
+    function toggleMuted(): void {
+        AudioRepository.setMuted(!root.muted);
+    }
+
     // steps: +1 sube un paso, -1 baja un paso.
     function nudge(steps): void {
         root.setVolume(root.volume + steps * root.step);

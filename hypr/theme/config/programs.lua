@@ -8,6 +8,7 @@ M.terminal     = "warp-terminal"
 M.fileManager  = "nautilus"
 
 M.menu = "qs ipc call launcher open"
+M.settings = "qs ipc call settings toggle"
 
 M.screenshotPath = '"$(xdg-user-dir PICTURES)/Screenshots"'
 

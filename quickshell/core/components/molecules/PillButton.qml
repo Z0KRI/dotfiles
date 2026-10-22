@@ -1,5 +1,6 @@
 // MOLÉCULA: botón de texto en cápsula de vidrio
 // (como "Edit Controls" de macOS). Ej.: "Configuración de red…".
+// Con `icon`, lleva un ícono antes del texto.
 
 import QtQuick
 import qs.core.theme
@@ -9,10 +10,11 @@ Surface {
     id: root
 
     property string text: ""
+    property string icon: ""
 
     signal clicked()
 
-    implicitWidth: label.implicitWidth + 28
+    implicitWidth: content.implicitWidth + 28
     implicitHeight: 30
     radius: height / 2
     border.width: 1
@@ -28,13 +30,27 @@ Surface {
         NumberAnimation { duration: 120 }
     }
 
-    Label {
-        id: label
+    Row {
+        id: content
+
         anchors.centerIn: parent
-        text: root.text
-        color: Theme.glass.content
-        font.pixelSize: Theme.font.small + 1
-        font.weight: Font.DemiBold
+        spacing: 6
+
+        Icon {
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.icon !== ""
+            icon: root.icon
+            size: 13
+            color: Theme.glass.content
+        }
+
+        Label {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.text
+            color: Theme.glass.content
+            font.pixelSize: Theme.font.small + 1
+            font.weight: Font.DemiBold
+        }
     }
 
     HoverHandler {

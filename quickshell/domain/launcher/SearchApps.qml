@@ -3,7 +3,6 @@ pragma Singleton
 import Quickshell
 import qs.core.utils
 import qs.data.applications
-import qs.data.usage
 
 Singleton {
     id: root
@@ -13,13 +12,15 @@ Singleton {
     readonly property int weightComment: 1
     readonly property int weightUsage: 5
 
+    // El uso sale de LaunchHistory, no del repositorio: si apagas el
+    // historial en Ajustes, cuenta 0 y el orden queda alfabético.
     function execute(query) {
         const needle = (query ?? "").trim().toLowerCase();
         const entries = AppRepository.entries;
 
         if (needle === "")
             return entries.slice().sort((a, b) =>
-                UsageRepository.countFor(b.id) - UsageRepository.countFor(a.id)
+                LaunchHistory.countFor(b.id) - LaunchHistory.countFor(a.id)
                 || a.name.localeCompare(b.name));
 
         return entries
@@ -41,6 +42,6 @@ Singleton {
     }
 
     function usageBonus(entry) {
-        return Math.log(1 + UsageRepository.countFor(entry.id)) * root.weightUsage;
+        return Math.log(1 + LaunchHistory.countFor(entry.id)) * root.weightUsage;
     }
 }

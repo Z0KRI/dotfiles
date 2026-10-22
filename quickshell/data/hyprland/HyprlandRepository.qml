@@ -9,6 +9,19 @@ Singleton {
 
     property var lastActiveByWorkspace: ({})
 
+    // Los monitores, como datos planos. La frecuencia no es propiedad del
+    // monitor en Quickshell: viene en `lastIpcObject`, la respuesta cruda de
+    // `hyprctl monitors -j`.
+    readonly property var monitors: Hyprland.monitors.values.map(monitor => ({
+        name: monitor.name,
+        description: monitor.description,
+        width: monitor.width,
+        height: monitor.height,
+        scale: monitor.scale,
+        focused: monitor.focused,
+        refreshRate: monitor.lastIpcObject?.refreshRate ?? 0
+    }))
+
     function monitorFor(screen) {
         if (!screen)
             return null;

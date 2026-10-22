@@ -2,7 +2,6 @@ pragma Singleton
 
 import Quickshell
 import qs.data.applications
-import qs.data.usage
 
 Singleton {
     id: root
@@ -11,7 +10,8 @@ Singleton {
         if (!entry)
             return;
 
-        UsageRepository.record(entry.id);
+        // Solo cuenta si el historial está activado (Ajustes › Spotlight).
+        LaunchHistory.record(entry.id);
         AppRepository.launch(entry);
     }
 }

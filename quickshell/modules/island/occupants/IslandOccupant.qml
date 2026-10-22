@@ -97,7 +97,10 @@ QtObject {
                     "| por hover:", root.expandOnHover,
                     "| retardo:", root.hoverEnterDelay);
 
-        if (!root.expandable || !root.expandOnHover)
+        // `IslandOccupants.expandOnHover` es el interruptor de Ajustes, para
+        // todos a la vez; `root.expandOnHover`, lo que quiere cada ocupante
+        // (una llamada nunca se abre por hover). Tienen que estar los dos.
+        if (!root.expandable || !root.expandOnHover || !IslandOccupants.expandOnHover)
             return;
 
         if (root.pointerInside) {

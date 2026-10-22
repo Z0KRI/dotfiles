@@ -17,8 +17,9 @@ Item {
     property bool solid: false
 
     // Hacia afuera: hay un menú abierto, la barra no debe esconderse.
+    // (Aquí seguía `soundMenu`, que ya no existe: el error rompía todo el
+    // binding y la barra se escondía aunque tuvieras un menú abierto.)
     readonly property bool popupOpen: systemMenu.visible
-                                      || soundMenu.visible
                                       || controlCenter.visible
                                       || clockMenu.visible
 
@@ -57,7 +58,9 @@ Item {
         }
 
         // App activa de ESTE monitor, con morphing al cambiar.
+        // Se puede ocultar en Ajustes › Barra de menús.
         BarItem {
+            visible: BarVisibility.showActiveApp
             interactive: false
 
             MorphLabel {

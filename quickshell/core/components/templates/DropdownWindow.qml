@@ -20,8 +20,8 @@ PopupWindow {
     // borde derecho del botón y crece hacia la izquierda.
     property bool alignRight: false
 
-    // Apariencia del panel. Por defecto, la de tus menús.
-    property color panelColor: Qt.alpha(Theme.colors.base100, 0.85)
+    // Apariencia del panel. Por defecto, la de tus menús (sigue a Liquid Glass).
+    property color panelColor: Theme.glass.menu
     property color panelBorder: Theme.glass.border
     property int panelRadius: 10
 

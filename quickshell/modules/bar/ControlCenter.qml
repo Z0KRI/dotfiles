@@ -1,6 +1,7 @@
 // Centro de control, estilo macOS Tahoe.
 // Cuadrícula de dos columnas; el texto de Wi-Fi y Bluetooth y el botón
-// redondo de Sonido abren su detalle.
+// redondo de Sonido abren su detalle. Los detalles terminan en un botón a su
+// sección de Ajustes, y el panel en "Ajustes del sistema…", como en macOS.
 
 import QtQuick
 import Quickshell
@@ -16,6 +17,8 @@ import qs.domain.media
 import qs.domain.desktop
 import qs.domain.session
 import qs.domain.notifications
+import qs.domain.phone
+import qs.domain.settings
 
 DropdownWindow {
     id: root
@@ -40,17 +43,29 @@ DropdownWindow {
     // Página visible: "home", "wifi", "bluetooth" o "sound".
     property string page: "home"
 
-    // Buscar redes solo mientras ves la lista de Wi-Fi.
+    // Buscar redes solo mientras ves la lista de Wi-Fi. Con start/stop y no
+    // con un sí/no: Ajustes también puede estar buscando, y cerrar este panel
+    // no debe apagarle la búsqueda.
     readonly property bool wantsScan: root.visible && root.page === "wifi"
-    onWantsScanChanged: WifiControl.setScanning(root.wantsScan)
+    onWantsScanChanged: {
+        if (root.wantsScan)
+            WifiControl.startScan();
+        else
+            WifiControl.stopScan();
+    }
 
     onVisibleChanged: {
         if (root.visible) {
             root.page = "home";
-            PhoneBridge.watch();
+            PhoneService.watch();
         } else {
-            PhoneBridge.unwatch();
+            PhoneService.unwatch();
         }
+    }
+
+    // Cierra el panel y abre Ajustes en esa sección.
+    function openSettings(section): void {
+        root.run(() => SettingsControl.open(section));
     }
 
     component SectionLabel: Label {
@@ -129,10 +144,10 @@ DropdownWindow {
                 height: root.cellHeight
                 icon: Theme.systemIcons.device.phone
                 title: "iPhone"
-                subtitle: PhoneBridge.status
-                active: PhoneBridge.active
-                onToggled: PhoneBridge.toggle()
-                onOpened: root.run(() => PhoneBridge.openApp())
+                subtitle: PhoneService.status
+                active: PhoneService.active
+                onToggled: PhoneService.toggle()
+                onOpened: root.openSettings("iphone")
             }
 
             ControlTile {
@@ -254,6 +269,14 @@ DropdownWindow {
                 onActionClicked: root.page = "sound"
             }
         }
+
+        // Ajustes del sistema, al pie como el "Editar controles" de macOS.
+        PillButton {
+            anchors.horizontalCenter: parent.horizontalCenter
+            icon: Theme.systemIcons.settings
+            text: "Ajustes del sistema…"
+            onClicked: root.openSettings("")
+        }
     }
 
     // ── Wi-Fi ───────────────────────────────────────────────
@@ -299,7 +322,7 @@ DropdownWindow {
             font.pixelSize: Theme.font.small
             topPadding: 6
             text: "«" + WifiControl.passwordNeededFor + "» pide contraseña. "
-                  + "Conéctate una vez desde la configuración de red; "
+                  + "Conéctate una vez desde Ajustes de Wi-Fi › Configuración avanzada; "
                   + "después podrás hacerlo desde aquí."
         }
 
@@ -307,9 +330,8 @@ DropdownWindow {
 
         PillButton {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: WifiControl.hasSettingsApp
-            text: "Configuración de red…"
-            onClicked: root.run(() => WifiControl.openSettings())
+            text: "Ajustes de Wi-Fi…"
+            onClicked: root.openSettings("wifi")
         }
     }
 
@@ -351,9 +373,8 @@ DropdownWindow {
 
         PillButton {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: BluetoothControl.hasSettingsApp
-            text: "Configuración de Bluetooth…"
-            onClicked: root.run(() => BluetoothControl.openSettings())
+            text: "Ajustes de Bluetooth…"
+            onClicked: root.openSettings("bluetooth")
         }
     }
 
@@ -385,9 +406,8 @@ DropdownWindow {
 
         PillButton {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: Audio.hasSettingsApp
-            text: "Configuración de sonido…"
-            onClicked: root.run(() => Audio.openSettings())
+            text: "Ajustes de sonido…"
+            onClicked: root.openSettings("sound")
         }
     }
 }
