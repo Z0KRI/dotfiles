@@ -16,9 +16,23 @@ SettingsPage {
     id: root
 
     // El estado del servicio se consulta a systemd cada 5 s solo mientras
-    // alguien mira: el mismo contador que usa el Centro de control.
-    Component.onCompleted: PhoneService.watch()
+    // alguien mira: el mismo contador que usa el Centro de control. Lo de las
+    // llamadas se le pregunta a BlueFerry una vez, al abrir.
+    Component.onCompleted: {
+        PhoneService.watch();
+        if (Phone.available && PhoneService.active)
+            Phone.refreshStatus();
+    }
     Component.onDestruction: PhoneService.unwatch()
+
+    readonly property var callStates: ({
+        disabled: "Apagadas",
+        unavailable: "oFono no está corriendo",
+        searching: "Buscando el iPhone",
+        connecting: "Conectando",
+        ready: "Listas",
+        bluez_conflict: "Bluetooth tiene el canal (falta -P hfp)"
+    })
 
     SettingsHero {
         icon: Theme.systemIcons.device.phone
@@ -47,11 +61,61 @@ SettingsPage {
 
         SettingsRow {
             glyph: Theme.systemIcons.phoneCall
-            title: "Responder desde la isla"
+            title: "Responder mensajes desde la isla"
             subtitle: Phone.available
                 ? "Escribe la respuesta en la notificación desplegada."
                 : "Necesita blueferry-quickshell-bridge (viene en el paquete blueferry-backend)."
             value: Phone.available ? "Disponible" : "No disponible"
+        }
+    }
+
+    SettingsGroup {
+        visible: Phone.available && PhoneService.active
+        header: "Llamadas"
+        footer: {
+            if (Phone.settingsError !== "")
+                return "BlueFerry no respondió: " + Phone.settingsError;
+            return "Con los botones del iPhone contestas EN el iPhone: hablas por él o por "
+                 + "tus AirPods. Para que el audio venga a la PC: ./install.sh --calls "
+                 + "(experimental).";
+        }
+
+        ToggleRow {
+            glyph: Theme.systemIcons.phoneCall
+            title: "Contestar desde la isla"
+            subtitle: {
+                if (!Phone.callButtons)
+                    return "Las llamadas del iPhone llegan con Contestar y Rechazar.";
+                if (Phone.notificationPolicy !== "all")
+                    return "Inactivo: las llamadas solo llegan con todas las notificaciones del iPhone.";
+                if (!Phone.contentShown)
+                    return "Inactivo: BlueFerry oculta el contenido de las notificaciones.";
+                return "Las llamadas del iPhone llegan con Contestar y Rechazar.";
+            }
+            checked: Phone.callButtons
+            onToggled: Phone.setCallButtons(!Phone.callButtons)
+        }
+
+        // La llamada es una notificación más del iPhone: con "solo mensajes"
+        // no llega, y sin ella no hay botones.
+        SettingsRow {
+            visible: Phone.callButtons && Phone.statusKnown && Phone.notificationPolicy !== "all"
+            glyph: Theme.systemIcons.bell
+            title: "Notificaciones del iPhone"
+            subtitle: "Ahora llegan solo algunas: la de la llamada no."
+
+            PushButton {
+                text: "Mostrar todas"
+                onClicked: Phone.showAllNotifications()
+            }
+        }
+
+        SettingsRow {
+            glyph: Theme.systemIcons.audioOutput
+            title: "Audio de las llamadas en la PC"
+            value: Phone.statusKnown
+                ? (Phone.pcCalls ? (root.callStates[Phone.pcCallsState] ?? Phone.pcCallsState) : "Apagado")
+                : "…"
         }
     }
 

@@ -127,7 +127,7 @@ SettingsPage {
 
                         Icon {
                             icon: Theme.systemIcons.arch.icon
-                            size: 18
+                            ink: Theme.systemIcons.arch.ink
                             color: Theme.glass.content
                             font.family: Theme.systemIcons.arch.family
                         }

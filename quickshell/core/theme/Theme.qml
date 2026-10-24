@@ -107,8 +107,13 @@ Singleton {
         // --- Space between buttons ---
         readonly property int spacing: 3
 
-        // buttons
-        readonly property int itemSize: 30
+        // La barra mide lo mismo que la isla cerrada y empieza en el mismo
+        // borde: las dos comparten la franja de arriba. Cambia la altura de la
+        // isla y la barra la sigue.
+        readonly property int barHeight: root.island.closedHeight
+
+        // Botones: lo que queda dentro de la píldora.
+        readonly property int itemSize: root.glass.barHeight - root.glass.padding * 2
         readonly property color hover: Qt.rgba(1, 1, 1, 0.12)
         readonly property color active: Qt.rgba(0, 0, 0, 0.30)
 
@@ -183,9 +188,11 @@ Singleton {
     }
 
     readonly property QtObject systemIcons: QtObject {
+        // El logo de Arch es un glifo de Nerd Font: su tamaño va por `ink`
+        // (lo que mide el DIBUJO), no por tamaño de fuente. Ver Icon.qml.
         readonly property var arch: ({
-            icon: "󰣇",
-            size: 25,
+            icon: "\udb82\udcc7",   // nf-md-arch (U+F08C7), como par sustituto
+            ink: 17,
             family: root.font.iconNerd
         })
 
@@ -234,6 +241,20 @@ Singleton {
         readonly property string gpu: "\ue66a"            // gpu
         readonly property string clock: "\ue250"          // clock-3
         readonly property string user: "\ue19f"           // user
+
+        // AirPods (Lucide): modos de ruido, conversación y batería.
+        readonly property var airpods: ({
+            off: "\ue401",            // circle-off
+            transparency: "\ue382",   // ear
+            adaptive: "\ue412",       // sparkles
+            anc: "\ue383",            // ear-off
+            conversation: "\ue51e",   // speech
+            appleMode: "\ue34e",      // apple
+            batteryFull: "\ue055",    // battery-full
+            batteryMedium: "\ue057",  // battery-medium
+            batteryLow: "\ue056",     // battery-low
+            batteryCharging: "\ue054" // battery-charging
+        })
 
         // Menú de Arch (antes iban vacíos: sus glifos se perdieron al copiarlos).
         readonly property string forceQuit: "\ue084"      // circle-x

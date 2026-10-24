@@ -42,16 +42,13 @@ Item {
             open();
     }
 
-    // Márgenes: flotando, un poco de aire arriba; sólida, lo mínimo.
-    readonly property int topGap: root.solid ? 2 : 6
-    readonly property int bottomGap: root.solid ? 2 : 1
-
     // Íconos y texto sobre el vidrio: blancos en ambos modos.
     readonly property color iconColor: Theme.glass.content
     readonly property int iconSize: 14
 
-    implicitHeight: Math.max(leftGroup.implicitHeight, rightGroup.implicitHeight)
-                    + root.topGap + root.bottomGap
+    // La misma franja que la isla cerrada (Theme.glass.barHeight), pegada al
+    // borde como ella: misma altura y mismo centro, flotando o sólida.
+    implicitHeight: Theme.glass.barHeight
 
     BarGroup {
         id: leftGroup
@@ -59,8 +56,7 @@ Item {
         flat: root.solid
         anchors.left: parent.left
         anchors.leftMargin: 8
-        anchors.top: parent.top
-        anchors.topMargin: root.topGap
+        anchors.verticalCenter: parent.verticalCenter
 
         BarItem {
             id: archButton
@@ -71,7 +67,7 @@ Item {
 
             Icon {
                 icon: Theme.systemIcons.arch.icon
-                size: Theme.systemIcons.arch.size
+                ink: Theme.systemIcons.arch.ink
                 color: root.iconColor
                 font.family: Theme.systemIcons.arch.family
             }
@@ -97,8 +93,7 @@ Item {
         flat: root.solid
         anchors.right: parent.right
         anchors.rightMargin: 8
-        anchors.top: parent.top
-        anchors.topMargin: root.topGap
+        anchors.verticalCenter: parent.verticalCenter
 
         BarItem {
             active: LauncherControl.shown

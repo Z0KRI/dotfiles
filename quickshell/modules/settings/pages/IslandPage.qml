@@ -17,8 +17,8 @@ SettingsPage {
         icon: Theme.systemIcons.island
         tint: "#1c1c1e"
         title: "Isla dinámica"
-        description: "La píldora del borde de arriba: el volumen al cambiarlo, lo que "
-                     + "suena y lo que te llega."
+        description: "La píldora del borde de arriba: el volumen al cambiarlo, tus "
+                     + "AirPods, lo que suena y lo que te llega."
     }
 
     SettingsGroup {
@@ -38,6 +38,14 @@ SettingsPage {
             subtitle: "Lo que suena, con su carátula. Se queda mientras haya pista."
             checked: IslandOccupants.player
             onToggled: IslandOccupants.setPlayer(!IslandOccupants.player)
+        }
+
+        ToggleRow {
+            glyph: Theme.systemIcons.device.headphones
+            title: "AirPods"
+            subtitle: "Al conectarlas, con su batería, y al cambiar el control de ruido."
+            checked: IslandOccupants.airpods
+            onToggled: IslandOccupants.setAirPods(!IslandOccupants.airpods)
         }
 
         SettingsRow {

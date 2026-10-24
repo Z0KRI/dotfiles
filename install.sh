@@ -6,10 +6,11 @@
 #   ./install.sh               todo: paquetes + enlaces + servicios
 #   ./install.sh --links       solo los enlaces y la fuente (no usa sudo)
 #   ./install.sh --check       solo revisa qué falta; no cambia nada
-#   ./install.sh --blueferry   además compila e instala BlueFerry (iPhone)
+#   ./install.sh --blueferry   además instala o actualiza BlueFerry (iPhone)
 #   ./install.sh --calls       además prepara las llamadas del iPhone (oFono)
+#   ./install.sh --airpods     además LibrePods (AirPods); te pregunta por el modo Apple
 #
-# Las opciones se combinan: ./install.sh --blueferry --calls
+# Las opciones se combinan: ./install.sh --blueferry --airpods
 #
 # Cada paquete está aquí porque un archivo concreto lo usa; el comentario dice
 # cuál. Si quitas algo de la config, quita su paquete; si agregas, agrégalo.
@@ -21,6 +22,10 @@ CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 BACKUP="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
 BLUEFERRY_SRC="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/blueferry"
+# El commit de BlueFerry que se instaló desde aquí la última vez, y el drop-in
+# de bluetooth.service que trae su paquete.
+BLUEFERRY_BUILT="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/blueferry.built"
+BLUEFERRY_DROPIN=/usr/lib/systemd/system/bluetooth.service.d/blueferry.conf
 
 # Versiones mínimas: la config de Hyprland es Lua (0.56+) y la shell usa
 # Quickshell.Networking y hasFullscreen de los workspaces (0.3+).
@@ -83,6 +88,19 @@ AUR_PACKAGES=(
 # Para compilar BlueFerry (--blueferry).
 BLUEFERRY_BUILD=(base-devel git python)
 
+# LibrePods (--airpods), del AUR: modos de ruido, detección de conversación y
+# batería de cada AirPod. Es la versión nueva (Rust); la shell la arranca sola
+# y la maneja desde su ícono de bandeja (data/airpods/LibrePodsRepository.qml).
+AIRPODS_AUR=librepods-rust-git
+
+# Modo Apple (--airpods, solo si dices que sí): tu PC se presenta ante las
+# AirPods como un aparato de Apple, el "DeviceID" del perfil DID de Bluetooth.
+# Los AirPods guardan algunas funciones para Apple, y LibrePods las necesita
+# así ("VendorID spoofing"). NO es la MAC: tu dirección Bluetooth no cambia.
+BT_CONF=/etc/bluetooth/main.conf
+APPLE_DEVICE_ID="bluetooth:004C:0000:0000"
+APPLE_MARK="# dotfiles: modo Apple para los AirPods (./install.sh --airpods)"
+
 
 # ── Utilidades ────────────────────────────────────────────────────────
 
@@ -90,6 +108,15 @@ say()  { printf '\033[1;34m::\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m ✓\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m !\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m ✗\033[0m %s\n' "$*" >&2; exit 1; }
+
+# Pregunta de sí o no; si solo das Enter, es que no. Sin terminal (lo corre
+# otro script) también es que no: nada de sistema se cambia sin preguntarte.
+ask() {
+    local answer=""
+    [[ -t 0 ]] || return 1
+    read -r -p "$(printf '\033[1;35m ?\033[0m %s [s/N] ' "$*")" answer || true
+    [[ "$answer" =~ ^[sSyY] ]]
+}
 
 # Instalar de los repos. La PRIMERA vez en cada corrida va con -Syu: instalar
 # contra una base de paquetes vieja es lo que dio los 404 al compilar
@@ -254,10 +281,34 @@ enable_services() {
 
 install_blueferry() {
     say "BlueFerry (iPhone)"
-    if command -v blueferry >/dev/null && command -v blueferry-quickshell >/dev/null; then
-        ok "ya instalado ($(pacman -Q blueferry-backend 2>/dev/null || echo blueferry))"
+
+    # Instalado por otro camino (no es el paquete blueferry-backend que arma
+    # su build.sh): ese no se toca.
+    if command -v blueferry >/dev/null && ! pacman -Q blueferry-backend >/dev/null 2>&1; then
+        ok "instalado por fuera de este script: no se toca"
         return
     fi
+
+    command -v git >/dev/null || pacman_install git
+    if [[ -d "$BLUEFERRY_SRC/.git" ]]; then
+        git -C "$BLUEFERRY_SRC" pull --ff-only
+    else
+        mkdir -p "$(dirname "$BLUEFERRY_SRC")"
+        git clone https://github.com/erikwb/blueferry.git "$BLUEFERRY_SRC"
+    fi
+
+    # Se compila si el código cambió desde la última instalación hecha desde
+    # aquí. Sin esa marca (lo instalaste antes de que existiera) también: así
+    # un BlueFerry viejo se pone al día.
+    local head have
+    head="$(git -C "$BLUEFERRY_SRC" rev-parse HEAD)"
+    have="$(pacman -Q blueferry-backend 2>/dev/null | cut -d' ' -f2 || true)"
+    if [[ -n "$have" ]] && command -v blueferry-quickshell >/dev/null \
+            && [[ "$(cat "$BLUEFERRY_BUILT" 2>/dev/null)" == "$head" ]]; then
+        ok "al día ($have, ${head:0:7})"
+        return
+    fi
+    [[ -n "$have" ]] && say "actualizando BlueFerry $have al código de ${head:0:7}"
 
     # Las herramientas de compilación, y el sistema al día: makepkg instala
     # las dependencias de BlueFerry con pacman.
@@ -267,19 +318,99 @@ install_blueferry() {
         pacman_install "${missing[@]}"
     fi
 
-    if [[ -d "$BLUEFERRY_SRC/.git" ]]; then
-        git -C "$BLUEFERRY_SRC" pull --ff-only
-    else
-        mkdir -p "$(dirname "$BLUEFERRY_SRC")"
-        git clone https://github.com/erikwb/blueferry.git "$BLUEFERRY_SRC"
-    fi
-
     # build.sh arma los cuatro paquetes de Arch (backend, gtk, qt, quickshell)
     # y los instala con pacman. El backend trae el servicio de usuario (arranca
-    # solo al iniciar sesión) y el drop-in de bluetooth.service (-E -P hfp).
+    # solo al iniciar sesión) y el drop-in de bluetooth.service (-E -P hfp);
+    # al instalarse reinicia Bluetooth para que lo tome.
     (cd "$BLUEFERRY_SRC" && ./build.sh -si)
+    printf '%s\n' "$head" > "$BLUEFERRY_BUILT"
 
     ok "BlueFerry instalado. Empareja el iPhone desde su app: blueferry-quickshell"
+}
+
+install_airpods() {
+    say "LibrePods (AirPods)"
+    local helper
+    helper="$(aur_helper)"
+
+    # `librepods` a secas: cualquier versión que lo provea cuenta.
+    if [[ -z "$(missing_packages librepods)" ]] || command -v librepods >/dev/null; then
+        ok "ya instalado"
+    elif [[ -z "$helper" ]]; then
+        warn "LibrePods está en el AUR ($AIRPODS_AUR) y no hay paru ni yay: instálalo a mano."
+    else
+        "$helper" -S --needed "$AIRPODS_AUR"
+        ok "LibrePods instalado. Reinicia la shell (pkill qs; qs -d): ella lo arranca."
+    fi
+
+    apple_mode
+}
+
+# ¿Ya está el DeviceID de Apple, activo (sin comentar)?
+apple_mode_on() {
+    grep -qiE '^[[:space:]]*DeviceID[[:space:]]*=[[:space:]]*bluetooth:004c:' "$BT_CONF" 2>/dev/null
+}
+
+# Reescribe main.conf: quita cualquier DeviceID activo (y la marca de aquí) y,
+# con "on", pone el de Apple justo debajo de [General]. Lo demás queda igual.
+# Antes guarda una copia en tu carpeta de respaldo.
+write_apple_mode() {
+    local mode="$1" tmp
+    tmp="$(mktemp)"
+
+    if [[ -f "$BT_CONF" ]]; then
+        mkdir -p "$BACKUP"
+        cp "$BT_CONF" "$BACKUP/bluetooth-main.conf"
+        ok "copia de $BT_CONF en $BACKUP/bluetooth-main.conf"
+    fi
+
+    awk -v mode="$mode" -v mark="$APPLE_MARK" -v line="DeviceID = $APPLE_DEVICE_ID" '
+        /^[[:space:]]*DeviceID[[:space:]]*=/ { next }
+        index($0, "# dotfiles: modo Apple") == 1 { next }
+        { print }
+        mode == "on" && !done && /^[[:space:]]*\[General\][[:space:]]*$/ {
+            print mark; print line; done = 1
+        }
+        END {
+            if (mode == "on" && !done) { print "[General]"; print mark; print line }
+        }
+    ' "$( [[ -f "$BT_CONF" ]] && echo "$BT_CONF" || echo /dev/null )" > "$tmp"
+
+    sudo install -Dm644 "$tmp" "$BT_CONF"
+    rm -f "$tmp"
+
+    # Sin reiniciar, bluetoothd sigue con la identidad vieja.
+    sudo systemctl restart bluetooth
+}
+
+apple_mode() {
+    say "Modo Apple (funciones completas de los AirPods)"
+
+    if apple_mode_on; then
+        ok "activado: tu PC se presenta como un aparato de Apple"
+        if ask "¿Quitarlo y volver a la identidad normal? (reinicia Bluetooth)"; then
+            write_apple_mode off
+            ok "quitado. Vuelve a conectar tus AirPods para que lo noten."
+        fi
+        return
+    fi
+
+    cat <<EOF
+   Los AirPods guardan algunas funciones para los aparatos de Apple. Para
+   tenerlas, tu PC puede presentarse como uno: se agrega a $BT_CONF
+       DeviceID = $APPLE_DEVICE_ID
+   Tu MAC no cambia. LibrePods lo marca "bajo tu propio riesgo": la PC se
+   presenta así ante TODOS tus aparatos Bluetooth, también el iPhone.
+   Se reinicia Bluetooth: lo conectado se desconecta unos segundos.
+   Se quita igual: vuelve a correr ./install.sh --airpods.
+EOF
+
+    if ask "¿Presentar tu PC como un aparato de Apple?"; then
+        write_apple_mode on
+        ok "activado. Si tus AirPods no lo notan, olvídalos en Ajustes › Bluetooth y vuelve a emparejarlos."
+    else
+        ok "se queda con la identidad normal"
+    fi
 }
 
 check() {
@@ -328,7 +459,9 @@ check() {
         fi
     done
 
-    if fc-list 2>/dev/null | grep -qi lucide; then
+    # `fc-list -q` y no `fc-list | grep -q`: con pipefail, grep cierra el tubo
+    # al encontrarla, fc-list muere por SIGPIPE y la revisión decía que no está.
+    if fc-list -q lucide 2>/dev/null; then
         ok "fuente lucide"
     else
         warn "la fuente lucide no está registrada (./install.sh --links)"; problems=$((problems + 1))
@@ -346,8 +479,25 @@ check() {
         ok "BlueFerry $(pacman -Q blueferry-backend 2>/dev/null | cut -d' ' -f2 || true)"
         command -v blueferry-quickshell-bridge >/dev/null \
             || warn "falta blueferry-quickshell-bridge: no podrás responder desde la isla"
+        # Los BlueFerry viejos arrancan bluetoothd solo con -E, sin -P hfp, y
+        # con eso las llamadas no llegan (blueferry/install.sh se detiene).
+        if [[ -f "$BLUEFERRY_DROPIN" ]] && ! grep -q -- '-P hfp' "$BLUEFERRY_DROPIN"; then
+            warn "tu BlueFerry es de antes de -P hfp: actualízalo (./install.sh --blueferry)"
+            problems=$((problems + 1))
+        fi
     else
         warn "BlueFerry no está: sin notificaciones del iPhone (./install.sh --blueferry)"
+    fi
+
+    if command -v librepods >/dev/null; then
+        ok "LibrePods (AirPods)"
+        if apple_mode_on; then
+            ok "modo Apple activado (funciones completas de los AirPods)"
+        else
+            ok "modo Apple desactivado (para activarlo: ./install.sh --airpods)"
+        fi
+    else
+        warn "LibrePods no está: tus AirPods suenan, pero sin control de ruido (./install.sh --airpods)"
     fi
 
     if (( problems == 0 )); then
@@ -358,20 +508,22 @@ check() {
 }
 
 usage() {
-    sed -n '3,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    sed -n '3,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 
 # ── Principal ─────────────────────────────────────────────────────────
 
 main() {
-    local only_links=false only_check=false with_blueferry=false with_calls=false arg
+    local only_links=false only_check=false with_blueferry=false with_calls=false
+    local with_airpods=false arg
     for arg in "$@"; do
         case "$arg" in
             --links)     only_links=true ;;
             --check)     only_check=true ;;
             --blueferry) with_blueferry=true ;;
             --calls)     with_calls=true ;;
+            --airpods)   with_airpods=true ;;
             -h|--help)   usage; exit 0 ;;
             *)           usage; die "opción desconocida: $arg" ;;
         esac
@@ -395,6 +547,7 @@ main() {
     enable_services
     $with_blueferry && install_blueferry
     $with_calls && "$DOTFILES/blueferry/install.sh"
+    $with_airpods && install_airpods
 
     echo
     check

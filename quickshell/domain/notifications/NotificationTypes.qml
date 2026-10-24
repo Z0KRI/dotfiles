@@ -3,13 +3,22 @@ pragma Singleton
 // TIPAR: convertir lo que llega por el bus —tres cadenas de texto libre— en un
 // objeto con campos fijos que la vista pueda pintar sin preguntar de dónde vino.
 //
-// BlueFerry manda CUATRO formatos por el mismo canal y los distingue un emoji
-// al principio del resumen (src/blueferry/sinks/libnotify.py):
+// BlueFerry manda sus formatos por el mismo canal y los distingue un emoji al
+// principio del resumen (src/blueferry/sinks/libnotify.py):
 //
-//   📱  app del teléfono (ANCS)  summary="📱 App"            body="remitente — mensaje"
+//   📱  app del teléfono (ANCS)  summary="📱 App · título"    body="subtítulo\nmensaje"
+//                                (antes de la 0.8: "📱 App" y "remitente — mensaje")
 //   💬  mensaje (MAP)            summary="💬 quien"           body="texto"
-//   📞  llamada                  summary="📞 Incoming call"   body="nombre\nnúmero"
+//   📞  llamada sonando          summary="📞 Incoming call"   body="nombre\nnúmero"
+//                                acciones answer / decline (con ./install.sh --calls)
+//   📞  llamada perdida          summary="📞 quien"           body="Missed call · hora"
+//                                sin acciones
 //   🔋  batería baja             summary="🔋 ..."             body="texto"
+//
+// Una llamada también puede llegar como notificación de la app Teléfono (o
+// WhatsApp, FaceTime…) por ANCS. Si BlueFerry trae sus botones del iPhone
+// ("blueferry notification-actions enable"), Aceptar y Rechazar llegan como
+// las acciones ancs-positive y ancs-negative, y se trata como llamada.
 //
 // Aquí viven las REGLAS. Los símbolos están en el tema (AppGlyphs): cambiar el
 // glifo de WhatsApp no cambia nada de cómo se interpreta una notificación.
@@ -31,7 +40,20 @@ Singleton {
     readonly property int markBattery: 0x1F50B  // 🔋
 
     // Lo que BlueFerry pone entre remitente y mensaje: " — " (raya, no guion).
+    // Desde la 0.8 el título va en el resumen, junto a la app: " · ".
     readonly property string joiner: " \u2014 "
+    readonly property string titleJoiner: " \u00b7 "
+
+    // Apps del iPhone cuyas notificaciones con Aceptar/Rechazar son llamadas.
+    // Por trozo y en minúsculas, como en AppGlyphs.
+    readonly property var callApps: ["phone", "teléfono", "telefono", "facetime", "whatsapp",
+                                     "telegram", "signal", "messenger", "teams", "zoom",
+                                     "skype", "discord"]
+    readonly property var callWords: /incoming|entrante|calling|llamando|videollamada|llamada de voz|voice call|video call/i
+
+    // Una llamada perdida también puede traer botones ("Devolver llamada",
+    // "Borrar"): esa NO es una llamada sonando, y Contestar marcaría.
+    readonly property var missedWords: /missed|perdida|no contestada|sin contestar/i
 
     // ── lo vacío ──────────────────────────────────────────────────
     //
@@ -50,6 +72,8 @@ Singleton {
             replyable: false,
             holds: false,
             keep: false,
+            answerAction: "",
+            declineAction: "",
             source: null
         };
     }
@@ -76,6 +100,21 @@ Singleton {
         }
 
         return s.trim();
+    }
+
+    // ¿la notificación trae esta acción? (por su identificador)
+    function hasAction(n, id) {
+        const list = n && n.actions ? n.actions : [];
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i] && list[i].identifier === id)
+                return true;
+        }
+        return false;
+    }
+
+    function isCallApp(app) {
+        const name = String(app || "").toLowerCase();
+        return root.callApps.some(match => name.indexOf(match) >= 0);
     }
 
     function mark(text) {
@@ -141,7 +180,30 @@ Singleton {
         const body = String(n.body || "");
         const kind = root.mark(summary);
 
-        // ── llamada entrante ──
+        // ── llamada perdida ──
+        //
+        // Mismo emoji que la que suena, pero sin botones: "📞 quien" (o
+        // "📞 3 missed calls") y la hora. No retiene la isla.
+        if (kind === root.markCall && !root.hasAction(n, "answer")) {
+            return {
+                kind: "missed-call",
+                appName: "Llamadas",
+                title: root.unescapeMarkup(root.strip(summary)),
+                message: root.unescapeMarkup(body),
+                image: "",
+                icon: "",
+                glyph: AppGlyphs.glyph("", "missed-call"),
+                fromPhone: true,
+                replyable: false,
+                holds: false,
+                keep: true,
+                answerAction: "",
+                declineAction: "",
+                source: n
+            };
+        }
+
+        // ── llamada entrante (con ./install.sh --calls: el audio, en la PC) ──
         //
         // El cuerpo trae nombre y número en dos líneas. Si el contacto no
         // tiene nombre, viene una sola.
@@ -168,6 +230,8 @@ Singleton {
                 // Fuera del historial a propósito: las llamadas tienen su
                 // propio registro (PBAP), no son notificaciones viejas.
                 keep: false,
+                answerAction: "answer",
+                declineAction: "decline",
                 source: n
             };
         }
@@ -191,6 +255,8 @@ Singleton {
                 replyable: true,
                 holds: false,
                 keep: true,
+                answerAction: "",
+                declineAction: "",
                 source: n
             };
         }
@@ -209,25 +275,85 @@ Singleton {
                 replyable: false,
                 holds: false,
                 keep: true,
+                answerAction: "",
+                declineAction: "",
                 source: n
             };
         }
 
-        // ── app del teléfono: "📱 App" + "remitente — mensaje" ──
-        const app = root.strip(summary);
-        const cut = body.indexOf(root.joiner);
+        // ── app del teléfono (ANCS) ──
+        //
+        // Desde BlueFerry 0.8: "📱 App · título" y en el cuerpo subtítulo y
+        // mensaje, en líneas. Antes: "📱 App" y "remitente — mensaje". Las dos
+        // vienen escapadas como HTML.
+        const head = root.unescapeMarkup(root.strip(summary));
+        const text = root.unescapeMarkup(body);
+        const dot = head.indexOf(root.titleJoiner);
 
-        // La PRIMERA raya, no todas: si el mensaje lleva otra dentro, se queda
-        // donde está. Y si no hay ninguna, la notificación no traía título
-        // propio: todo el cuerpo es el mensaje y no hay remitente.
-        const title = cut > 0 ? body.slice(0, cut) : "";
-        const message = cut > 0 ? body.slice(cut + root.joiner.length) : body;
+        let app = head;
+        let title = "";
+        let message = text;
+
+        if (dot > 0) {
+            app = head.slice(0, dot);
+            title = head.slice(dot + root.titleJoiner.length);
+        } else {
+            // La PRIMERA raya, no todas: si el mensaje lleva otra dentro, se
+            // queda donde está. Sin ninguna, todo el cuerpo es el mensaje.
+            const cut = text.indexOf(root.joiner);
+            if (cut > 0) {
+                title = text.slice(0, cut);
+                message = text.slice(cut + root.joiner.length);
+            }
+        }
+
+        app = app.trim();
+        title = title.trim();
+        message = message.trim();
+
+        // ── …que es una llamada sonando ──
+        //
+        // Con los botones del iPhone encendidos, una llamada trae Aceptar y
+        // Rechazar. Una invitación del calendario también, por eso además
+        // tiene que ser de una app de llamadas o decir que es una llamada; y
+        // no puede ser una perdida.
+        const ringing = root.hasAction(n, "ancs-positive")
+                        && root.hasAction(n, "ancs-negative")
+                        && !root.missedWords.test(title + " " + message)
+                        && (root.isCallApp(app) || root.callWords.test(message));
+
+        if (ringing) {
+            return {
+                kind: "call",
+                appName: app.length > 0 ? app : "iPhone",
+                title: title.length > 0 ? title : message,
+                // "mobile\nIncoming Call" → "mobile · Incoming Call"
+                message: title.length > 0 ? message.split("\n").join(root.titleJoiner) : "",
+                image: String(n.image || ""),
+                icon: "",
+                glyph: AppGlyphs.glyph("", "call"),
+                fromPhone: true,
+                replyable: false,
+
+                // Igual que la de --calls: se queda mientras suena. Cuando deja
+                // de sonar, el iPhone retira su notificación y BlueFerry cierra
+                // la de aquí.
+                holds: true,
+                keep: false,
+
+                // Contestar y rechazar son las acciones del iPhone: se
+                // contesta EN el iPhone (hablas por él o por tus AirPods).
+                answerAction: "ancs-positive",
+                declineAction: "ancs-negative",
+                source: n
+            };
+        }
 
         return {
             kind: "phone-app",
             appName: app.length > 0 ? app : "iPhone",
-            title: title.trim(),
-            message: message.trim(),
+            title: title,
+            message: message,
             image: String(n.image || ""),
 
             // Vacío a propósito: el icono del puente es el mismo teléfono
@@ -243,6 +369,8 @@ Singleton {
             // teléfono mientras no mirabas es justo para lo que sirve. Ponlo a
             // `false` si prefieres respetar lo que pide el puente.
             keep: true,
+            answerAction: "",
+            declineAction: "",
             source: n
         };
     }
@@ -273,6 +401,8 @@ Singleton {
             // Aquí sí se respeta: una app que pide no ser guardada sabe lo que
             // dice (un aviso de volumen, por ejemplo).
             keep: !n.transient,
+            answerAction: "",
+            declineAction: "",
             source: n
         };
     }

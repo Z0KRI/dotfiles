@@ -62,11 +62,20 @@ Singleton {
     // Apunta la app la primera vez que notifica. Si ya estaba, no escribe
     // nada: así no se reescribe el archivo de preferencias con cada mensaje.
     function remember(name, phone): void {
-        if (!name || root.entryFor(name))
+        const saved = PreferencesRepository.notificationApps ?? [];
+
+        // BlueFerry 0.8 empezó a poner el título junto a la app ("Phone ·
+        // Suney"), y antes de saber leerlo se apuntó así cada conversación
+        // como si fuera una app. Esas entradas se limpian aquí, de paso.
+        const apps = saved.filter(app => !(app.phone && String(app.name).indexOf(" \u00b7 ") >= 0));
+        const known = !name || apps.some(app => app.name === name);
+
+        if (known && apps.length === saved.length)
             return;
 
-        PreferencesRepository.notificationApps = (PreferencesRepository.notificationApps ?? [])
-            .concat([{ name: name, phone: !!phone, allowed: true }]);
+        PreferencesRepository.notificationApps = known
+            ? apps
+            : apps.concat([{ name: name, phone: !!phone, allowed: true }]);
     }
 
     function setAllowed(name, on): void {

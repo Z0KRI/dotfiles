@@ -23,7 +23,7 @@ SettingsPage {
             anchors.horizontalCenter: parent.horizontalCenter
             icon: Theme.systemIcons.arch.icon
             font.family: Theme.systemIcons.arch.family
-            size: 76
+            ink: 64
             color: "#1793d1"   // el azul de Arch
         }
 

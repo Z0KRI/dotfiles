@@ -68,6 +68,15 @@ IslandOccupant {
         onTriggered: Notifications.advance()
     }
 
+    // Red de seguridad: una llamada no suena minuto y medio. Si para entonces
+    // nadie cerró su notificación (BlueFerry la cierra al dejar de sonar), se
+    // suelta la isla en vez de quedarse con una llamada que ya no existe.
+    Timer {
+        interval: 90000
+        running: root.active && Notifications.holds
+        onTriggered: Notifications.advance()
+    }
+
     // Una llamada se despliega sola en cuanto entra.
     Connections {
         target: Notifications
@@ -80,9 +89,9 @@ IslandOccupant {
         }
     }
 
-    // Busca una acción por su identificador. La llamada trae "answer" y
-    // "decline"; `Notifications.actions` las lleva, pero en una vista de
-    // llamada cada botón quiere la suya, no la lista.
+    // Busca una acción por su identificador. Cada botón de la llamada quiere
+    // la suya, no la lista: cuáles son lo dice Notifications.answerAction y
+    // declineAction (las de --calls o las del iPhone).
     function action(id): var {
         const list = Notifications.allActions;
 
@@ -230,7 +239,7 @@ IslandOccupant {
                     }
 
                     TapHandler {
-                        onTapped: Notifications.invoke(root.action("answer"))
+                        onTapped: Notifications.invoke(root.action(Notifications.answerAction))
                     }
                 }
 
@@ -256,7 +265,7 @@ IslandOccupant {
                     }
 
                     TapHandler {
-                        onTapped: Notifications.invoke(root.action("decline"))
+                        onTapped: Notifications.invoke(root.action(Notifications.declineAction))
                     }
                 }
             }
