@@ -4,8 +4,10 @@
 //   DropExpensiveFonts  fontconfig ignora las fuentes .woff/.woff2, que se
 //                       descomprimen en memoria. Tus fuentes son .ttf.
 //   UseQApplication     NO está a propósito: solo lo necesitan los menús
-//                       nativos (bandeja del sistema). Sin él Quickshell usa
-//                       QGuiApplication y no levanta la parte de widgets.
+//                       nativos de la bandeja. La bandeja sí se usa (para
+//                       LibrePods), pero su menú se lee desde QML, sin abrirlo.
+//                       Sin él Quickshell usa QGuiApplication y no levanta la
+//                       parte de widgets.
 
 // La raíz de tu shell. Cada feature vive en modules/ y se declara aquí una
 // sola vez. Las que se manejan desde Hyprland abren su puerta por IPC:

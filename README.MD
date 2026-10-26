@@ -2,7 +2,8 @@
 
 Mi escritorio en Arch Linux: **Hyprland** (config Lua) con una shell propia en
 **Quickshell** al estilo macOS — barra de menús, isla dinámica, Spotlight,
-Centro de control y Ajustes — y el iPhone conectado por **BlueFerry**.
+Centro de control y Ajustes —, con el iPhone conectado por **BlueFerry** y las
+AirPods manejados con **LibrePods**.
 
 Los mismos archivos sirven en la PC de casa y en la del trabajo; lo que cambia
 entre máquinas vive en `hypr/hosts/`.
@@ -13,8 +14,9 @@ entre máquinas vive en `hypr/hosts/`.
 git clone https://github.com/Z0KRI/dotfiles.git ~/Projects/dotfiles
 cd ~/Projects/dotfiles
 ./install.sh                 # paquetes + enlaces + servicios
-./install.sh --blueferry     # opcional: iPhone (notificaciones y mensajes)
+./install.sh --blueferry     # opcional: iPhone (notificaciones y mensajes); también lo actualiza
 ./install.sh --calls         # opcional: contestar llamadas del iPhone (oFono)
+./install.sh --airpods       # opcional: AirPods (control de ruido y batería)
 ./install.sh --check         # revisar qué falta, sin cambiar nada
 ```
 
@@ -96,7 +98,7 @@ Lo que hacen los atajos también se puede llamar a mano:
 ```bash
 qs ipc call launcher open|close|toggle
 qs ipc call settings open|close|toggle
-qs ipc call settings go wifi        # bluetooth, iphone, sound, displays, about…
+qs ipc call settings go wifi        # bluetooth, airpods, iphone, sound, about…
 qs ipc call capture region|screen|color
 ```
 
@@ -108,7 +110,9 @@ Las preferencias de la shell (`preferences.json`, `usage.json`) se guardan en
 `./install.sh --blueferry` clona BlueFerry, arma sus paquetes de Arch y los
 instala. Después se empareja desde su app (`blueferry-quickshell`). Su servicio
 arranca solo al iniciar sesión, y su paquete ya deja `bluetoothd` con
-`-E -P hfp`: no hace falta tocar `bluetooth.service`.
+`-E -P hfp`: no hace falta tocar `bluetooth.service`. Volver a correr
+`--blueferry` lo actualiza si su código cambió (los BlueFerry viejos dejan
+`bluetoothd` solo con `-E`, y así las llamadas no llegan).
 
 - **Notificaciones y SMS/iMessage**: llegan a la isla; los mensajes se pueden
   responder desde ahí. Los de WhatsApp no: llegan por ANCS, que no tiene dónde
@@ -116,6 +120,47 @@ arranca solo al iniciar sesión, y su paquete ya deja `bluetoothd` con
 - **Llamadas** (experimental): `./install.sh --calls` instala oFono del AUR,
   le da permiso a tu usuario, enlaza `blueferry/wireplumber/51-bluez-ofono.conf`
   y las enciende. `blueferry/install.sh --status` revisa cómo va.
+
+## AirPods (LibrePods)
+
+`./install.sh --airpods` instala LibrePods del AUR (`librepods-rust-git`). No
+hace falta abrirlo ni ponerlo en el autostart: la shell lo arranca minimizado
+al iniciar, porque necesita ser ella quien hospede la bandeja (LibrePods se
+cierra si al arrancar no hay bandeja).
+
+Con tus AirPods conectados:
+
+- **El sonido se pasa a ellos** al conectarlos, como en macOS (una vez por
+  conexión: si luego eliges otra salida, se respeta). Esto no necesita
+  LibrePods.
+- **Centro de control › Bluetooth** (o **Sonido**): tocarlos abre su página,
+  como en macOS: batería de cada AirPod y del estuche, control de ruido
+  (Desactivado, Transparencia, Adaptativo, Cancelación) y detección de
+  conversación.
+- **Ajustes › AirPods** aparece arriba de todo mientras están conectados; en
+  Ajustes › Bluetooth, la (i) junto a ellos lleva ahí.
+- **Isla dinámica**: al conectarlos enseña su nombre y su batería, y al cambiar
+  de modo (también apretando el tallo) el modo nuevo. Se ensancha lo que pida
+  el texto. Se apaga en Ajustes › Isla.
+
+La shell no habla con los AirPods directamente: lee y "pulsa" el menú de la
+bandeja de LibrePods (`quickshell/data/airpods/`). Lo que la shell no cubre
+(renombrarlos, volumen personalizado, habilitar el modo Desactivado, controles
+del tallo) está en la ventana de LibrePods: Ajustes › AirPods › Abrir
+LibrePods….
+
+**Modo Apple.** `--airpods` te pregunta (por defecto, no) si tu PC se presenta
+como un aparato de Apple: agrega `DeviceID = bluetooth:004C:0000:0000` a
+`/etc/bluetooth/main.conf`, guarda una copia en `~/.dotfiles_backup/<fecha>/` y
+reinicia Bluetooth. No cambia tu MAC. Los AirPods le dan entonces lo que solo le
+dan a Apple; en Linux, hoy, eso es sobre todo estar conectados a la vez al
+iPhone y a la PC. LibrePods lo marca "bajo tu propio riesgo" porque la PC se
+presenta así ante todos tus aparatos. Para quitarlo, vuelve a correr
+`./install.sh --airpods`. Su estado sale en Ajustes › AirPods.
+
+Sin LibrePods los AirPods funcionan como audífonos normales, solo sin esas
+opciones. Si usas la versión vieja (Qt, `librepods-git`), cambia
+`--start-minimized` por `--hide` en `LibrePodsRepository.qml`.
 
 ## Pendiente
 

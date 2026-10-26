@@ -21,6 +21,7 @@ Singleton {
     // un teléfono aunque la haya lanzado WhatsApp.
     readonly property var byKind: ({
         "call": "\uf095",
+        "missed-call": "\uf095",
         "phone-message": "\uf075",
         "phone-battery": "\uf243"
     })

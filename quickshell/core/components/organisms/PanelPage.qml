@@ -56,10 +56,15 @@ Column {
             onClicked: root.back()
         }
 
+        // Títulos largos (el nombre de unos audífonos) se cortan con "…" antes
+        // de llegar al interruptor.
         Label {
             anchors.left: backButton.right
             anchors.leftMargin: 10
+            anchors.right: root.showSwitch ? headerSwitch.left : parent.right
+            anchors.rightMargin: root.showSwitch ? 10 : 0
             anchors.verticalCenter: parent.verticalCenter
+            elide: Text.ElideRight
             text: root.title
             color: root.contentColor
             font.pixelSize: Theme.font.large
@@ -67,6 +72,7 @@ Column {
         }
 
         ToggleSwitch {
+            id: headerSwitch
             visible: root.showSwitch
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter

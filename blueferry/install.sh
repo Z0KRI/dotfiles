@@ -9,13 +9,15 @@
 #
 # Requisito: BlueFerry ya instalado (../install.sh --blueferry lo compila).
 #
-# Lo que NO hace, a propósito: tocar bluetooth.service. El paquete de Arch de
-# BlueFerry ya trae un drop-in que arranca bluetoothd con "-E -P hfp":
+# Lo que NO hace, a propósito: escribir su propio drop-in de bluetooth.service.
+# El paquete de Arch de BlueFerry ya trae uno que arranca bluetoothd con
+# "-E -P hfp":
 #   -E      las interfaces experimentales que necesita ANCS (notificaciones)
 #   -P hfp  apaga el manos libres propio de BlueZ 5.87+, que si no le gana
 #           el canal a oFono
 # Un drop-in nuestro con solo "-P hfp" le quitaría el -E y se perderían las
-# notificaciones. Aquí solo se comprueba que el proceso corra con las dos.
+# notificaciones. Aquí se comprueba que el proceso corra con las dos y, si el
+# drop-in está pero bluetoothd no lo ha tomado, se reinicia Bluetooth.
 
 set -euo pipefail
 
@@ -80,14 +82,36 @@ if ! command -v ofonod >/dev/null; then
 fi
 
 bluetoothd_flags_ok || {
-    if [[ -f "$vendor_dropin" ]]; then
-        warn "bluetoothd no corre con -E -P hfp, pero el drop-in de BlueFerry existe:"
-        warn "    sudo systemctl daemon-reload && sudo systemctl restart bluetooth"
-    else
-        warn "bluetoothd no corre con -E -P hfp y no encuentro $vendor_dropin."
-        warn "Ese archivo lo instala el paquete blueferry-backend: reinstálalo."
-    fi
-    die "arregla eso primero y vuelve a correr este script"
+    [[ -f "$vendor_dropin" ]] || die \
+        "bluetoothd no corre con -E -P hfp y falta $vendor_dropin. Lo instala el paquete blueferry-backend: reinstálalo (desde la raíz de los dotfiles: ./install.sh --blueferry)."
+
+    # Un BlueFerry viejo trae un drop-in con solo "-E", de antes de que BlueZ
+    # 5.87 trajera su propio manos libres. Reiniciar no sirve: hay que
+    # actualizarlo (el paquete nuevo reinicia Bluetooth al instalarse).
+    grep -q -- '-P hfp' "$vendor_dropin" || die \
+        "tu BlueFerry es viejo: su drop-in arranca bluetoothd solo con «$(sed -n 's|^ExecStart=/[^ ]*bluetoothd *||p' "$vendor_dropin")», sin -P hfp. Actualízalo y repite, desde la raíz de los dotfiles: ./install.sh --blueferry --calls"
+
+    # El drop-in está, pero bluetoothd sigue con los parámetros de antes. Pasa
+    # si BlueFerry se instaló con Bluetooth apagado o en otra corrida: el
+    # paquete solo reinicia Bluetooth si en ese momento estaba encendido.
+    say "aplicando el drop-in de BlueFerry: reiniciando Bluetooth (lo conectado se desconecta unos segundos)"
+    sudo systemctl daemon-reload
+    sudo systemctl restart bluetooth
+    for _ in 1 2 3 4 5; do
+        bluetoothd_flags_ok && break
+        sleep 1
+    done
+
+    bluetoothd_flags_ok || {
+        # Ni así: otro drop-in pisa el ExecStart del de BlueFerry. Gana el
+        # último en orden alfabético que ponga ExecStart.
+        warn "bluetoothd sigue sin -E -P hfp. Ahora corre así:"
+        warn "    $(pgrep -a bluetoothd || echo 'no está corriendo')"
+        warn "Otro archivo cambia cómo arranca. Estos son los de bluetooth.service:"
+        systemctl show -p DropInPaths --value bluetooth.service | tr ' ' '\n' | sed 's/^/      /'
+        die "quita el ExecStart de los que no sean de BlueFerry y vuelve a correr este script"
+    }
+    say "bluetoothd ya corre con -E -P hfp"
 }
 
 # ── 1. permiso sobre oFono ────────────────────────────────────────

@@ -50,6 +50,12 @@ Singleton {
     readonly property string icon: root.typed.icon
     readonly property string glyph: root.typed.glyph
 
+    // En una llamada: qué acción contesta y cuál rechaza. "answer"/"decline"
+    // si viene de --calls (el audio va a la PC), "ancs-positive"/"ancs-negative"
+    // si son los botones del iPhone (se contesta en el iPhone).
+    readonly property string answerAction: root.typed.answerAction
+    readonly property string declineAction: root.typed.declineAction
+
     // ── el historial ──────────────────────────────────────────────
     //
     // De la más nueva a la más vieja, y ya tipado: el centro de control lo

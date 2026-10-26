@@ -12,7 +12,9 @@ import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.organisms
+import qs.domain.airpods
 import qs.domain.bluetooth
+import qs.domain.settings
 
 SettingsPage {
     id: root
@@ -51,6 +53,23 @@ SettingsPage {
                 glyph: Theme.systemIcons.device[device.modelData.kind]
                 title: device.modelData.name
                 subtitle: device.modelData.detail !== "" ? device.modelData.detail : "No conectado"
+
+                // Tus AirPods conectados: la (i) lleva a su página, como en macOS.
+                Icon {
+                    visible: AirPods.owns(device.modelData)
+                    icon: Theme.systemIcons.info
+                    size: 15
+                    color: infoHover.hovered ? Theme.colors.accent : Theme.window.textMuted
+
+                    HoverHandler {
+                        id: infoHover
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    TapHandler {
+                        onTapped: SettingsControl.go("airpods")
+                    }
+                }
 
                 PushButton {
                     text: device.modelData.connected ? "Desconectar" : "Conectar"

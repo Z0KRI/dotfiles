@@ -39,6 +39,7 @@ AppWindow {
         displays: displaysPage,
         menubar: menuBarPage,
         island: islandPage,
+        airpods: airPodsPage,
         spotlight: spotlightPage,
         about: aboutPage
     })
@@ -91,6 +92,7 @@ AppWindow {
     Component { id: displaysPage; DisplaysPage {} }
     Component { id: menuBarPage; MenuBarPage {} }
     Component { id: islandPage; IslandPage {} }
+    Component { id: airPodsPage; AirPodsPage {} }
     Component { id: spotlightPage; SpotlightPage {} }
     Component { id: aboutPage; AboutPage {} }
 }

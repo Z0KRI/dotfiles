@@ -8,15 +8,29 @@ pragma Singleton
 // `id`: SettingsControl.open("wifi").
 //
 // Agregar una sección es una entrada aquí más una página en pages/.
+//
+// AirPods es la única que va y viene, como en macOS: sale arriba de todo
+// mientras están conectados. Aun sin ellos, `find` y el buscador la
+// encuentran (su página explica cómo conectarlas).
 
 import QtQuick
 import Quickshell
 import qs.core.theme
+import qs.domain.airpods
 
 Singleton {
     id: root
 
-    readonly property var groups: [
+    readonly property var airpods: ({
+        id: "airpods", title: AirPods.name, tint: "#636366",
+        icon: Theme.systemIcons.device.headphones,
+        keywords: "airpods beats audifonos cancelacion ruido transparencia adaptativo "
+                  + "conversacion bateria estuche librepods"
+    })
+
+    readonly property var groups: AirPods.connected ? [[root.airpods]].concat(root.fixed) : root.fixed
+
+    readonly property var fixed: [
         [
             {
                 id: "wifi", title: "Wi-Fi", tint: "#0a84ff",
@@ -67,7 +81,7 @@ Singleton {
             {
                 id: "island", title: "Isla dinámica", tint: "#1c1c1e",
                 icon: Theme.systemIcons.island,
-                keywords: "isla notch musica volumen reproductor"
+                keywords: "isla notch musica volumen reproductor airpods"
             },
             {
                 id: "spotlight", title: "Spotlight", tint: "#8e8e93",
@@ -84,7 +98,7 @@ Singleton {
         ]
     ]
 
-    readonly property var all: root.groups.reduce((list, group) => list.concat(group), [])
+    readonly property var all: root.fixed.reduce((list, group) => list.concat(group), [root.airpods])
 
     function find(id) {
         return root.all.find(section => section.id === id) ?? null;

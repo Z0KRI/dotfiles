@@ -11,6 +11,7 @@ import qs.core.components.molecules
 import qs.core.components.organisms
 import qs.core.components.templates
 import qs.domain.network
+import qs.domain.airpods
 import qs.domain.bluetooth
 import qs.domain.audio
 import qs.domain.media
@@ -40,8 +41,26 @@ DropdownWindow {
     readonly property int halfWidth: (root.fullWidth - root.cellGap) / 2
     readonly property int tallHeight: root.cellHeight * 2 + root.cellGap
 
-    // Página visible: "home", "wifi", "bluetooth" o "sound".
+    // Página visible: "home", "wifi", "bluetooth", "sound" o "airpods".
     property string page: "home"
+
+    // A los AirPods se llega desde Bluetooth o desde Sonido: "‹" regresa a
+    // la que te trajo.
+    property string airpodsFrom: "bluetooth"
+
+    function openAirPods(from): void {
+        root.airpodsFrom = from;
+        root.page = "airpods";
+    }
+
+    // Si se desconectan (o se cierra LibrePods) con su página abierta, no se
+    // queda una página vacía.
+    readonly property bool airpodsGone: root.page === "airpods"
+                                        && !(AirPods.connected && AirPods.controllable)
+    onAirpodsGoneChanged: {
+        if (root.airpodsGone)
+            root.page = root.airpodsFrom;
+    }
 
     // Buscar redes solo mientras ves la lista de Wi-Fi. Con start/stop y no
     // con un sí/no: Ajustes también puede estar buscando, y cerrar este panel
@@ -371,12 +390,24 @@ DropdownWindow {
             ChoiceRow {
                 required property var modelData
 
+                // Tus AirPods conectados (con LibrePods) abren su página, como
+                // en macOS; para desconectarlos hay un botón ahí dentro.
+                readonly property bool airpods: AirPods.owns(modelData) && AirPods.controllable
+
                 contentColor: Theme.glass.content
                 icon: Theme.systemIcons.device[modelData.kind]
                 text: modelData.name
-                subtitle: modelData.detail
+                subtitle: airpods && AirPods.modeLabel !== ""
+                    ? modelData.detail + " · " + AirPods.modeLabel
+                    : modelData.detail
+                trailingIcon: airpods ? Theme.systemIcons.chevronRight : ""
                 selected: modelData.connected
-                onTriggered: BluetoothControl.toggleDevice(modelData.address)
+                onTriggered: {
+                    if (airpods)
+                        root.openAirPods("bluetooth");
+                    else
+                        BluetoothControl.toggleDevice(modelData.address);
+                }
             }
         }
 
@@ -418,12 +449,128 @@ DropdownWindow {
             }
         }
 
+        // Con tus AirPods puestos, su control de ruido también está aquí,
+        // como en el menú de sonido de macOS.
+        SectionLabel {
+            visible: AirPods.connected && AirPods.controllable
+            text: "AirPods"
+        }
+
+        ChoiceRow {
+            visible: AirPods.connected && AirPods.controllable
+            contentColor: Theme.glass.content
+            icon: Theme.systemIcons.device.headphones
+            text: AirPods.name
+            subtitle: AirPods.modeLabel
+            trailingIcon: Theme.systemIcons.chevronRight
+            selected: true
+            onTriggered: root.openAirPods("sound")
+        }
+
         Item { width: 1; height: 6 }
 
         PillButton {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "Ajustes de sonido…"
             onClicked: root.openSettings("sound")
+        }
+    }
+
+    // ── AirPods ─────────────────────────────────────────────
+    // Lo del menú de macOS al tocar tus AirPods: batería de cada pieza,
+    // control de ruido y detección de conversación. Todo sale de LibrePods
+    // (ver domain/airpods/AirPods.qml).
+    PanelPage {
+        visible: root.page === "airpods"
+        title: AirPods.name
+        onBack: root.page = root.airpodsFrom
+
+        // Batería: izquierdo · derecho · estuche (o una sola si son Max).
+        Row {
+            visible: AirPods.pieces.length > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: Theme.spacing.md
+            topPadding: 2
+            bottomPadding: 4
+
+            Repeater {
+                model: AirPods.pieces
+
+                BatteryGauge {
+                    required property var modelData
+
+                    label: modelData.label
+                    level: modelData.level
+                    charging: modelData.charging
+                }
+            }
+        }
+
+        SectionLabel {
+            visible: AirPods.modes.length > 0
+            text: "Control de ruido"
+        }
+
+        Repeater {
+            model: AirPods.modes
+
+            ChoiceRow {
+                required property var modelData
+
+                contentColor: Theme.glass.content
+                opacity: modelData.enabled ? 1 : 0.4
+                icon: Theme.systemIcons.airpods[modelData.id]
+                text: modelData.label
+                selected: modelData.active
+                onTriggered: {
+                    if (modelData.enabled)
+                        AirPods.setMode(modelData.id);
+                }
+            }
+        }
+
+        SectionLabel {
+            visible: AirPods.hasConversation
+            text: "Conversación"
+        }
+
+        ChoiceRow {
+            visible: AirPods.hasConversation
+            contentColor: Theme.glass.content
+            icon: Theme.systemIcons.airpods.conversation
+            text: "Detección de conversación"
+            subtitle: AirPods.conversation ? "Activada" : "Desactivada"
+            selected: AirPods.conversation
+            onTriggered: AirPods.toggleConversation()
+        }
+
+        // Conectados pero LibrePods aún no los ve (recién conectados, o
+        // todavía hablando con ellos).
+        SectionLabel {
+            visible: AirPods.controllable && AirPods.modes.length === 0
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: "Esperando a que LibrePods lea tus AirPods…"
+        }
+
+        Item { width: 1; height: 6 }
+
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: Theme.spacing.sm
+
+            PillButton {
+                text: "Desconectar"
+                onClicked: {
+                    BluetoothControl.toggleDevice(AirPods.address);
+                    root.page = root.airpodsFrom;
+                }
+            }
+
+            PillButton {
+                text: "Ajustes de AirPods…"
+                onClicked: root.openSettings("airpods")
+            }
         }
     }
 }

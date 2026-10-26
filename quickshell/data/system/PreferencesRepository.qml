@@ -48,6 +48,7 @@ Singleton {
     // ── Isla ────────────────────────────────────────────────
     property alias islandVolume: adapter.islandVolume
     property alias islandPlayer: adapter.islandPlayer
+    property alias islandAirPods: adapter.islandAirPods
     property alias islandExpandOnHover: adapter.islandExpandOnHover
 
     // ── Spotlight ───────────────────────────────────────────
@@ -100,6 +101,7 @@ Singleton {
 
             property bool islandVolume: true
             property bool islandPlayer: true
+            property bool islandAirPods: true
             property bool islandExpandOnHover: true
 
             property bool launcherHistory: true

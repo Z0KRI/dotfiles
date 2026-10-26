@@ -120,4 +120,62 @@ Singleton {
         root.sending = false;
         root.lastError = String(message || "");
     }
+
+    // ── llamadas ──────────────────────────────────────────────────
+    //
+    // Dos caminos para contestar desde la isla:
+    //   - Los botones del iPhone: la notificación de la llamada trae Aceptar
+    //     y Rechazar, y se contesta EN el iPhone (hablas por él o por tus
+    //     AirPods). Es un ajuste de BlueFerry, apagado de fábrica, y solo
+    //     funciona con "todas las notificaciones del iPhone".
+    //   - La llamada en la PC (./install.sh --calls, oFono): el audio viene a
+    //     la computadora. Experimental.
+    //
+    // A BlueFerry se le pregunta solo cuando alguien mira (Ajustes › iPhone):
+    // el puente es un proceso de Python y no tiene por qué estar vivo.
+    property bool statusKnown: false
+    property bool callButtons: false
+    property string notificationPolicy: ""
+    property bool contentShown: true
+    property bool pcCalls: false
+    property string pcCallsState: ""
+    property string settingsError: ""
+
+    // Encendido no basta: sin todas las notificaciones la de la llamada no
+    // llega, y con el contenido oculto BlueFerry no manda los botones. Eso lo
+    // explica Ajustes › iPhone con notificationPolicy y contentShown.
+
+    function refreshStatus(): void {
+        PhoneBridge.call("status", {},
+            function (status) {
+                root.statusKnown = true;
+                root.settingsError = "";
+                root.callButtons = status.ancs_actions_preference === true;
+                root.notificationPolicy = String(status.notification_policy || "");
+                root.contentShown = status.notification_content_shown !== false;
+                root.pcCalls = status.calls_enabled === true;
+                root.pcCallsState = String(status.calls_state || "");
+            },
+            function (message) {
+                root.statusKnown = false;
+                root.settingsError = String(message || "");
+            });
+    }
+
+    function setCallButtons(on): void {
+        root.callButtons = on;   // respuesta inmediata; la consulta lo confirma
+        PhoneBridge.call("set_ancs_notification_actions", { enabled: on },
+            function () { root.refreshStatus(); },
+            function (message) {
+                root.settingsError = String(message || "");
+                root.refreshStatus();
+            });
+    }
+
+    // Los botones solo viajan con "todas las notificaciones del iPhone".
+    function showAllNotifications(): void {
+        PhoneBridge.call("set_notification_policy", { policy: "all" },
+            function () { root.refreshStatus(); },
+            function (message) { root.settingsError = String(message || ""); });
+    }
 }
