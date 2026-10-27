@@ -1,3 +1,4 @@
 *
 !.gitignore
 !init.lua
+!default.lua

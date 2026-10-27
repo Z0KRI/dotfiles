@@ -1,3 +1,8 @@
+pragma ComponentBehavior: Bound
+
+// (Bound: el componente en línea MoveZone puede llamar a root.startSystemMove()
+// y qmllint no se queja de acceso sin calificar.)
+
 // TEMPLATE: ventana de aplicación al estilo macOS Golden Gate. Barra lateral
 // de vidrio de borde a borde con los botones de ventana arriba, y a la
 // derecha una barra de herramientas sobre el contenido.
@@ -12,6 +17,7 @@
 // Ranuras (las llena quien la usa):
 //   sidebar   lo de la barra lateral, debajo de los botones de ventana
 //   toolbar   lo de la barra de herramientas
+//   overlay   encima de TODO, barra lateral incluida (hojas modales)
 //   (default) el contenido
 
 import QtQuick
@@ -24,6 +30,7 @@ FloatingWindow {
 
     property alias sidebar: sidebarHolder.data
     property alias toolbar: toolbarHolder.data
+    property alias overlay: overlayHolder.data
     default property alias content: contentHolder.data
 
     property int sidebarWidth: Theme.window.sidebarWidth
@@ -133,6 +140,12 @@ FloatingWindow {
             y: Theme.window.toolbarHeight
             width: contentBackground.width
             height: parent.height - y
+        }
+
+        // Al final: lo último declarado se dibuja encima.
+        Item {
+            id: overlayHolder
+            anchors.fill: parent
         }
     }
 }

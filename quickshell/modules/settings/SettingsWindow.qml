@@ -11,8 +11,10 @@ import Quickshell
 import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
+import qs.core.components.organisms
 import qs.core.components.templates
 import qs.domain.settings
+import qs.domain.desktop
 import qs.modules.settings.pages
 
 AppWindow {
@@ -81,6 +83,24 @@ AppWindow {
     Loader {
         anchors.fill: parent
         sourceComponent: root.pages[root.current.id] ?? aboutPage
+    }
+
+    // "¿Conservar esta configuración de pantalla?" Vive en la ventana y no en
+    // la página: si cambias de sección a media cuenta regresiva, sigue a la
+    // vista (y si cierras Ajustes, el dominio igual revierte al llegar a 0).
+    overlay: ConfirmSheet {
+        anchors.fill: parent
+
+        shown: Displays.confirming
+        icon: Theme.systemIcons.monitorCheck
+        tint: "#0a84ff"
+        title: "¿Conservar esta configuración de pantalla?"
+        message: "Si no la conservas, vuelve a la anterior en " + Displays.secondsLeft
+                 + (Displays.secondsLeft === 1 ? " segundo." : " segundos.")
+        rejectText: "Revertir"
+        acceptText: "Conservar"
+        onAccepted: Displays.keep()
+        onRejected: Displays.revert()
     }
 
     Component { id: wifiPage; WifiPage {} }

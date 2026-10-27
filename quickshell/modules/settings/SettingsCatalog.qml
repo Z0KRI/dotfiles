@@ -69,7 +69,8 @@ Singleton {
             {
                 id: "displays", title: "Pantallas", tint: "#0a84ff",
                 icon: Theme.systemIcons.sun,
-                keywords: "brillo luz nocturna monitor resolucion temperatura calida"
+                keywords: "brillo luz nocturna monitor monitores resolucion escala tamaño frecuencia hz "
+                          + "rotacion girar vrr duplicar espejo organizar acomodar temperatura calida"
             }
         ],
         [

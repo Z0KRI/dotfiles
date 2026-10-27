@@ -46,7 +46,9 @@ hypr/
 │   ├── workspace_windows_rules.lua
 │   └── workspaces.lua           primario por monitor + fullscreen automático
 └── hosts/
-    ├── init.lua                 carga hosts/<hostname>.lua o, si no existe, default.lua
+    ├── init.lua                 carga hosts/<hostname>.lua o, si no existe, default.lua;
+    │                            después, hosts/displays.lua si existe
+    ├── displays.lua             lo escribe Ajustes › Pantallas (por máquina, no se sube)
     └── default.lua              respaldo y plantilla (un monitor, teclado latam)
 
 quickshell/                      capas, como en S.I.R.A:

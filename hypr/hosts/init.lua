@@ -36,3 +36,12 @@ local function profileFor(host)
 end
 
 require("hosts." .. profileFor(readHostname()))
+
+-- Lo que conservas en Ajustes › Pantallas (lo escribe tu shell, también
+-- ignorado por git). Va DESPUÉS del perfil a propósito: hl.monitor() de un
+-- monitor que ya tiene regla solo cambia los campos que trae, así que pisa
+-- lo que tocaste en Ajustes y deja igual lo demás de tu perfil.
+-- Para volver al perfil: Ajustes › Pantallas › Restablecer (o borrar el archivo).
+if package.searchpath("hosts.displays", package.path) then
+    require("hosts.displays")
+end

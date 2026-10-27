@@ -37,7 +37,8 @@ Item {
 
     width: parent ? parent.width : implicitWidth
     implicitWidth: 400
-    implicitHeight: Math.max(Theme.window.rowHeight, texts.implicitHeight + 18)
+    // Lo que mida más: el texto o lo de la derecha (ej. chips en dos renglones).
+    implicitHeight: Math.max(Theme.window.rowHeight, texts.implicitHeight + 18, trailing.implicitHeight + 16)
     opacity: root.enabled ? 1 : 0.45
 
     readonly property bool hasLeading: root.icon !== "" || root.glyph !== ""

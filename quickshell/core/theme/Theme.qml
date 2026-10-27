@@ -165,6 +165,9 @@ Singleton {
         readonly property color control: root.isDark ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(0, 0, 0, 0.06)
         readonly property color controlRaised: root.isDark ? "#5b5b5f" : "#ffffff"
         readonly property color controlBorder: root.isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.12)
+        // Texto de los botones destructivos (Restablecer, Olvidar). En oscuro
+        // el rojo de error se pierde sobre el gris del botón: va uno más claro.
+        readonly property color destructive: root.isDark ? "#ff7b72" : "#b91c1c"
         readonly property color track: root.isDark ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.1)
         readonly property color knob: "#ffffff"
         readonly property color shadow: Qt.rgba(0, 0, 0, root.isDark ? 0.45 : 0.16)
@@ -241,6 +244,15 @@ Singleton {
         readonly property string gpu: "\ue66a"            // gpu
         readonly property string clock: "\ue250"          // clock-3
         readonly property string user: "\ue19f"           // user
+
+        // Pantallas.
+        readonly property string monitorCheck: "\ue482"   // monitor-check
+        readonly property string monitorOff: "\ue1dc"     // monitor-off
+        readonly property string rotate: "\ue149"         // rotate-cw
+        readonly property string mirror: "\ue09e"         // copy
+        readonly property string textSize: "\ue587"       // a-large-small
+        readonly property string resolution: "\ue2ec"     // scaling
+        readonly property string vrr: "\ue1b4"            // zap
 
         // AirPods (Lucide): modos de ruido, conversación y batería.
         readonly property var airpods: ({

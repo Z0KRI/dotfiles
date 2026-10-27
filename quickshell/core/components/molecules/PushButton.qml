@@ -44,7 +44,7 @@ Rectangle {
             if (root.primary)
                 return "white";
             if (root.destructive)
-                return Theme.colors.error;
+                return Theme.window.destructive;
             return Theme.window.text;
         }
     }
