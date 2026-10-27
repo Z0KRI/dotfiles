@@ -79,7 +79,8 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 
 | Atajo | Qué hace |
 |---|---|
-| `SUPER + Espacio` | Spotlight |
+| `SUPER + Espacio` | Spotlight: apps, archivos y web |
+| `SUPER + SHIFT + V` | Spotlight en el portapapeles (pega en la ventana donde estabas) |
 | `SUPER + ,` | Ajustes |
 | `SUPER + Enter` / `SUPER + E` | terminal / archivos |
 | `SUPER + Q` | cerrar ventana (si el workspace queda vacío, vuelve al 1) |
@@ -93,12 +94,26 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 | `SUPER + flechas` / `+ SHIFT` | mover el foco / intercambiar ventanas |
 | `SUPER + SHIFT + Q` | salir de Hyprland |
 
+Con Spotlight abierto:
+
+| Atajo | Qué hace |
+|---|---|
+| `SUPER + 1 / 2 / 3` (o `CTRL`) | Aplicaciones / Archivos / Portapapeles (otra vez: búsqueda general) |
+| `Tab` / `SHIFT + Tab` | modo siguiente / anterior |
+| `Enter` | abrir (si la app ya tiene ventana, va a ella) · pegar · buscar |
+| `CTRL + Enter` | abrir otra ventana · mostrar en carpeta · solo copiar |
+| `SHIFT + Supr` | borrar la entrada del portapapeles |
+| `Retroceso` (campo vacío) | volver a la búsqueda general |
+| `> comando` | ejecutar un comando |
+| `Esc` | borrar lo escrito; con el campo vacío, cerrar |
+
 ## La shell por IPC
 
 Lo que hacen los atajos también se puede llamar a mano:
 
 ```bash
 qs ipc call launcher open|close|toggle
+qs ipc call launcher mode clipboard # apps, files, clipboard o all
 qs ipc call settings open|close|toggle
 qs ipc call settings go wifi        # bluetooth, airpods, iphone, sound, about…
 qs ipc call capture region|screen|color
@@ -170,6 +185,5 @@ opciones. Si usas la versión vieja (Qt, `librepods-git`), cambia
   un bloqueador escuchando (hypridle + hyprlock). Aún no está configurado.
 - **No suspender** (Centro de control) inhibe la inactividad, pero sin un
   demonio de inactividad todavía no hay nada que inhibir.
-- **Spotlight: modo Archivos** con `plocate` (`plocate-updatedb.timer`).
-- El portapapeles ya se guarda con `cliphist`; falta el modo Portapapeles en
-  Spotlight.
+- **Spotlight**: calculadora, secciones de Ajustes como resultados y
+  miniaturas de las imágenes del portapapeles.

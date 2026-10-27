@@ -268,6 +268,22 @@ Singleton {
             batteryCharging: "\ue054" // battery-charging
         })
 
+        // Spotlight: los chips de modo y el glifo de respaldo de cada tipo de
+        // resultado (cuando el tema de íconos no trae uno).
+        readonly property var launcher: ({
+            all: "",         // search
+            apps: "",        // layout-grid
+            files: "",       // folder
+            clipboard: "",   // clipboard
+            file: "",        // file
+            image: "",       // image
+            text: "",        // file-text
+            web: "",         // globe
+            link: "",        // link
+            command: "",     // terminal
+            enter: ""        // corner-down-left
+        })
+
         // Menú de Arch (antes iban vacíos: sus glifos se perdieron al copiarlos).
         readonly property string forceQuit: "\ue084"      // circle-x
         readonly property string restart: "\ue148"        // rotate-ccw

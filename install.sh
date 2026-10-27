@@ -50,7 +50,9 @@ PACKAGES=(
     grim                          # capturas (CaptureRepository)
     slurp                         # captura de zona (CaptureRepository)
     wl-clipboard                  # wl-copy (capturas) y wl-paste (cliphist)
-    cliphist                      # historial del portapapeles (autostart)
+    cliphist                      # historial del portapapeles (autostart, Spotlight › Portapapeles)
+    plocate                       # Spotlight › Archivos (FileRepository)
+    xdg-utils                     # xdg-open: Spotlight abre páginas y archivos (OpenerRepository)
     hyprpicker                    # selector de color (Centro de control)
     glib2                         # gsettings: modo oscuro de las apps (ColorSchemeRepository)
     gsettings-desktop-schemas     # el esquema org.gnome.desktop.interface que usa gsettings
@@ -140,6 +142,14 @@ missing_packages() {
 
 aur_helper() {
     command -v paru 2>/dev/null || command -v yay 2>/dev/null || true
+}
+
+# ¿Ya existe el índice de plocate? Se le pregunta a plocate y no al archivo:
+# /var/lib/plocate es de root y del grupo plocate, y tu usuario puede no
+# tener permiso ni para ver si está. plocate sí (es setgid plocate). Toda
+# ruta contiene "/", así que con un índice cualquiera encuentra algo.
+plocate_ready() {
+    command -v plocate >/dev/null && plocate -l 1 -- / >/dev/null 2>&1
 }
 
 # "0.56.2" >= "0.56"
@@ -261,13 +271,22 @@ enable_services() {
     command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update && ok "carpetas de usuario"
 
     local unit
-    for unit in NetworkManager.service bluetooth.service; do
+    # plocate-updatedb.timer: regenera una vez al día el índice de archivos
+    # que usa Spotlight. Sin él, plocate busca en una base que nunca cambia.
+    for unit in NetworkManager.service bluetooth.service plocate-updatedb.timer; do
         if systemctl is-enabled --quiet "$unit" 2>/dev/null; then
             ok "$unit"
         else
             sudo systemctl enable --now "$unit" && ok "$unit habilitado"
         fi
     done
+
+    # El timer corre una vez al día: la primera vez no hay índice todavía y
+    # Spotlight no encontraría nada hasta mañana. Se arma ya (tarda unos
+    # segundos; recorre el disco una sola vez).
+    if command -v updatedb >/dev/null && ! plocate_ready; then
+        sudo updatedb && ok "índice de plocate creado"
+    fi
 
     # PipeWire viene habilitado de serie en Arch (presets de usuario).
     for unit in pipewire.socket pipewire-pulse.socket wireplumber.service; do
@@ -473,6 +492,13 @@ check() {
     else
         warn "sin hosts/${name:-<hostname>}.lua: se usa hosts/default.lua (un monitor, latam)"
         warn "  para personalizarlo: cp hypr/hosts/default.lua hypr/hosts/$name.lua"
+    fi
+
+    if plocate_ready; then
+        ok "índice de plocate (Spotlight › Archivos)"
+    else
+        warn "sin índice de plocate: Spotlight no encuentra archivos (sudo updatedb)"
+        problems=$((problems + 1))
     fi
 
     if command -v blueferry >/dev/null; then

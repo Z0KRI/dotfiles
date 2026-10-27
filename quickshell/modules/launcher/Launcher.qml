@@ -1,8 +1,11 @@
 // La feature de Spotlight. Siempre viva, pero la ventana solo existe
 // mientras está abierta (LazyLoader).
 //
-// Por IPC, para el atajo:
-//   qs ipc call launcher open|close|toggle
+// Por IPC, para los atajos de Hyprland:
+//   qs ipc call launcher open|close|toggle   la búsqueda general
+//   qs ipc call launcher mode clipboard      abrir directo en un modo
+//                                            (apps | files | clipboard | all);
+//                                            si ya está abierto en ese modo, lo cierra
 
 import Quickshell
 import Quickshell.Io
@@ -24,6 +27,9 @@ Scope {
         }
         function close(): void {
             LauncherControl.close();
+        }
+        function mode(name: string): void {
+            LauncherControl.openMode(name);
         }
     }
 

@@ -87,7 +87,7 @@ Singleton {
             {
                 id: "spotlight", title: "Spotlight", tint: "#8e8e93",
                 icon: Theme.systemIcons.search,
-                keywords: "buscar launcher apps historial atajo"
+                keywords: "buscar launcher apps historial atajo archivos plocate portapapeles cliphist pegar web buscador google duckduckgo"
             }
         ],
         [

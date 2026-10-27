@@ -53,6 +53,9 @@ Singleton {
 
     // ── Spotlight ───────────────────────────────────────────
     property alias launcherHistory: adapter.launcherHistory
+    property alias launcherSearchEngine: adapter.launcherSearchEngine
+    property alias launcherFiles: adapter.launcherFiles
+    property alias launcherPaste: adapter.launcherPaste
 
     FileView {
         id: file
@@ -105,6 +108,9 @@ Singleton {
             property bool islandExpandOnHover: true
 
             property bool launcherHistory: true
+            property string launcherSearchEngine: "google" // google | duckduckgo | bing
+            property bool launcherFiles: true    // archivos en la búsqueda general
+            property bool launcherPaste: true    // el portapapeles pega, no solo copia
         }
     }
 

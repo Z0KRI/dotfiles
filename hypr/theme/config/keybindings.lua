@@ -19,6 +19,11 @@ local mainMod = p.mainMod
 
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(p.menu))
 
+-- El portapapeles. No es SUPER + V (como Win + V) porque ese ya flota la
+-- ventana (abajo, WINDOW ACTIONS). Dentro de Spotlight, SUPER + 1/2/3
+-- cambian de modo: no les pongas binds aquí o Hyprland se los quedaría.
+hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd(p.clipboard))
+
 
 -----------------
 ---- AJUSTES ----

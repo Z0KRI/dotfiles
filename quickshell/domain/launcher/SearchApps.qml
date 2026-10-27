@@ -1,9 +1,11 @@
 // CASO DE USO: buscar apps en Spotlight.
 // Reglas:
 //   - Sin texto: todas, las más usadas primero y luego alfabético.
-//   - Con texto: coincidencia difusa en nombre (pesa 3), nombre genérico (2)
-//     y descripción (1), más un extra por uso (logarítmico: abrir una app 100
-//     veces no la deja fija arriba para siempre).
+//   - Con texto: coincidencia difusa en nombre (pesa 3), nombre genérico (2),
+//     descripción y palabras clave del .desktop (1), más un extra por uso
+//     (logarítmico: abrir una app 100 veces no la deja fija arriba para
+//     siempre). Las palabras clave son las que el .desktop declara para
+//     buscarlo: "navegador" encuentra Firefox aunque no lo diga su nombre.
 //   - Sin coincidencia, no sale aunque la uses mucho.
 
 pragma Singleton
@@ -41,12 +43,28 @@ Singleton {
     function rank(entry, needle) {
         const match = Fuzzy.score(entry.name, needle) * root.weightName
                     + Fuzzy.score(entry.genericName, needle) * root.weightGeneric
-                    + Fuzzy.score(entry.comment, needle) * root.weightComment;
+                    + Fuzzy.score(entry.comment, needle) * root.weightComment
+                    + root.keywordScore(entry, needle) * root.weightComment;
 
         if (match === 0)
             return 0;
 
         return match + root.usageBonus(entry);
+    }
+
+    // La mejor coincidencia entre sus palabras clave (Keywords= del .desktop).
+    // Solo cuenta si la palabra CONTIENE lo que escribiste (60 o más en
+    // Fuzzy): una app trae decenas de palabras clave, y con letras sueltas en
+    // orden casi cualquier búsqueda corta encontraría alguna.
+    function keywordScore(entry, needle) {
+        const keywords = entry.keywords ?? [];
+        let best = 0;
+        for (const keyword of keywords) {
+            const score = Fuzzy.score(keyword, needle);
+            if (score >= 60)
+                best = Math.max(best, score);
+        }
+        return best;
     }
 
     function usageBonus(entry) {
