@@ -15,6 +15,13 @@
 //
 // `rightInset` deja libre un espacio a la derecha para lo que quien la usa
 // quiera poner encima (en Spotlight, los chips de modo).
+//
+// Apariencia, para ponerla sobre cualquier fondo (en Spotlight, vidrio):
+//   glyph          el glifo de la izquierda (la lupa, o el ícono del modo)
+//   contentColor   texto, glifo y placeholder (este último a media opacidad)
+//   fontSize       el tamaño del texto; el glifo crece con él
+//   padding        el margen de los lados (en una cápsula, más que en un cuadro:
+//                  la curva se come las esquinas)
 
 import QtQuick
 import qs.core.theme
@@ -27,6 +34,10 @@ Surface {
     property alias placeholder: input.placeholder
     property int debounceDelay: 10
     property int rightInset: 0
+    property alias glyph: searchIcon.icon
+    property color contentColor: Theme.colors.baseContent
+    property alias fontSize: input.font.pixelSize
+    property int padding: Theme.spacing.md
 
     signal accepted()
     signal alternateAccepted()
@@ -69,10 +80,12 @@ Surface {
         id: searchIcon
 
         icon: Theme.systemIcons.search
+        color: root.contentColor
 
-        size: parent.height * 0.5
+        // Un poco más grande que el texto, como la lupa de macOS.
+        size: Math.round(input.font.pixelSize * 1.15)
         anchors.left: parent.left
-        anchors.leftMargin: Theme.spacing.md
+        anchors.leftMargin: root.padding
         anchors.verticalCenter: parent.verticalCenter
     }
 
@@ -86,7 +99,10 @@ Surface {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.leftMargin: Theme.spacing.md
-        anchors.rightMargin: Theme.spacing.md + root.rightInset
+        anchors.rightMargin: root.padding + root.rightInset
+
+        color: root.contentColor
+        placeholderColor: Qt.alpha(root.contentColor, 0.5)
 
         onTextEdited: debounceTimer.restart()
 

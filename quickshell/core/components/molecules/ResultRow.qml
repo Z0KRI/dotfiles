@@ -11,6 +11,13 @@
 //   entry.detail                  un dato a la derecha (la fecha de un
 //                                 archivo) cuando la fila NO está elegida
 //
+// Apariencia (de fábrica, la del tema; sobre vidrio, la de Theme.liquid):
+//   contentColor     títulos; el subtítulo y lo de la derecha, más tenues
+//   selectionColor   el fondo de la fila elegida
+//   selectedContent  el texto encima de ese fondo
+//   iconSize         el ícono; la fila crece con él
+//   tileColor, glyphColor   el cuadrito de respaldo del ícono
+//
 // Con el subtítulo vacío el título queda centrado solo: una Column no le
 // reserva espacio a un hijo invisible.
 
@@ -24,19 +31,32 @@ Surface {
     property var entry: null
     property bool selected: false
 
-    signal activated()
-    signal hovered()
+    property color contentColor: Theme.colors.baseContent
+    property color selectionColor: Qt.alpha(Theme.colors.baseContent, 0.1)
+    property color selectedContent: root.contentColor
+    property int iconSize: 28
+    property int titleSize: Theme.font.normal
+    property color tileColor: Theme.colors.neutral
+    property color glyphColor: Theme.colors.accent
 
+    signal activated()
+    // Dónde está el puntero, en coordenadas de la ventana. La fila no decide
+    // si eso cuenta como "el usuario la señaló": eso lo decide la lista.
+    signal hovered(point scenePosition)
+
+    readonly property color ink: root.selected ? root.selectedContent : root.contentColor
     readonly property string trailingText: root.selected ? (root.entry?.hint ?? "") : (root.entry?.detail ?? "")
 
-    color: root.selected ? Qt.alpha(Theme.colors.baseContent, 0.1) : "transparent"
-    radius: Theme.radius.md
-    implicitHeight: 45
+    color: root.selected ? root.selectionColor : "transparent"
+    radius: Math.round(root.height * 0.28)
+    implicitHeight: Math.max(45, root.iconSize + 14)
 
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        onEntered: root.hovered()
+        // positionChanged y no entered: entered también llega cuando la FILA
+        // se mueve debajo de un mouse quieto (al escribir, al desplazarse).
+        onPositionChanged: mouse => root.hovered(mapToItem(null, mouse.x, mouse.y))
         onClicked: root.activated()
     }
 
@@ -46,14 +66,18 @@ Surface {
         anchors.left: parent.left
         anchors.leftMargin: Theme.spacing.md
         anchors.verticalCenter: parent.verticalCenter
+        width: root.iconSize
+        height: root.iconSize
         iconName: root.entry?.icon ?? ""
         image: root.entry?.image ?? ""
         glyph: root.entry?.glyph || Theme.systemIcons.squirrel
+        tileColor: root.tileColor
+        glyphColor: root.glyphColor
     }
 
     Column {
         anchors.left: icon.right
-        anchors.leftMargin: Theme.spacing.md + Theme.spacing.sm
+        anchors.leftMargin: Theme.spacing.md
         // Sin texto a la derecha, el título usa todo el ancho.
         anchors.right: trailing.visible ? trailing.left : parent.right
         anchors.rightMargin: Theme.spacing.md
@@ -63,14 +87,16 @@ Surface {
         Label {
             width: parent.width
             text: root.entry?.title ?? ""
-            font.pixelSize: Theme.font.normal
+            color: root.ink
+            font.pixelSize: root.titleSize
+            font.weight: Font.Medium
         }
 
         Label {
             width: parent.width
             visible: text !== ""
             text: root.entry?.subtitle ?? ""
-            color: Qt.alpha(Theme.colors.baseContent, 0.6)
+            color: Qt.alpha(root.ink, 0.62)
             font.pixelSize: Theme.font.small
         }
     }
@@ -86,7 +112,7 @@ Surface {
         // avisa como "binding loop".
         visible: text !== ""
         text: root.trailingText
-        color: Qt.alpha(Theme.colors.baseContent, root.selected ? 0.75 : 0.5)
+        color: Qt.alpha(root.ink, root.selected ? 0.85 : 0.5)
         font.pixelSize: Theme.font.small
         elide: Text.ElideNone
     }

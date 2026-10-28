@@ -81,7 +81,7 @@ SettingsPage {
     SettingsGroup {
         header: "Liquid Glass"
         footer: "Cambia qué tan transparente es el vidrio de la barra, el Centro de "
-                + "control, los menús y esta barra lateral. En medio queda como siempre."
+                + "control, los menús, Spotlight y esta barra lateral. En medio queda como siempre."
 
         // Vista previa: un "fondo de pantalla" y tu barra encima.
         Item {

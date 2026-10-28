@@ -187,3 +187,7 @@ opciones. Si usas la versión vieja (Qt, `librepods-git`), cambia
   demonio de inactividad todavía no hay nada que inhibir.
 - **Spotlight**: calculadora, secciones de Ajustes como resultados y
   miniaturas de las imágenes del portapapeles.
+- **Liquid Glass**: Spotlight ya lo tiene (átomo `GlassSurface` + `hl.layer_rule`
+  con desenfoque). Falta llevarlo a la barra, la isla y el Centro de control:
+  cada capa necesita su propia regla por namespace. La refracción de Apple
+  (el vidrio que deforma lo de atrás en los bordes) no está: necesita un shader.

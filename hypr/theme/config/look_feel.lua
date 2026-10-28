@@ -53,11 +53,21 @@ hl.config({
             color        = 0xee1a1a1a,
         },
 
+        -- Desenfoque de lo translúcido: Spotlight (layer_rule en
+        -- workspace_windows_rules.lua) y las ventanas con transparencia.
+        -- Más pasadas = más difuso: macOS 27 subió la difusión detrás del
+        -- vidrio para que el texto se lea mejor. Cada pasada cuesta GPU; si
+        -- notas tirones, baja passes a 2.
+        -- variant/proportional NO van: son de la rama en desarrollo, no de 0.56.
         blur = {
-            enabled  = true,
-            size     = 3,
-            passes   = 1,
-            vibrancy = 0.1696,
+            enabled           = true,
+            size              = 8,
+            passes            = 3,
+            noise             = 0.02,   -- un grano leve: el vidrio no se ve plástico
+            contrast          = 0.95,
+            brightness        = 1.0,
+            vibrancy          = 0.22,   -- satura un poco los colores de atrás
+            vibrancy_darkness = 0.15,
         },
     },
 })

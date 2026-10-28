@@ -140,6 +140,57 @@ Singleton {
         readonly property int tileRadius: 22
     }
 
+    // Liquid Glass de macOS 27 (Golden Gate), para Spotlight. Lo usa el átomo
+    // GlassSurface. Cuatro capas, de abajo hacia arriba:
+    //
+    //   1. El DESENFOQUE: no es de QML. Lo pinta Hyprland detrás de la capa
+    //      (hl.layer_rule en workspace_windows_rules.lua). QML no puede ver lo
+    //      que hay detrás de su ventana.
+    //   2. El TINTE: un color translúcido encima. Su opacidad sigue al
+    //      deslizador de Liquid Glass de Ajustes, igual que la barra.
+    //   3. El BORDE OSCURO: Golden Gate oscureció los bordes para separar
+    //      capas sobre fondos claros.
+    //   4. El REFLEJO: un borde de luz más brillante en la esquina de arriba a
+    //      la izquierda y en la de abajo a la derecha, como luz sobre un vidrio
+    //      grueso.
+    //
+    // El vidrio es oscuro en los dos modos, como la barra y el Centro de
+    // control: el texto encima va siempre en blanco. QML no sabe qué hay
+    // detrás, así que no puede elegir un color de texto según el fondo.
+    readonly property QtObject liquid: QtObject {
+        // Los tintes nunca bajan de 0.26: Hyprland solo desenfoca donde el
+        // alfa supera su ignore_alpha (0.2). Más transparente que eso y el
+        // vidrio dejaría de desenfocar.
+        readonly property color field: Qt.rgba(0.06, 0.06, 0.08, root.liquidAlpha(0.72))  // la barra
+        readonly property color panel: Qt.rgba(0.10, 0.10, 0.12, root.liquidAlpha(0.48))  // los resultados
+
+        readonly property color highlight: Qt.rgba(1, 1, 1, 0.55)   // el punto más brillante del reflejo
+        readonly property color edge: Qt.rgba(0, 0, 0, 0.34)        // el borde oscuro
+        readonly property color sheen: Qt.rgba(1, 1, 1, 0.07)       // luz interior, arriba
+
+        readonly property color content: "#ffffff"
+        readonly property color contentMuted: Qt.rgba(1, 1, 1, 0.62)
+        readonly property color hover: Qt.rgba(1, 1, 1, 0.12)
+        // La fila elegida: el acento, casi opaco, para que el texto blanco
+        // se lea encima en cualquier fondo.
+        readonly property color selection: Qt.alpha(root.colors.accent, 0.82)
+        readonly property color tile: Qt.rgba(1, 1, 1, 0.14)        // fondo de un ícono de respaldo
+
+        // Golden Gate bajó el radio de las esquinas respecto a Tahoe.
+        readonly property int radius: 22
+        readonly property int gap: 10          // entre la barra y los resultados
+        readonly property int barHeight: 54
+        readonly property int barFont: 19
+        readonly property int rowHeight: 48
+        readonly property int iconSize: 34
+    }
+
+    // Opacidad del tinte de Liquid Glass: la misma curva que el resto del
+    // vidrio (glassAlpha), con un piso. Ver `liquid` arriba.
+    function liquidAlpha(alpha: real): real {
+        return Math.max(0.26, root.glassAlpha(alpha));
+    }
+
     // Ventanas de aplicación (Ajustes), estilo macOS Golden Gate: claras u
     // oscuras según isDark, con la barra lateral de vidrio de borde a borde.
     // El contenido es opaco a propósito: Golden Gate devolvió la legibilidad

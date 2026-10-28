@@ -4,7 +4,9 @@
 //
 // `options` es una lista de objetos con value, glyph y label. `label` no se dibuja:
 // es para quien use la molécula (un tooltip, Ajustes…). El elegido se pinta
-// con el color de acento; los demás, solo el glifo.
+// con chosenColor (el acento); los demás, solo el glifo en contentColor.
+// Al pasar el mouse, una capa de contentColor muy tenue: sirve sobre fondo
+// claro (contenido oscuro) y sobre vidrio (contenido blanco).
 //
 // (En este comentario no van llaves: el escáner de Quickshell deja de leer
 // los import en la primera línea que tenga una.)
@@ -20,6 +22,8 @@ Row {
     property var current
 
     property int size: 28
+    property color contentColor: Theme.colors.baseContent
+    property color chosenColor: Theme.colors.accent
 
     signal selected(var value)
 
@@ -38,8 +42,8 @@ Row {
             width: root.size
             height: root.size
             radius: root.size / 2
-            color: button.chosen ? Theme.colors.accent
-                 : hover.hovered ? Qt.alpha(Theme.colors.baseContent, 0.12)
+            color: button.chosen ? root.chosenColor
+                 : hover.hovered ? Qt.alpha(root.contentColor, 0.14)
                  : "transparent"
 
             Behavior on color {
@@ -50,7 +54,7 @@ Row {
                 anchors.centerIn: parent
                 icon: button.modelData.glyph
                 size: Math.round(root.size * 0.5)
-                color: button.chosen ? "#ffffff" : Qt.alpha(Theme.colors.baseContent, 0.75)
+                color: button.chosen ? "#ffffff" : Qt.alpha(root.contentColor, 0.8)
             }
 
             HoverHandler {

@@ -3,6 +3,14 @@
 // escrito); el modo vive en LauncherControl porque también lo cambian los
 // atajos de Hyprland.
 //
+// Aspecto de macOS 27 (Golden Gate): dos piezas de vidrio separadas.
+//   - La barra: una cápsula. A la izquierda, el glifo del modo (la lupa en
+//     la búsqueda general), igual que el ícono de la categoría en macOS.
+//   - Los resultados: un panel aparte, debajo, que cae y se desvanece al
+//     aparecer. Íconos grandes y la fila elegida en el color de acento.
+// El vidrio en sí (tinte, borde oscuro, reflejo) es el átomo GlassSurface; el
+// desenfoque lo pone Hyprland (workspace_windows_rules.lua).
+//
 // El flujo de una tecla:
 //   SearchField  →  query  →  Spotlight.prepare()   (lanza plocate si toca)
 //                         →  Spotlight.results()   (binding: lee lo que hay)
@@ -19,13 +27,13 @@
 //   Esc                 borra lo escrito; con el campo vacío, cierra
 
 import QtQuick
-import Quickshell.Widgets
 import qs.core.theme
+import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.organisms
 import qs.domain.launcher
 
-ClippingRectangle {
+Item {
     id: root
 
     property string query: ""
@@ -38,14 +46,14 @@ ClippingRectangle {
     // así al ocultarse se desvanece con los últimos resultados, no con otros.
     property var shownResults: []
 
+    // El espacio entre el borde del panel de resultados y las filas.
+    readonly property int inset: 6
+
     signal dismissed()
     signal launched()
 
-    implicitWidth: 580
-    implicitHeight: content.implicitHeight + Theme.spacing.sm
-
-    color: Theme.glass.menu
-    radius: Theme.radius.lg
+    implicitWidth: 620
+    implicitHeight: content.implicitHeight
 
     onResultsChanged: {
         if (root.results.length > 0)
@@ -69,28 +77,35 @@ ClippingRectangle {
         LauncherControl.setMode(root.mode === mode ? "all" : mode);
     }
 
-    // Absorbe los clics para que no lleguen al fondo del overlay.
-    MouseArea {
-        anchors.fill: parent
-    }
-
     Column {
         id: content
 
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: Theme.spacing.xs
-        spacing: Theme.spacing.sm
+        width: parent.width
+        spacing: Theme.liquid.gap
 
-        Item {
+        // ── La barra ─────────────────────────────────────────────
+        GlassSurface {
             width: parent.width
-            height: search.implicitHeight
+            height: Theme.liquid.barHeight
+            radius: height / 2
+            tint: Theme.liquid.field
+
+            // Absorbe los clics para que no lleguen al fondo del overlay,
+            // que cerraría Spotlight. El hueco ENTRE las dos piezas no tiene
+            // esto: un clic ahí sí cierra, como afuera.
+            MouseArea {
+                anchors.fill: parent
+            }
 
             SearchField {
                 id: search
 
                 anchors.fill: parent
+                implicitHeight: Theme.liquid.barHeight
+                padding: 20
+                fontSize: Theme.liquid.barFont
+                contentColor: Theme.liquid.content
+                glyph: LauncherCatalog.find(root.mode)?.glyph ?? Theme.systemIcons.search
                 placeholder: LauncherCatalog.placeholderFor(root.mode)
                 rightInset: scopes.width
 
@@ -124,10 +139,12 @@ ClippingRectangle {
                 id: scopes
 
                 anchors.right: parent.right
-                anchors.rightMargin: Theme.spacing.sm
+                anchors.rightMargin: 13
                 anchors.verticalCenter: parent.verticalCenter
+                size: 30
                 options: LauncherCatalog.modes
                 current: root.mode
+                contentColor: Theme.liquid.content
 
                 onSelected: value => {
                     root.toggleMode(value);
@@ -136,14 +153,26 @@ ClippingRectangle {
             }
         }
 
-        ResultList {
-            id: list
+        // ── Los resultados ───────────────────────────────────────
+        GlassSurface {
+            id: panel
 
             width: parent.width
-            height: root.showResults ? Math.min(contentHeight, 420) : 0
+            height: root.showResults ? Math.min(list.contentHeight, 440) + root.inset * 2 : 0
             opacity: root.showResults ? 1 : 0
             visible: opacity > 0
-            model: root.shownResults
+            tint: Theme.liquid.panel
+
+            // Cae unos píxeles mientras aparece: parece que se desprende de
+            // la barra. Translate mueve lo que se ve sin cambiar el espacio
+            // que ocupa en la Column.
+            transform: Translate {
+                y: root.showResults ? 0 : -10
+
+                Behavior on y {
+                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                }
+            }
 
             Behavior on height {
                 NumberAnimation {
@@ -159,7 +188,28 @@ ClippingRectangle {
                 }
             }
 
-            onActivated: entry => root.activate(entry, false)
+            MouseArea {
+                anchors.fill: parent
+            }
+
+            ResultList {
+                id: list
+
+                anchors.fill: parent
+                anchors.margins: root.inset
+                model: root.shownResults
+
+                contentColor: Theme.liquid.content
+                selectionColor: Theme.liquid.selection
+                selectedContent: "#ffffff"
+                rowHeight: Theme.liquid.rowHeight
+                iconSize: Theme.liquid.iconSize
+                titleSize: Theme.font.normal + 1
+                tileColor: Theme.liquid.tile
+                glyphColor: Theme.liquid.content
+
+                onActivated: entry => root.activate(entry, false)
+            }
         }
     }
 
