@@ -2,8 +2,9 @@
 
 Mi escritorio en Arch Linux: **Hyprland** (config Lua) con una shell propia en
 **Quickshell** al estilo macOS — barra de menús, isla dinámica, Spotlight,
-Centro de control y Ajustes —, con el iPhone conectado por **BlueFerry** y las
-AirPods manejados con **LibrePods**.
+Centro de control y Ajustes —, con el iPhone conectado por **BlueFerry**, las
+AirPods manejados con **LibrePods** y los teclados (el Apple, el Dell, el ROG…)
+integrados a la shell.
 
 Los mismos archivos sirven en la PC de casa y en la del trabajo; lo que cambia
 entre máquinas vive en `hypr/hosts/`.
@@ -47,15 +48,16 @@ hypr/
 │   └── workspaces.lua           primario por monitor + fullscreen automático
 └── hosts/
     ├── init.lua                 carga hosts/<hostname>.lua o, si no existe, default.lua;
-    │                            después, hosts/displays.lua si existe
+    │                            después, hosts/displays.lua y hosts/keyboard.lua si existen
     ├── displays.lua             lo escribe Ajustes › Pantallas (por máquina, no se sube)
+    ├── keyboard.lua             lo escribe Ajustes › Teclado (distribución por teclado; no se sube)
     └── default.lua              respaldo y plantilla (un monitor, teclado latam)
 
 quickshell/                      capas, como en S.I.R.A:
 ├── core/                        componentes (atoms → templates), tema y utilidades
 ├── data/                        lo único que habla con el sistema (Pipewire, BlueZ, hyprctl…)
 ├── domain/                      las reglas (qué se muestra, cuándo, cómo se guarda)
-└── modules/                     las features: bar, island, launcher, settings, capture
+└── modules/                     las features: bar, island, launcher, settings, capture, keys
 
 blueferry/                       llamadas del iPhone: oFono + WirePlumber (opcional)
 applications/                    el .desktop de Ajustes
@@ -93,6 +95,16 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 | `SUPER + SHIFT + S` | captura de zona |
 | `SUPER + flechas` / `+ SHIFT` | mover el foco / intercambiar ventanas |
 | `SUPER + SHIFT + Q` | salir de Hyprland |
+| `F1` / `F2` (teclado Apple) | brillo, con su nivel en la isla |
+| `F4` (Launchpad) | Spotlight en Aplicaciones; la lupa de los de 2021, la búsqueda general |
+| `F7` / `F8` / `F9` | anterior / reproducir-pausar / siguiente |
+| `F10` / `F11` / `F12` | silencio / bajar / subir volumen |
+
+Las teclas F son las del teclado Apple: su driver convierte la fila de arriba
+en brillo, música y volumen. En el Dell, el ROG o cualquier otro, F1–F12
+siguen siendo F1–F12; si traen teclas de música o volumen propias (en muchos,
+con Fn), también sirven. Con "Usar F1, F2… como estándar" (Ajustes › Teclado)
+en el Apple salen con `fn`.
 
 Con Spotlight abierto:
 
@@ -117,6 +129,8 @@ qs ipc call launcher mode clipboard # apps, files, clipboard o all
 qs ipc call settings open|close|toggle
 qs ipc call settings go wifi        # bluetooth, airpods, iphone, sound, about…
 qs ipc call capture region|screen|color
+qs ipc call brightness up|down      # un paso de 16, como macOS
+qs ipc call media playPause|next|previous
 ```
 
 Las preferencias de la shell (`preferences.json`, `usage.json`) se guardan en
@@ -178,6 +192,64 @@ presenta así ante todos tus aparatos. Para quitarlo, vuelve a correr
 Sin LibrePods los AirPods funcionan como audífonos normales, solo sin esas
 opciones. Si usas la versión vieja (Qt, `librepods-git`), cambia
 `--start-minimized` por `--hide` en `LibrePodsRepository.qml`.
+
+## Teclados
+
+La shell funciona con cualquier teclado: el Apple, uno Dell, un ROG Strix Scope,
+el de una laptop. Lo propio de Apple solo aparece cuando hay uno conectado.
+
+**Emparejar** (Bluetooth): **Ajustes › Bluetooth › Dispositivos cercanos ›
+Conectar**. Si el teclado pide un código, sale una hoja con el código en
+grande: se escribe **en ese teclado** y luego Retorno/Enter. No se ve nada
+mientras lo escribes (el teclado todavía no está conectado), y eso es normal.
+Quickshell no trae un "agente de emparejamiento" (la pieza que enseña ese
+código), así que la shell trae el suyo: `quickshell/data/bluetooth/pair-agent.py`,
+en Python con `python-gobject`. Vive lo que dura un emparejamiento y se cierra
+solo. Le sirve igual a un teléfono (compara el número) o a una bocina vieja
+(te pide su PIN, casi siempre 0000).
+
+**Ajustes › Teclado**:
+
+- **Tus teclados**: los que estén conectados, de cualquier marca, cada uno una
+  vez (aunque el sistema lo vea en varias partes: letras, multimedia…). Las
+  cámaras, los audífonos y los mouses gamer que se anuncian como "teclado" no
+  salen.
+- **Distribución por teclado**: cada uno la suya (Latinoamérica, España,
+  Inglés, Inglés internacional con AltGr para ñ y acentos); sin elegir, la de
+  `hosts/<equipo>.lua`. Se aplica al momento y se guarda en
+  `hypr/hosts/keyboard.lua`, que es de cada máquina: el Dell de la oficina y el
+  ROG de casa no se pisan. En un teclado Apple, España e Inglés usan la
+  variante `mac`.
+- **Teclado Apple** (solo con uno conectado):
+  - **F1–F12 como teclas estándar** y las teclas **° y <** de los teclados
+    ISO: son opciones del driver `hid_apple` del kernel. Piden tu contraseña
+    (pkexec) y se escriben en `/sys/module/hid_apple/parameters` y en
+    `/etc/modprobe.d/hid_apple.conf`, sin tocar otras opciones de esa línea.
+  - **Intercambiar ⌘ y ⌥**: no va en el driver sino en xkb, solo para el
+    teclado Apple (`altwin:swap_lalt_lwin` en `hypr/hosts/keyboard.lua`): la ⌥
+    izquierda hace de SUPER y la ⌘ de Alt, y la ⌥ derecha sigue siendo AltGr.
+    No pide contraseña y se aplica solo a cualquier teclado Apple que
+    conectes, también por cable.
+  - **La fila de arriba**: qué hace cada tecla (ver Atajos).
+
+  El driver de Apple solo maneja aparatos con el número de fabricante de
+  Apple: el Dell y el ROG ni pasan por él. Algunos genéricos sí (los de chip
+  SONiX, un Keychron en modo Mac…), porque se presentan como Apple; la shell
+  los reconoce con la misma lista del kernel y no los trata como Apple. Por
+  eso ⌘ y ⌥ van por xkb (en el driver se cambiarían también en ellos), y si
+  hay uno conectado, la opción de ° y < lo advierte.
+
+La lista de teclados se pone al día sola al conectar o desconectar uno, por
+cable o Bluetooth: el kernel avisa y la shell lo escucha con `udevadm monitor`.
+
+**Isla**: al conectar un teclado Bluetooth (de cualquier marca), su nombre y su
+batería; al bajar de 20 % y de 10 %, el aviso en rojo. La batería la lee UPower
+(los teclados la mandan por HID, no por BlueZ). Se apaga en Ajustes › Isla.
+
+En el arranque dual: el menú de GRUB no ve teclados Bluetooth (para elegir
+Windows, conéctalo con cable), y si lo emparejas en Windows y en Linux en la
+misma PC, solo funciona en el último donde lo emparejaste: cada sistema guarda
+su propia llave.
 
 ## Pendiente
 

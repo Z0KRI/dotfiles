@@ -39,6 +39,7 @@ AppWindow {
         sound: soundPage,
         appearance: appearancePage,
         displays: displaysPage,
+        keyboard: keyboardPage,
         menubar: menuBarPage,
         island: islandPage,
         airpods: airPodsPage,
@@ -85,23 +86,32 @@ AppWindow {
         sourceComponent: root.pages[root.current.id] ?? aboutPage
     }
 
-    // "¿Conservar esta configuración de pantalla?" Vive en la ventana y no en
-    // la página: si cambias de sección a media cuenta regresiva, sigue a la
-    // vista (y si cierras Ajustes, el dominio igual revierte al llegar a 0).
-    overlay: ConfirmSheet {
-        anchors.fill: parent
+    // Las hojas modales viven en la ventana y no en las páginas: si cambias de
+    // sección a media espera, siguen a la vista.
+    //
+    // "¿Conservar esta configuración de pantalla?": si cierras Ajustes, el
+    // dominio igual revierte al llegar a 0.
+    // El emparejamiento de Bluetooth: si cierras Ajustes, se cancela.
+    overlay: [
+        ConfirmSheet {
+            anchors.fill: parent
 
-        shown: Displays.confirming
-        icon: Theme.systemIcons.monitorCheck
-        tint: "#0a84ff"
-        title: "¿Conservar esta configuración de pantalla?"
-        message: "Si no la conservas, vuelve a la anterior en " + Displays.secondsLeft
-                 + (Displays.secondsLeft === 1 ? " segundo." : " segundos.")
-        rejectText: "Revertir"
-        acceptText: "Conservar"
-        onAccepted: Displays.keep()
-        onRejected: Displays.revert()
-    }
+            shown: Displays.confirming
+            icon: Theme.systemIcons.monitorCheck
+            tint: "#0a84ff"
+            title: "¿Conservar esta configuración de pantalla?"
+            message: "Si no la conservas, vuelve a la anterior en " + Displays.secondsLeft
+                     + (Displays.secondsLeft === 1 ? " segundo." : " segundos.")
+            rejectText: "Revertir"
+            acceptText: "Conservar"
+            onAccepted: Displays.keep()
+            onRejected: Displays.revert()
+        },
+
+        PairingSheet {
+            anchors.fill: parent
+        }
+    ]
 
     Component { id: wifiPage; WifiPage {} }
     Component { id: bluetoothPage; BluetoothPage {} }
@@ -110,6 +120,7 @@ AppWindow {
     Component { id: soundPage; SoundPage {} }
     Component { id: appearancePage; AppearancePage {} }
     Component { id: displaysPage; DisplaysPage {} }
+    Component { id: keyboardPage; KeyboardPage {} }
     Component { id: menuBarPage; MenuBarPage {} }
     Component { id: islandPage; IslandPage {} }
     Component { id: airPodsPage; AirPodsPage {} }

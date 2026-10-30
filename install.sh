@@ -64,7 +64,10 @@ PACKAGES=(
     wireplumber                   # wpctl (teclas de volumen en keybindings.lua)
     networkmanager                # Quickshell.Networking (Wi-Fi)
     bluez                         # Quickshell.Bluetooth
-    bluez-utils                   # bluetoothctl (emparejar teclados con PIN)
+    bluez-utils                   # bluetoothctl, por si quieres emparejar desde la terminal
+    python-gobject                # el agente que enseña el código al emparejar (data/bluetooth/pair-agent.py)
+    upower                        # batería del teclado y del mouse Bluetooth (UPowerRepository)
+    polkit                        # pkexec: Ajustes › Teclado cambia las opciones de hid_apple
 
     # Apps de programs.lua
     nautilus                      # fileManager
@@ -492,6 +495,15 @@ check() {
     else
         warn "sin hosts/${name:-<hostname>}.lua: se usa hosts/default.lua (un monitor, latam)"
         warn "  para personalizarlo: cp hypr/hosts/default.lua hypr/hosts/$name.lua"
+    fi
+
+    # El agente de emparejamiento corre con el python3 del sistema: es ese
+    # el que tiene que encontrar gi (python-gobject).
+    if python3 -c 'import gi; gi.require_version("Gio", "2.0")' 2>/dev/null; then
+        ok "python-gobject (emparejar teclados con código)"
+    else
+        warn "python3 no encuentra python-gobject: no podrás emparejar teclados desde Ajustes"
+        problems=$((problems + 1))
     fi
 
     if plocate_ready; then

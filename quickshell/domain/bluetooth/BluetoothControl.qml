@@ -8,12 +8,16 @@
 //   - Orden: conectados primero, luego por nombre.
 //   - El tipo sale del ícono que reporta el sistema: audífonos, bocina,
 //     teléfono, teclado, ratón, control, computadora; lo demás, genérico.
+//   - Batería: la que anuncia por Bluetooth y, si no, la que sabe UPower
+//     (los teclados y mouses la reportan por HID, no por BlueZ).
+//   - Emparejar va por BluetoothPairing, que enseña el código si lo piden.
 //   - Estado del mosaico: Desactivado / Activado / nombre / "N dispositivos".
 
 pragma Singleton
 
 import Quickshell
 import qs.data.bluetooth
+import qs.data.power
 import qs.data.applications
 import qs.domain.launcher
 
@@ -26,16 +30,22 @@ Singleton {
     readonly property string adapterName: BluetoothRepository.adapterName
 
     readonly property var devices: BluetoothRepository.devices
-        .map(device => Object.assign({}, device, {
-            kind: root.kindOf(device.icon),
-            detail: root.detailOf(device)
-        }))
+        .map(device => {
+            const battery = root.batteryOf(device);
+            return Object.assign({}, device, {
+                kind: root.kindOf(device.icon),
+                battery: battery.level,
+                charging: battery.charging,
+                detail: root.detailOf(device, battery)
+            });
+        })
         .sort((a, b) => (b.connected - a.connected) || a.name.localeCompare(b.name));
 
     readonly property var nearby: BluetoothRepository.nearby
         .map(device => Object.assign({}, device, {
             kind: root.kindOf(device.icon),
-            detail: device.pairing ? "Emparejando…" : ""
+            pairing: BluetoothPairing.isPairing(device.address),
+            detail: BluetoothPairing.isPairing(device.address) ? "Emparejando…" : ""
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -88,11 +98,13 @@ Singleton {
     }
 
     function pair(address): void {
-        BluetoothRepository.pair(address);
+        const device = root.nearby.find(d => d.address === address);
+        BluetoothPairing.start(address, device?.name ?? address, device?.kind ?? "bluetooth");
     }
 
     function cancelPair(address): void {
-        BluetoothRepository.cancelPair(address);
+        if (BluetoothPairing.isPairing(address))
+            BluetoothPairing.cancel();
     }
 
     function forget(address): void {
@@ -104,11 +116,23 @@ Singleton {
             LaunchApp.execute(root.settingsApp);
     }
 
-    function detailOf(device) {
+    // { level: 0..1 o -1, charging }
+    function batteryOf(device) {
+        if (device.battery >= 0)
+            return { level: device.battery, charging: false };
+
+        const power = device.connected ? UPowerRepository.forAddress(device.address) : null;
+        if (power)
+            return { level: power.percent, charging: power.charging };
+
+        return { level: -1, charging: false };
+    }
+
+    function detailOf(device, battery) {
         if (!device.connected)
             return "";
-        if (device.battery >= 0)
-            return "Conectado · " + Math.round(device.battery * 100) + "%";
+        if (battery.level >= 0)
+            return "Conectado · " + Math.round(battery.level * 100) + "%" + (battery.charging ? " · cargando" : "");
         return "Conectado";
     }
 

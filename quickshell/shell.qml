@@ -14,6 +14,8 @@
 //   qs ipc call launcher open|close|toggle
 //   qs ipc call settings open|close|toggle|go <sección>
 //   qs ipc call capture  region|screen|color
+//   qs ipc call brightness up|down
+//   qs ipc call media    playPause|next|previous
 
 import QtQuick
 import Quickshell
@@ -22,6 +24,7 @@ import qs.modules.launcher
 import qs.modules.island
 import qs.modules.settings
 import qs.modules.capture
+import qs.modules.keys
 
 ShellRoot {
     Bar {}
@@ -29,4 +32,5 @@ ShellRoot {
     Launcher {}
     Settings {}
     Capture {}
+    MediaKeys {}
 }

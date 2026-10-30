@@ -1,5 +1,9 @@
 // REPOSITORIO: único archivo que conoce BlueZ (vía Quickshell.Bluetooth).
 // Entrega datos planos, nunca objetos de Bluetooth.
+//
+// Emparejar NO pasa por aquí: Quickshell no trae un agente que enseñe el
+// código que piden los teclados, así que eso lo hace pair-agent.py
+// (PairingRepository.qml, en esta carpeta).
 
 pragma Singleton
 
@@ -34,16 +38,12 @@ Singleton {
             .map(device => root.plain(device))
         : []
 
-    // El que acabas de pedir emparejar. Cuando termine, se conecta solo.
-    property string pairingAddress: ""
-
     function plain(device) {
         return {
             address: device.address,
             name: device.name || device.deviceName || device.address,
             icon: device.icon,
             connected: device.connected,
-            pairing: device.pairing,
             battery: device.batteryAvailable ? device.battery : -1
         };
     }
@@ -73,53 +73,10 @@ Singleton {
             device.disconnect();
     }
 
-    // Emparejar = pair() + marcarlo de confianza (para que se reconecte solo
-    // la próxima vez) + conectar en cuanto quede emparejado.
-    function pair(address): void {
-        const device = root.find(address);
-        if (!device)
-            return;
-
-        root.pairingAddress = address;
-        device.trusted = true;
-        device.pair();
-    }
-
-    function cancelPair(address): void {
-        const device = root.find(address);
-        if (device && device.pairing)
-            device.cancelPair();
-
-        if (root.pairingAddress === address)
-            root.pairingAddress = "";
-    }
-
     // Olvidar = desemparejar. BlueZ borra las llaves y deja de reconectarlo.
     function forget(address): void {
         const device = root.find(address);
         if (device)
             device.forget();
-    }
-
-    // Un Connections por dispositivo, igual que en HyprlandRepository: así nos
-    // enteramos de cuándo termina de emparejarse el que pediste.
-    Variants {
-        model: root.adapter ? root.adapter.devices.values : []
-
-        Connections {
-            id: watcher
-
-            required property var modelData
-            target: watcher.modelData
-
-            function onPairedChanged() {
-                const device = watcher.modelData;
-
-                if (device.paired && device.address === root.pairingAddress) {
-                    root.pairingAddress = "";
-                    device.connect();
-                }
-            }
-        }
     }
 }

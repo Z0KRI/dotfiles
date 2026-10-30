@@ -20,6 +20,8 @@ Singleton {
     readonly property bool volume: PreferencesRepository.islandVolume
     readonly property bool player: PreferencesRepository.islandPlayer
     readonly property bool airpods: PreferencesRepository.islandAirPods
+    readonly property bool keyboard: PreferencesRepository.islandKeyboard
+    readonly property bool brightness: PreferencesRepository.islandBrightness
     readonly property bool expandOnHover: PreferencesRepository.islandExpandOnHover
 
     // ¿hay una app en pantalla completa donde sale la isla (el monitor
@@ -36,6 +38,10 @@ Singleton {
             return root.player;
         if (name === "airpods")
             return root.airpods;
+        if (name === "keyboard")
+            return root.keyboard;
+        if (name === "brightness")
+            return root.brightness;
         return true;
     }
 
@@ -49,6 +55,14 @@ Singleton {
 
     function setAirPods(on): void {
         PreferencesRepository.islandAirPods = on;
+    }
+
+    function setKeyboard(on): void {
+        PreferencesRepository.islandKeyboard = on;
+    }
+
+    function setBrightness(on): void {
+        PreferencesRepository.islandBrightness = on;
     }
 
     function setExpandOnHover(on): void {

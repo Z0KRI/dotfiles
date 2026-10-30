@@ -1,11 +1,13 @@
 // Ajustes › Bluetooth: encender y apagar, tus dispositivos y los cercanos.
 // Mientras la página está a la vista se buscan dispositivos nuevos.
 //
-// Emparejar desde aquí funciona con lo que empareja sin preguntar nada
-// (audífonos, bocinas, la mayoría de mouses y controles). Lo que pide
-// confirmar un código (teclados, teléfonos) necesita un "agente de
-// emparejamiento" que muestre ese código, y Quickshell no trae uno: para
-// esos, blueman-applet o bluetoothctl. La nota al pie lo dice.
+// "Conectar" en un cercano lo empareja. Si pide un código (un teclado, un
+// teléfono), sale la hoja de emparejamiento encima de la ventana
+// (modules/settings/PairingSheet.qml) con el código a escribir o a comparar.
+//
+// La (i) de una fila lleva a su página, como en macOS: tus AirPods a
+// Ajustes › AirPods y un teclado conectado (de cualquier marca) a
+// Ajustes › Teclado.
 
 import QtQuick
 import qs.core.theme
@@ -50,13 +52,16 @@ SettingsPage {
 
                 required property var modelData
 
+                // ¿Tiene página propia? Tus AirPods y los teclados, conectados.
+                readonly property string page: AirPods.owns(device.modelData) ? "airpods"
+                    : device.modelData.connected && device.modelData.kind === "keyboard" ? "keyboard" : ""
+
                 glyph: Theme.systemIcons.device[device.modelData.kind]
                 title: device.modelData.name
                 subtitle: device.modelData.detail !== "" ? device.modelData.detail : "No conectado"
 
-                // Tus AirPods conectados: la (i) lleva a su página, como en macOS.
                 Icon {
-                    visible: AirPods.owns(device.modelData)
+                    visible: device.page !== ""
                     icon: Theme.systemIcons.info
                     size: 15
                     color: infoHover.hovered ? Theme.colors.accent : Theme.window.textMuted
@@ -67,7 +72,7 @@ SettingsPage {
                     }
 
                     TapHandler {
-                        onTapped: SettingsControl.go("airpods")
+                        onTapped: SettingsControl.go(device.page)
                     }
                 }
 
@@ -102,8 +107,9 @@ SettingsPage {
     SettingsGroup {
         visible: BluetoothControl.powered
         header: "Dispositivos cercanos"
-        footer: "Los que piden confirmar un código (teclados, teléfonos) se emparejan "
-                + "desde la configuración avanzada o con bluetoothctl."
+        footer: "Para que aparezca, ponlo en modo de emparejamiento: un teclado Apple se "
+                + "enciende y ya; otros, con su tecla o combinación de Bluetooth. Si está "
+                + "emparejado con otro equipo, apaga ahí el Bluetooth."
 
         Repeater {
             model: BluetoothControl.nearby

@@ -236,3 +236,34 @@ hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
 hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
 hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
+
+
+-------------------------------------------
+---- TECLAS ESPECIALES (TECLADO APPLE) ----
+-------------------------------------------
+
+-- La fila de arriba del teclado Apple, como en macOS. Quien la convierte es
+-- el driver de Apple del kernel (hid_apple), y solo en los teclados Apple:
+-- F1 manda XF86MonBrightnessDown, F8 XF86AudioPlay, etc. En el Dell, el ROG
+-- o cualquier otro, F1–F12 siguen mandando F1–F12 y estos atajos no los
+-- tocan. Si alguno trae teclas de música, volumen o búsqueda propias (en
+-- muchos, con Fn), mandan estos mismos códigos y también sirven.
+-- Con "Usar F1, F2… como estándar" (Ajustes › Teclado) en el Apple salen con fn.
+--
+--   F1 / F2     brillo (la isla enseña el nivel)
+--   F3          Mission Control: XF86LaunchA. Hyprland no trae vista de
+--               ventanas, así que queda libre.
+--   F4          Launchpad (XF86LaunchB) o la lupa de los de 2021 (XF86Search)
+--   F7 F8 F9    anterior / reproducir-pausar / siguiente
+--   F10–F12     volumen: los de arriba (MULTIMEDIA KEYS)
+hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd(p.brightness .. " up"),   { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(p.brightness .. " down"), { locked = true, repeating = true })
+
+hl.bind("XF86LaunchB", hl.dsp.exec_cmd(p.launchpad))
+hl.bind("XF86Search",  hl.dsp.exec_cmd(p.menu))
+
+-- locked: siguen sirviendo con la pantalla bloqueada, como en el iPhone.
+hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd(p.media .. " playPause"), { locked = true })
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd(p.media .. " playPause"), { locked = true })
+hl.bind("XF86AudioNext",  hl.dsp.exec_cmd(p.media .. " next"),      { locked = true })
+hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd(p.media .. " previous"),  { locked = true })

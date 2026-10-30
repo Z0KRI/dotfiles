@@ -4,6 +4,9 @@
 //     con gamma se puede llegar a negro y quedarte sin ver nada.
 //   - Mientras arrastras se aplica como mucho cada 60 ms.
 //   - Se recuerda entre reinicios y se vuelve a aplicar al iniciar.
+//   - Las teclas de brillo (F1 y F2 del teclado Mac) suben o bajan un
+//     dieciseisavo, los mismos 16 pasos de macOS, y avisan con `stepped` para
+//     que la isla enseñe el nivel. El deslizador no avisa: ya lo estás viendo.
 
 pragma Singleton
 
@@ -20,8 +23,23 @@ Singleton {
 
     readonly property int gamma: Math.round((root.minimum + root.value * (1 - root.minimum)) * 100)
 
+    readonly property int steps: 16
+
+    // El nivel en porcentaje, como lo enseña la isla.
+    readonly property int percent: Math.round(root.value * 100)
+
+    signal stepped()
+
     function setValue(value): void {
         PreferencesRepository.brightness = Math.max(0, Math.min(1, value));
+    }
+
+    // +1 sube un paso, -1 baja uno. Redondea al paso más cercano: si el
+    // deslizador te dejó en medio de dos, la tecla te lleva al siguiente.
+    function step(direction): void {
+        const current = Math.round(root.value * root.steps);
+        root.setValue((current + (direction > 0 ? 1 : -1)) / root.steps);
+        root.stepped();
     }
 
     // Throttle: si ya hay una aplicación en camino, no se agenda otra;

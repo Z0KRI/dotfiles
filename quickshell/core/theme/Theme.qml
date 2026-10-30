@@ -319,6 +319,22 @@ Singleton {
             batteryCharging: "\ue054" // battery-charging
         })
 
+        // Teclado: Ajustes › Teclado, la hoja de emparejamiento y la isla.
+        readonly property string functionKeys: "\ue22d"   // function-square
+        readonly property string command: "\ue09a"        // command
+        readonly property string swapKeys: "\ue24a"       // arrow-left-right
+        readonly property string languages: "\ue0fe"      // languages
+        readonly property string missionControl: "\ue426" // app-window
+        readonly property string launchpad: "\ue0ff"      // layout-grid
+        readonly property string pairCode: "\ue4a3"       // key-round
+        readonly property string warning: "\ue193"        // alert-triangle
+        readonly property var batteryLevel: ({
+            full: "\ue055",      // battery-full
+            medium: "\ue057",    // battery-medium
+            low: "\ue056",       // battery-low
+            charging: "\ue054",  // battery-charging
+            warning: "\ue3ac"    // battery-warning
+        })
         // Spotlight: los chips de modo y el glifo de respaldo de cada tipo de
         // resultado (cuando el tema de íconos no trae uno).
         readonly property var launcher: ({

@@ -40,7 +40,7 @@ Singleton {
             {
                 id: "bluetooth", title: "Bluetooth", tint: "#0a84ff",
                 icon: Theme.systemIcons.bluetooth.on,
-                keywords: "audifonos dispositivos emparejar teclado mouse bocina"
+                keywords: "audifonos dispositivos emparejar codigo pin teclado mouse bocina"
             },
             {
                 id: "iphone", title: "iPhone", tint: "#30b94d",
@@ -75,6 +75,15 @@ Singleton {
         ],
         [
             {
+                id: "keyboard", title: "Teclado", tint: "#8e8e93",
+                icon: Theme.systemIcons.device.keyboard,
+                keywords: "teclado teclados magic apple mac dell rog asus logitech fn funcion f1 f12 "
+                          + "comando command opcion option cmd alt modificadoras distribucion idioma latam "
+                          + "español ingles internacional altgr iso bateria brillo launchpad multimedia hid_apple"
+            }
+        ],
+        [
+            {
                 id: "menubar", title: "Barra de menús", tint: "#5e5ce6",
                 icon: Theme.systemIcons.panelTop,
                 keywords: "barra ocultar reloj fecha hora escritorio app activa"
@@ -82,7 +91,7 @@ Singleton {
             {
                 id: "island", title: "Isla dinámica", tint: "#1c1c1e",
                 icon: Theme.systemIcons.island,
-                keywords: "isla notch musica volumen reproductor airpods"
+                keywords: "isla notch musica volumen brillo reproductor airpods teclado"
             },
             {
                 id: "spotlight", title: "Spotlight", tint: "#8e8e93",

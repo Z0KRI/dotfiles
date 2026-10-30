@@ -17,8 +17,8 @@ SettingsPage {
         icon: Theme.systemIcons.island
         tint: "#1c1c1e"
         title: "Isla dinámica"
-        description: "La píldora del borde de arriba: el volumen al cambiarlo, tus "
-                     + "AirPods, lo que suena y lo que te llega."
+        description: "La píldora del borde de arriba: el volumen y el brillo al cambiarlos, "
+                     + "tus AirPods y tu teclado, lo que suena y lo que te llega."
     }
 
     SettingsGroup {
@@ -30,6 +30,14 @@ SettingsPage {
             subtitle: "Al subir o bajar el volumen, por unos segundos."
             checked: IslandOccupants.volume
             onToggled: IslandOccupants.setVolume(!IslandOccupants.volume)
+        }
+
+        ToggleRow {
+            glyph: Theme.systemIcons.sun
+            title: "Brillo"
+            subtitle: "Al usar las teclas de brillo (en el teclado Apple, F1 y F2)."
+            checked: IslandOccupants.brightness
+            onToggled: IslandOccupants.setBrightness(!IslandOccupants.brightness)
         }
 
         ToggleRow {
@@ -46,6 +54,14 @@ SettingsPage {
             subtitle: "Al conectarlas, con su batería, y al cambiar el control de ruido."
             checked: IslandOccupants.airpods
             onToggled: IslandOccupants.setAirPods(!IslandOccupants.airpods)
+        }
+
+        ToggleRow {
+            glyph: Theme.systemIcons.device.keyboard
+            title: "Teclado"
+            subtitle: "Al conectar un teclado Bluetooth, con su batería, y cuando le queda poca."
+            checked: IslandOccupants.keyboard
+            onToggled: IslandOccupants.setKeyboard(!IslandOccupants.keyboard)
         }
 
         SettingsRow {

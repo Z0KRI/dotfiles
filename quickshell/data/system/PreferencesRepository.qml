@@ -49,7 +49,12 @@ Singleton {
     property alias islandVolume: adapter.islandVolume
     property alias islandPlayer: adapter.islandPlayer
     property alias islandAirPods: adapter.islandAirPods
+    property alias islandKeyboard: adapter.islandKeyboard
+    property alias islandBrightness: adapter.islandBrightness
     property alias islandExpandOnHover: adapter.islandExpandOnHover
+
+    // ── Teclado ─────────────────────────────────────────────
+    property alias keyboardSwapCommand: adapter.keyboardSwapCommand
 
     // ── Spotlight ───────────────────────────────────────────
     property alias launcherHistory: adapter.launcherHistory
@@ -105,7 +110,12 @@ Singleton {
             property bool islandVolume: true
             property bool islandPlayer: true
             property bool islandAirPods: true
+            property bool islandKeyboard: true
+            property bool islandBrightness: true
             property bool islandExpandOnHover: true
+
+            // ⌘ y ⌥ cambiadas en los teclados Apple (domain/keyboard/AppleKeyboard).
+            property bool keyboardSwapCommand: false
 
             property bool launcherHistory: true
             property string launcherSearchEngine: "google" // google | duckduckgo | bing

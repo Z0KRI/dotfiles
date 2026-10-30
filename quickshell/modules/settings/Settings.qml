@@ -12,6 +12,7 @@ import Quickshell
 import Quickshell.Io
 import qs.domain.settings
 import qs.domain.desktop
+import qs.domain.keyboard
 
 Scope {
     id: root
@@ -40,7 +41,11 @@ Scope {
     // (modo oscuro, acento y vidrio; brillo; luz nocturna). Un singleton se
     // crea la primera vez que alguien lo toca: si nadie los tocara hasta abrir
     // Ajustes, tu luz nocturna no volvería sola después de reiniciar.
-    readonly property var awake: [Appearance.dark, Brightness.value, NightLight.enabled]
+    //
+    // AppleKeyboard por lo mismo: le pone ⌘ y ⌥ cambiadas a un teclado Apple
+    // que conectes por primera vez (o por cable), aunque Ajustes no se abra.
+    readonly property var awake: [Appearance.dark, Brightness.value, NightLight.enabled,
+                                  AppleKeyboard.swapCommandOption]
 
     LazyLoader {
         active: SettingsControl.shown
