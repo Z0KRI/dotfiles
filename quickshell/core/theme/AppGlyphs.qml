@@ -22,7 +22,13 @@ Singleton {
 
     readonly property var byApp: [
         { match: "warp", glyph: "\ue20a", family: Theme.font.icon },
-        { match: "x",   glyph: "\ue8c9" },
+        { match: "x",   glyph: "\ue8c9", exact: true },
+        { match: "amazon", glyph: "\uf270" },
+        { match: "outlook", glyph: "\ueb1b" },
+        { match: "uber", glyph: "\ued31" },
+        { match: "coppel", glyph: "\udb80\udf06" },
+        { match: "youtube", glyph: "\uf16a" },
+        { match: "netflix", glyph: "\udb81\udf46" },
         { match: "spotify", glyph: "\uf1bc" },
         { match: "health",   glyph: "\uf004" },
         { match: "reddit",   glyph: "\uf281" },
@@ -34,7 +40,6 @@ Singleton {
         { match: "facebook",   glyph: "\uf09a" },
         { match: "twitter",    glyph: "\uf099" },
         { match: "slack",      glyph: "\uf198" },
-        { match: "spotify",    glyph: "\uf1bc" },
         { match: "youtube",    glyph: "\uf167" },
         { match: "gmail",      glyph: "\uf0e0" },
         { match: "mail",       glyph: "\uf0e0" },
@@ -73,10 +78,17 @@ Singleton {
         return root.familyForApp(appName);
     }
 
-    // La primera que encaje con el nombre, o null.
+    // La primera que encaje con el nombre, o null. Encaja por trozo
+    // ("WhatsApp Business" con "whatsapp"), salvo las que llevan
+    // `exact: true`: esas solo con una PALABRA entera del nombre. Es para los
+    // nombres cortos: "x" por trozo encaja con "Firefox", "Xbox" o "Dropbox".
     function entryFor(appName) {
         const name = String(appName || "").toLowerCase();
-        return root.byApp.find(entry => name.indexOf(entry.match) !== -1) ?? null;
+        const words = name.split(/[^a-z0-9áéíóúüñ]+/);
+
+        return root.byApp.find(entry => entry.exact
+            ? words.includes(entry.match)
+            : name.indexOf(entry.match) !== -1) ?? null;
     }
 
     function forApp(appName): string {

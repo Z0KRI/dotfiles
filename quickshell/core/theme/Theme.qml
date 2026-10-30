@@ -445,6 +445,18 @@ Singleton {
         readonly property int artOpen: 136
         readonly property int artOpenRadius: 10
 
+        // El desplegado con imagen, el del reproductor y el de las
+        // notificaciones: la imagen grande a la izquierda y, a su lado y
+        // dentro de su altura, el texto. Las dos vistas leen de aquí para
+        // verse de la misma familia.
+        readonly property int openStart: 16       // borde → imagen (aire para su halo)
+        readonly property int openEnd: 14         // texto → borde derecho
+        readonly property int openBottom: 18      // por encima de la curva de abajo
+        readonly property int openGap: 18         // imagen → texto
+        readonly property int openTitle: 17       // la canción, quien escribe
+        readonly property int openSubtitle: 13    // el artista, el mensaje
+        readonly property int openCaption: 11     // el programa o la app, en la esquina
+
         readonly property int spacing: 16
 
         // Los avisos de una línea de un aparato (AirPods, teclados): las

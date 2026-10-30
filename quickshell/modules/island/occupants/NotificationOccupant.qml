@@ -7,6 +7,10 @@
 // respuesta. Se eligen con `Notifications.kind`, que ya viene tipado — aquí no
 // hay un solo `split` ni un emoji.
 //
+// Las del mensaje son de la familia del reproductor: plegada, una línea que
+// mide lo que su texto; desplegada, la imagen grande a la izquierda y el
+// texto a su lado (CoverArt y las medidas `open*` de Theme.island).
+//
 // Regla de toda vista de la isla: HoverHandler y TapHandler, nunca un MouseArea
 // con `hoverEnabled`. Un MouseArea que acepta hover se lo queda, el detector de
 // la superficie deja de verlo y la tarjeta se cierra justo al ir a pulsar.
@@ -31,7 +35,7 @@ IslandOccupant {
 
     readonly property bool isCall: Notifications.kind === "call"
 
-    contentWidth: root.isCall ? 280 : 320
+    contentWidth: root.isCall ? 280 : root.toastWidth
     contentHeight: Theme.island.closedHeight
 
     expandable: true
@@ -298,6 +302,11 @@ IslandOccupant {
     }
 
     // ── notificación, plegada ─────────────────────────────────────
+    //
+    // Una línea, como el reproductor plegado: la foto chica (o el logo de la
+    // app), quién escribe y el mensaje. El mensaje va en UNA línea
+    // (`preview`): con sus saltos de línea, un Text pinta una por salto, no
+    // las corta con "…", y la de abajo se sale de la isla.
     property Component toastClosed: Component {
         Item {
             anchors.fill: parent
@@ -309,129 +318,181 @@ IslandOccupant {
                 onTapped: Notifications.invokeDefault()
             }
 
-            AppBadge {
+            CoverArt {
                 id: badge
 
                 anchors.left: parent.left
-                anchors.leftMargin: 7
+                anchors.leftMargin: root.toastEdge
                 anchors.verticalCenter: parent.verticalCenter
 
-                size: Theme.island.artClosed
+                width: Theme.island.artClosed
+                height: Theme.island.artClosed
+                radius: Theme.island.artClosedRadius
 
-                image: Notifications.image
+                // Sin cuadro gris: sin foto, el logo de la app en blanco, como
+                // el ícono de la app en la isla del iPhone.
+                color: "transparent"
+                source: Notifications.image
                 icon: Notifications.icon
+                iconScale: 1
                 glyph: Notifications.glyph
-                fontFamily: Notifications.glyphFamily
-                color: Theme.island.fg
+                glyphFamily: Notifications.glyphFamily
+                glyphSize: 15
+                glyphColor: Theme.island.fg
             }
 
             Label {
                 id: who
 
                 anchors.left: badge.right
-                anchors.leftMargin: 8
+                anchors.leftMargin: root.toastGap
                 anchors.verticalCenter: parent.verticalCenter
 
-                // Se queda con lo que necesite, pero nunca más de la mitad: un
-                // nombre largo no puede comerse el mensaje entero.
-                width: Math.min(who.implicitWidth, parent.width * 0.45)
+                // Se queda con lo que necesite, pero con mensaje nunca más de
+                // la mitad: un nombre largo no puede comerse el mensaje entero.
+                width: Math.min(who.implicitWidth,
+                                Notifications.preview.length > 0
+                                    ? parent.width * 0.45
+                                    : parent.width - who.x - root.toastEnd)
 
-                text: Notifications.title.length > 0
-                    ? Notifications.title
-                    : Notifications.appName
-
+                text: Notifications.headline
                 color: Theme.island.fg
-                font.pixelSize: 12
-                font.bold: true
-                elide: Text.ElideRight
+                font.pixelSize: root.toastText
+                font.weight: Font.DemiBold
+                maximumLineCount: 1
             }
 
             Label {
                 anchors.left: who.right
-                anchors.leftMargin: 7
+                anchors.leftMargin: root.toastSplit
                 anchors.right: parent.right
-                anchors.rightMargin: 10
+                anchors.rightMargin: root.toastEnd
                 anchors.verticalCenter: parent.verticalCenter
 
-                text: Notifications.message
+                text: Notifications.preview
                 color: Theme.island.muted
-                font.pixelSize: 12
+                font.pixelSize: root.toastText
 
                 // Texto plano: el servidor anuncia `bodyMarkupSupported: false`.
                 // Lo que venía escapado ya lo desescapó el dominio.
                 textFormat: Text.PlainText
+                maximumLineCount: 1
                 elide: Text.ElideRight
             }
         }
     }
 
-    // ── notificación, desplegada ──────────────────────────────────
+    // ── notificación, desplegada: como el reproductor ─────────────
+    //
+    // La misma familia que el reproductor desplegado (las medidas salen de
+    // Theme.island): la imagen grande a la izquierda —la foto de quien
+    // escribe con su halo, o el ícono o el logo de la app en su cuadro— y a
+    // su lado, dentro de su altura: quién escribe, la app en la esquina, el
+    // mensaje y, abajo, los botones o el campo para responder.
     property Component toastOpen: Component {
         Item {
             id: card
 
             anchors.fill: parent
             anchors.topMargin: Theme.island.openTopRadius
-            anchors.leftMargin: 26
-            anchors.rightMargin: 26
-            anchors.bottomMargin: 22
+            anchors.leftMargin: Theme.island.openStart
+            anchors.rightMargin: Theme.island.openEnd
+            anchors.bottomMargin: Theme.island.openBottom
 
-            AppBadge {
-                id: bigBadge
+            CoverArt {
+                id: art
 
                 anchors.left: parent.left
-                anchors.top: parent.top
+                anchors.verticalCenter: parent.verticalCenter
 
-                size: 56
+                width: Theme.island.artOpen
+                height: Theme.island.artOpen
+                radius: Theme.island.artOpenRadius
+                decodeSize: Theme.island.artOpen * 2
 
-                image: Notifications.image
+                source: Notifications.image
                 icon: Notifications.icon
                 glyph: Notifications.glyph
-                fontFamily: Notifications.glyphFamily
-                color: Theme.island.fg
+                glyphFamily: Notifications.glyphFamily
+                glyphSize: 52
+                glow: true
             }
 
-            Column {
-                anchors.left: bigBadge.right
-                anchors.leftMargin: Theme.island.spacing
+            Item {
+                id: side
+
+                anchors.left: art.right
+                anchors.leftMargin: Theme.island.openGap
                 anchors.right: parent.right
-                anchors.top: parent.top
+                anchors.top: art.top
+                anchors.bottom: art.bottom
+            }
 
-                spacing: 4
+            // La app de verdad ("Gmail", no "BlueFerry"), en la esquina con
+            // su logo: donde el reproductor pone el programa que suena. Si no
+            // hay nadie detrás, la app ya es el título y aquí sobra.
+            Row {
+                id: source
 
-                // La aplicación de verdad: "WhatsApp", no "BlueFerry".
+                anchors.right: side.right
+                anchors.top: side.top
+                anchors.topMargin: 2
+
+                visible: Notifications.title.length > 0 && Notifications.appName.length > 0
+                spacing: 5
+
                 Label {
-                    width: parent.width
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Notifications.glyph
+                    color: Theme.island.muted
+                    font.family: Notifications.glyphFamily
+                    font.pixelSize: Theme.island.openCaption
+                }
+
+                Label {
+                    id: sourceName
+
+                    // Un nombre de app largo no se come el título.
+                    width: Math.min(sourceName.implicitWidth, side.width * 0.35)
                     text: Notifications.appName
                     color: Theme.island.muted
-                    font.pixelSize: 11
-                    elide: Text.ElideRight
+                    font.pixelSize: Theme.island.openCaption
+                    maximumLineCount: 1
                 }
+            }
 
-                // El remitente. Oculto cuando no hay: una notificación de
-                // sistema no tiene a nadie detrás, y una línea vacía se nota.
-                Label {
-                    width: parent.width
-                    visible: Notifications.title.length > 0
+            Label {
+                id: headline
 
-                    text: Notifications.title
-                    color: Theme.island.fg
-                    font.pixelSize: 16
-                    font.bold: true
-                    elide: Text.ElideRight
-                }
+                anchors.left: side.left
+                anchors.right: source.visible ? source.left : side.right
+                anchors.rightMargin: source.visible ? 14 : 0
+                anchors.top: side.top
 
-                Label {
-                    width: parent.width
-                    text: Notifications.message
-                    color: Theme.island.muted
-                    font.pixelSize: 13
+                text: Notifications.headline
+                color: Theme.island.fg
+                font.pixelSize: Theme.island.openTitle
+                font.weight: Font.DemiBold
+                maximumLineCount: 1
+            }
 
-                    textFormat: Text.PlainText
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: Notifications.replyable ? 2 : 3
-                    elide: Text.ElideRight
-                }
+            // El mensaje, hasta donde empiezan los botones. `Text.Wrap` y no
+            // `WordWrap`: una palabra más ancha que la isla (un enlace) se
+            // parte en vez de salirse por la derecha.
+            Label {
+                anchors.left: side.left
+                anchors.right: side.right
+                anchors.top: headline.bottom
+                anchors.topMargin: 3
+
+                text: Notifications.message
+                color: Theme.island.muted
+                font.pixelSize: Theme.island.openSubtitle
+
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                maximumLineCount: 3
+                elide: Text.ElideRight
             }
 
             // ── responder ─────────────────────────────────────────
@@ -441,13 +502,13 @@ IslandOccupant {
             Rectangle {
                 id: composer
 
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
+                anchors.left: side.left
+                anchors.right: side.right
+                anchors.bottom: side.bottom
 
                 visible: Notifications.replyable && Phone.available
-                height: 40
-                radius: 20
+                height: 36
+                radius: height / 2
                 color: Theme.island.track
 
                 // El campo pide el teclado al hacer clic, y la ventana lo tiene
@@ -457,13 +518,14 @@ IslandOccupant {
                     id: field
 
                     anchors.left: parent.left
-                    anchors.leftMargin: 16
+                    anchors.leftMargin: 14
                     anchors.right: sendButton.left
                     anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
 
                     color: Theme.island.fg
-                    font.pixelSize: 13
+                    font.family: Theme.font.ui
+                    font.pixelSize: Theme.island.openSubtitle
 
                     clip: true
                     selectByMouse: true
@@ -474,11 +536,13 @@ IslandOccupant {
                     onAccepted: card.send()
 
                     Label {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         visible: field.text.length === 0 && !field.activeFocus
                         text: "Responder a " + Notifications.title
                         color: Theme.island.muted
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.island.openSubtitle
                     }
                 }
 
@@ -486,11 +550,11 @@ IslandOccupant {
                     id: sendButton
 
                     anchors.right: parent.right
-                    anchors.rightMargin: 5
+                    anchors.rightMargin: 4
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 30
-                    height: 30
+                    width: 28
+                    height: 28
 
                     // Azul cuando hay algo que mandar, como en Mensajes.
                     enabled: field.text.trim().length > 0 && !Phone.sending
@@ -520,44 +584,91 @@ IslandOccupant {
                 }
             }
 
+            // Si no se pudo mandar, justo encima del campo (no encima de él).
             Label {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
+                anchors.left: side.left
+                anchors.right: side.right
+                anchors.bottom: composer.top
+                anchors.bottomMargin: 4
 
-                visible: Phone.lastError.length > 0 && Notifications.replyable
+                visible: composer.visible && Phone.lastError.length > 0
                 text: Phone.lastError
                 color: "#ff453a"
-                font.pixelSize: 11
-                elide: Text.ElideRight
+                font.pixelSize: Theme.island.openCaption
+                maximumLineCount: 1
             }
 
-            // Las acciones de la aplicación, y al final el descarte, que es
-            // nuestro y siempre está. Se esconden cuando hay campo de respuesta:
-            // no caben los dos y la respuesta es lo que querías.
+            // Las acciones de la aplicación y, al final, el descarte, que es
+            // nuestro y siempre está; ese sin fondo, como anterior y siguiente
+            // en el reproductor, para que lo de la app sea lo que destaca. Se
+            // esconden cuando hay campo de respuesta: no caben los dos y la
+            // respuesta es lo que querías. Tres acciones como mucho: más no
+            // caben a lo ancho.
             Row {
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
+                anchors.right: side.right
+                anchors.bottom: side.bottom
 
                 visible: !composer.visible
-                spacing: 10
+                spacing: 8
 
                 Repeater {
-                    model: Notifications.actions
+                    model: Notifications.actions.slice(0, 3)
 
                     IslandButton {
                         required property var modelData
 
+                        height: 30
                         text: modelData.text
                         onTapped: Notifications.invoke(modelData)
                     }
                 }
 
                 IslandButton {
+                    height: 30
+                    flat: true
                     text: "Descartar"
+                    textColor: Theme.island.muted
                     onTapped: Notifications.dismissCurrent()
                 }
             }
         }
+    }
+
+    // ── el ancho plegado ──────────────────────────────────────────
+    //
+    // Lo que mide el texto, entre el ancho mínimo de la isla y el mismo tope
+    // que los avisos de los AirPods; más allá, el mensaje se corta con "…".
+    // Se mide aquí y no en la vista: la isla toma este ancho ANTES de cargar
+    // lo de adentro.
+    readonly property int toastEdge: 7      // borde → foto
+    readonly property int toastGap: 8       // foto → nombre
+    readonly property int toastSplit: 7     // nombre → mensaje
+    readonly property int toastEnd: 12      // mensaje → borde
+    readonly property int toastText: 12
+
+    TextMetrics {
+        id: headMetrics
+        font.family: Theme.font.ui
+        font.pixelSize: root.toastText
+        font.weight: Font.DemiBold
+        text: Notifications.headline
+    }
+
+    TextMetrics {
+        id: previewMetrics
+        font.family: Theme.font.ui
+        font.pixelSize: root.toastText
+        text: Notifications.preview
+    }
+
+    readonly property int toastWidth: {
+        const message = Notifications.preview.length > 0
+            ? root.toastSplit + previewMetrics.advanceWidth
+            : 0;
+        const inner = root.toastEdge + Theme.island.artClosed + root.toastGap
+                      + headMetrics.advanceWidth + message + root.toastEnd;
+        const total = Math.ceil(inner) + Theme.island.closedTopRadius * 2;   // las alas
+
+        return Math.max(Theme.island.minWidth, Math.min(Theme.island.peekMaxWidth, total));
     }
 }

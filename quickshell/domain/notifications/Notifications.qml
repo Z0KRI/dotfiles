@@ -66,6 +66,16 @@ Singleton {
     readonly property string appName: root.typed.appName
     readonly property string title: root.typed.title
     readonly property string message: root.typed.message
+
+    // El mensaje en UNA línea, para la isla plegada: los saltos y los espacios
+    // de más se vuelven un espacio. Un Text con saltos de línea no se corta
+    // con "…": pinta una línea por salto y la de abajo se sale de la isla.
+    readonly property string preview: root.message.replace(/\s+/g, " ").trim()
+
+    // Lo que va en negritas: quién escribe, o la app si no hay nadie detrás
+    // (una notificación del sistema).
+    readonly property string headline: root.title.length > 0 ? root.title : root.appName
+
     readonly property string image: root.typed.image
     readonly property string icon: root.typed.icon
     readonly property string glyph: root.typed.glyph

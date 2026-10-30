@@ -1,7 +1,13 @@
 // MOLÉCULA: una carátula. La imagen con sus esquinas redondeadas; si no hay
-// —el reproductor no la manda, todavía no llega o no se pudo leer—, un
-// cuadro gris con un glifo (`glyph`): la nota para música, la tele para un
-// video. Cuando la imagen llega, aparece encima con un fundido.
+// —no la mandaron, todavía no llega o no se pudo leer—, un cuadro con lo
+// siguiente que haya, como AppBadge:
+//   1. `source`: la imagen, que llena el cuadro (la carátula, la foto de
+//      quien escribe).
+//   2. `icon`: el ícono de la app, centrado y más chico (`iconScale`): un
+//      ícono no se recorta para llenar.
+//   3. `glyph`: un glifo de fuente (`glyphFamily`), el que no falla nunca. La
+//      nota para música, la tele para un video, el logo de la app.
+// Cuando la imagen llega, aparece encima con un fundido.
 //
 // `glow`: detrás, la misma carátula muy difuminada asoma por los bordes con
 // sus propios colores, como en Apple Music. Solo cuando de verdad hay imagen;
@@ -12,7 +18,8 @@
 // memoria para pintar 20 px. Dos carátulas con la misma imagen y el mismo
 // decodeSize comparten la copia de la caché de Qt.
 //
-// No sabe de MPRIS: recibe la imagen y el glifo.
+// No sabe de MPRIS ni de notificaciones: recibe la imagen, el ícono y el
+// glifo.
 
 import QtQuick
 import QtQuick.Effects
@@ -24,7 +31,10 @@ Item {
     id: root
 
     property string source: ""
+    property string icon: ""
+    property real iconScale: 0.5
     property string glyph: Theme.systemIcons.cover.music
+    property string glyphFamily: Theme.font.icon
     property real radius: 4
     property int decodeSize: 64
     property int glyphSize: Math.round(root.width * 0.4)
@@ -38,6 +48,7 @@ Item {
     property real glowOpacity: 1
 
     readonly property bool ready: image.status === Image.Ready
+    readonly property bool hasIcon: root.icon !== "" && appIcon.status === Image.Ready
 
     // ── el halo ───────────────────────────────────────────────────
     //
@@ -86,10 +97,22 @@ Item {
         radius: root.radius
         color: root.color
 
+        IconImage {
+            id: appIcon
+
+            anchors.centerIn: parent
+            implicitSize: Math.round(root.width * root.iconScale)
+            visible: image.opacity < 1 && root.hasIcon
+
+            source: root.icon
+            asynchronous: true
+        }
+
         Icon {
             anchors.centerIn: parent
-            visible: image.opacity < 1 && root.glyph !== ""
+            visible: image.opacity < 1 && !root.hasIcon && root.glyph !== ""
             icon: root.glyph
+            font.family: root.glyphFamily
             size: root.glyphSize
             color: root.glyphColor
         }

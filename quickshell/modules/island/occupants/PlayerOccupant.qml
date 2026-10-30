@@ -135,9 +135,9 @@ IslandOccupant {
             // que su halo asome también por la izquierda. El cuerpo de la isla
             // empieza después de las alas (openTopRadius).
             anchors.topMargin: Theme.island.openTopRadius
-            anchors.leftMargin: 16
-            anchors.rightMargin: 14
-            anchors.bottomMargin: 18
+            anchors.leftMargin: Theme.island.openStart
+            anchors.rightMargin: Theme.island.openEnd
+            anchors.bottomMargin: Theme.island.openBottom
 
             // `position` no se actualiza sola. Mientras esta vista exista,
             // alguien tiene que pedirle al reproductor que lo diga.
@@ -167,7 +167,7 @@ IslandOccupant {
                 id: side
 
                 anchors.left: bigCover.right
-                anchors.leftMargin: 18
+                anchors.leftMargin: Theme.island.openGap
                 anchors.right: parent.right
                 anchors.top: bigCover.top
                 anchors.bottom: bigCover.bottom
@@ -208,7 +208,7 @@ IslandOccupant {
 
                     text: Player.source
                     color: Theme.island.muted
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.island.openCaption
                 }
             }
 
@@ -226,7 +226,7 @@ IslandOccupant {
                     width: parent.width
                     text: Player.title
                     color: Theme.island.fg
-                    font.pixelSize: 17
+                    font.pixelSize: Theme.island.openTitle
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
@@ -236,7 +236,7 @@ IslandOccupant {
                     visible: Player.subtitle.length > 0
                     text: Player.subtitle
                     color: Theme.island.muted
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.island.openSubtitle
                     elide: Text.ElideRight
                 }
             }
@@ -309,7 +309,7 @@ IslandOccupant {
                     width: 34
                     text: Player.elapsed
                     color: Theme.island.muted
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.island.openCaption
                     font.features: { "tnum": 1 }
                 }
 
@@ -322,7 +322,7 @@ IslandOccupant {
                     width: 34
                     text: Player.duration
                     color: Theme.island.muted
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.island.openCaption
                     font.features: { "tnum": 1 }
                     horizontalAlignment: Text.AlignRight
                 }
