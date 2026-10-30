@@ -14,8 +14,10 @@
 import QtQuick
 import qs.core.theme
 import qs.core.components.atoms
+import qs.core.components.molecules
 import qs.domain.notifications
 import qs.domain.phone
+import qs.domain.settings
 
 IslandOccupant {
     id: root
@@ -206,66 +208,89 @@ IslandOccupant {
                 }
             }
 
-            // Contestar y rechazar SON las acciones de la notificación. Esto no
-            // habla con BlueFerry: invoca lo que BlueFerry mandó, y el iPhone
-            // se entera por el mismo camino por el que avisó.
-            Column {
+            // A la derecha: Contestar y Rechazar, o, si la llamada llegó sin
+            // botones, Descartar y dónde se arregla eso.
+            Item {
                 id: buttons
 
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
 
-                spacing: 10
+                width: 132
+                height: Notifications.answerable ? answerColumn.height : onPhone.height
 
-                Rectangle {
-                    width: 132
-                    height: 38
-                    radius: 19
-                    color: answerHover.hovered ? "#3ae168" : "#30d158"
+                // Contestar y rechazar SON las acciones de la notificación.
+                // Esto no habla con BlueFerry: invoca lo que BlueFerry mandó,
+                // y el iPhone se entera por el mismo camino por el que avisó.
+                Column {
+                    id: answerColumn
+                    visible: Notifications.answerable
+                    spacing: 10
 
-                    Behavior on color { ColorAnimation { duration: Theme.motion.duration } }
-
-                    Label {
-                        anchors.centerIn: parent
+                    IslandButton {
+                        width: 132
+                        height: 38
                         text: "Contestar"
-                        color: "#06220f"
-                        font.pixelSize: 13
-                        font.bold: true
+                        tint: "#30d158"
+                        textColor: "#06220f"
+                        fontSize: 13
+                        bold: true
+
+                        onTapped: {
+                            // La de --calls se queda en la isla como llamada
+                            // en curso (CallOccupant).
+                            if (Notifications.answerAction === "answer")
+                                Calls.expectAnswer();
+                            Notifications.invoke(root.action(Notifications.answerAction));
+                        }
                     }
 
-                    HoverHandler {
-                        id: answerHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        onTapped: Notifications.invoke(root.action(Notifications.answerAction))
+                    IslandButton {
+                        width: 132
+                        height: 38
+                        text: "Rechazar"
+                        tint: "#ff453a"
+                        textColor: "#2b0906"
+                        fontSize: 13
+                        bold: true
+                        onTapped: Notifications.invoke(root.action(Notifications.declineAction))
                     }
                 }
 
-                Rectangle {
-                    width: 132
-                    height: 38
-                    radius: 19
-                    color: declineHover.hovered ? "#ff564f" : "#ff453a"
+                // Suena, pero el iPhone no mandó con qué contestar.
+                Column {
+                    id: onPhone
 
-                    Behavior on color { ColorAnimation { duration: Theme.motion.duration } }
+                    visible: !Notifications.answerable
+                    width: parent.width
+                    spacing: 8
+
+                    IslandButton {
+                        width: parent.width
+                        height: 38
+                        text: "Descartar"
+                        fontSize: 13
+                        bold: true
+                        onTapped: Notifications.dismissCurrent()
+                    }
 
                     Label {
-                        anchors.centerIn: parent
-                        text: "Rechazar"
-                        color: "#2b0906"
-                        font.pixelSize: 13
-                        font.bold: true
-                    }
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideNone
+                        text: "Contéstala en el iPhone. Para contestar aquí: Ajustes › iPhone"
+                        color: hintHover.hovered ? Theme.island.fg : Theme.island.muted
+                        font.pixelSize: 11
 
-                    HoverHandler {
-                        id: declineHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
+                        HoverHandler {
+                            id: hintHover
+                            cursorShape: Qt.PointingHandCursor
+                        }
 
-                    TapHandler {
-                        onTapped: Notifications.invoke(root.action(Notifications.declineAction))
+                        TapHandler {
+                            onTapped: SettingsControl.open("iphone")
+                        }
                     }
                 }
             }
@@ -457,7 +482,7 @@ IslandOccupant {
                     }
                 }
 
-                Rectangle {
+                IslandButton {
                     id: sendButton
 
                     anchors.right: parent.right
@@ -466,34 +491,14 @@ IslandOccupant {
 
                     width: 30
                     height: 30
-                    radius: 15
 
-                    readonly property bool armed: field.text.trim().length > 0
-                                                  && !Phone.sending
+                    // Azul cuando hay algo que mandar, como en Mensajes.
+                    enabled: field.text.trim().length > 0 && !Phone.sending
+                    tint: sendButton.enabled ? "#0a84ff" : "transparent"
+                    icon: Phone.sending ? Theme.systemIcons.sending : Theme.systemIcons.send
+                    iconSize: 14
 
-                    color: sendButton.armed
-                        ? (sendHover.hovered ? "#4b9bff" : "#0a84ff")
-                        : Qt.rgba(1, 1, 1, 0.12)
-
-                    Behavior on color { ColorAnimation { duration: Theme.motion.duration } }
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: Phone.sending ? "\uf110" : "\uf1d8"
-                        color: Theme.island.fg
-                        font.family: Theme.font.mono
-                        font.pixelSize: 13
-                    }
-
-                    HoverHandler {
-                        id: sendHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        enabled: sendButton.armed
-                        onTapped: card.send()
-                    }
+                    onTapped: card.send()
                 }
             }
 
@@ -540,67 +545,17 @@ IslandOccupant {
                 Repeater {
                     model: Notifications.actions
 
-                    Rectangle {
-                        id: actionButton
-
+                    IslandButton {
                         required property var modelData
 
-                        width: actionLabel.implicitWidth + 28
-                        height: 32
-                        radius: 16
-                        color: actionHover.hovered
-                            ? Qt.rgba(1, 1, 1, 0.3)
-                            : Theme.island.track
-
-                        Behavior on color { ColorAnimation { duration: Theme.motion.duration } }
-
-                        Label {
-                            id: actionLabel
-
-                            anchors.centerIn: parent
-                            text: actionButton.modelData.text
-                            color: Theme.island.fg
-                            font.pixelSize: 12
-                        }
-
-                        HoverHandler {
-                            id: actionHover
-                            cursorShape: Qt.PointingHandCursor
-                        }
-
-                        TapHandler {
-                            onTapped: Notifications.invoke(actionButton.modelData)
-                        }
+                        text: modelData.text
+                        onTapped: Notifications.invoke(modelData)
                     }
                 }
 
-                Rectangle {
-                    width: dismissLabel.implicitWidth + 28
-                    height: 32
-                    radius: 16
-                    color: dismissHover.hovered
-                        ? Qt.rgba(1, 1, 1, 0.3)
-                        : Theme.island.track
-
-                    Behavior on color { ColorAnimation { duration: Theme.motion.duration } }
-
-                    Label {
-                        id: dismissLabel
-
-                        anchors.centerIn: parent
-                        text: "Descartar"
-                        color: Theme.island.fg
-                        font.pixelSize: 12
-                    }
-
-                    HoverHandler {
-                        id: dismissHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        onTapped: Notifications.dismissCurrent()
-                    }
+                IslandButton {
+                    text: "Descartar"
+                    onTapped: Notifications.dismissCurrent()
                 }
             }
         }

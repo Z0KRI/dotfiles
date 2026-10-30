@@ -4,9 +4,13 @@
 //   - Subir el volumen quita el silencio.
 //   - Tipo de salida: Bluetooth = audífonos, HDMI/DisplayPort = pantalla,
 //     lo demás = bocinas.
+//   - Tramo del volumen (el ícono): silenciado o en 0; bajo hasta un tercio;
+//     medio hasta dos tercios; alto.
+//   - En texto: "Silenciado" o el porcentaje.
 
 pragma Singleton
 
+import QtQuick
 import Quickshell
 import qs.data.audio
 import qs.data.applications
@@ -18,6 +22,31 @@ Singleton {
     readonly property real volume: AudioRepository.volume
     readonly property bool muted: AudioRepository.muted
     readonly property int percent: Math.round(root.volume * 100)
+
+    // "muted" | "low" | "medium" | "high": la vista elige el ícono con esto
+    // (Theme.systemIcons.volume[level]).
+    readonly property string level: {
+        if (root.muted || root.percent === 0)
+            return "muted";
+        if (root.percent < 34)
+            return "low";
+        if (root.percent < 67)
+            return "medium";
+        return "high";
+    }
+
+    readonly property string label: root.muted ? "Silenciado" : root.percent + "%"
+
+    // Cambió el volumen o el silencio (la isla lo enseña un momento).
+    signal changed()
+
+    Connections {
+        target: AudioRepository
+
+        function onChanged() {
+            root.changed();
+        }
+    }
 
     readonly property var outputs: AudioRepository.outputs.map(output => ({
         id: output.id,

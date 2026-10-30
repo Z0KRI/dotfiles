@@ -6,12 +6,14 @@
 // batería, si la tienen, no llega por Bluetooth.
 //
 // Se va solo. Va con la misma prioridad que los AirPods (70): por encima del
-// volumen y del brillo, por debajo de las notificaciones. Su ancho sigue al
-// texto, con la misma regla que el de los AirPods.
+// volumen y del brillo, por debajo de las notificaciones. Se ve igual que el
+// de los AirPods (DevicePeek) y su ancho sigue al texto con la misma cuenta
+// (PeekWidth).
 
 import QtQuick
 import qs.core.theme
-import qs.core.components.atoms
+import qs.core.components.molecules
+import qs.core.utils
 import qs.domain.keyboard
 
 IslandOccupant {
@@ -72,107 +74,33 @@ IslandOccupant {
     readonly property string detailIcon: {
         if (root.battery < 0)
             return "";
-        if (root.charging)
-            return Theme.systemIcons.batteryLevel.charging;
-        if (root.reason === "low")
+        if (root.reason === "low" && !root.charging)
             return Theme.systemIcons.batteryLevel.warning;
-        if (root.battery > 0.6)
-            return Theme.systemIcons.batteryLevel.full;
-        if (root.battery > 0.2)
-            return Theme.systemIcons.batteryLevel.medium;
-        return Theme.systemIcons.batteryLevel.low;
+        return Theme.batteryIcon(root.battery, root.charging);
     }
 
     readonly property string detailText: root.battery >= 0
         ? Math.round(root.battery * 100) + "%"
         : "Conectado"
 
-    // ── el ancho ──────────────────────────────────────────────────
-    readonly property int edge: 12
-    readonly property int glyph: 14
-    readonly property int gap: 8
-    readonly property int split: 16
-    readonly property int textSize: 12
-    readonly property int maxWidth: 460
-
-    TextMetrics {
-        id: titleMetrics
-        font.family: Theme.font.ui
-        font.pixelSize: root.textSize
-        font.weight: Font.DemiBold
-        text: root.title
+    PeekWidth {
+        id: measure
+        title: root.title
+        detailText: root.detailText
+        hasDetailIcon: root.detailIcon !== ""
     }
 
-    TextMetrics {
-        id: detailMetrics
-        font.family: Theme.font.ui
-        font.pixelSize: root.textSize
-        text: root.detailText
-    }
-
-    contentWidth: {
-        const detail = (root.detailIcon !== "" ? root.glyph + 6 : 0) + detailMetrics.advanceWidth;
-        const inner = root.edge + root.glyph + root.gap + titleMetrics.advanceWidth
-                      + root.split + detail + root.edge;
-        const total = Math.ceil(inner) + Theme.island.closedTopRadius * 2;   // las alas
-        return Math.max(Theme.island.minWidth, Math.min(root.maxWidth, total));
-    }
+    contentWidth: measure.width
 
     view: Component {
-        Item {
+        DevicePeek {
             anchors.fill: parent
-
-            Icon {
-                id: glyph
-
-                anchors.left: parent.left
-                anchors.leftMargin: root.edge
-                anchors.verticalCenter: parent.verticalCenter
-
-                width: root.glyph
-                icon: Theme.systemIcons.device.keyboard
-                size: root.glyph
-                color: Theme.island.fg
-            }
-
-            Label {
-                anchors.left: glyph.right
-                anchors.leftMargin: root.gap
-                anchors.right: detail.left
-                anchors.rightMargin: root.split
-                anchors.verticalCenter: parent.verticalCenter
-
-                text: root.title
-                elide: Text.ElideRight
-                color: Theme.island.fg
-                font.pixelSize: root.textSize
-                font.weight: Font.DemiBold
-            }
-
-            Row {
-                id: detail
-
-                anchors.right: parent.right
-                anchors.rightMargin: root.edge
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-
-                Icon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.detailIcon !== ""
-                    width: root.glyph
-                    size: root.glyph
-                    icon: root.detailIcon
-                    color: root.low ? Theme.colors.error : Theme.island.fg
-                }
-
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.detailText
-                    color: root.low ? Theme.colors.error : (root.battery >= 0 ? Theme.island.fg : Theme.island.muted)
-                    font.pixelSize: root.textSize
-                }
-            }
+            glyph: Theme.systemIcons.device.keyboard
+            title: root.title
+            detailIcon: root.detailIcon
+            detailText: root.detailText
+            alert: root.low
+            dim: root.battery < 0
         }
     }
 }

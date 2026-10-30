@@ -16,10 +16,14 @@ Scope {
     id: root
 
     // Añadir un ocupante es declararlo y sumarlo a esta lista.
-    readonly property list<QtObject> occupants: [notification, airpods, keyboard, volume, brightness, player]
+    readonly property list<QtObject> occupants: [notification, call, airpods, keyboard, volume, brightness, player]
 
     NotificationOccupant {
         id: notification
+    }
+
+    CallOccupant {
+        id: call
     }
 
     AirPodsOccupant {

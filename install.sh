@@ -54,7 +54,7 @@ PACKAGES=(
     plocate                       # Spotlight › Archivos (FileRepository)
     xdg-utils                     # xdg-open: Spotlight abre páginas y archivos (OpenerRepository)
     hyprpicker                    # selector de color (Centro de control)
-    glib2                         # gsettings: modo oscuro de las apps (ColorSchemeRepository)
+    glib2                         # gsettings (modo oscuro, ColorSchemeRepository) y gdbus (CallsRepository)
     gsettings-desktop-schemas     # el esquema org.gnome.desktop.interface que usa gsettings
     pciutils                      # lspci: la gráfica en "Acerca de" (SystemInfoRepository)
 
@@ -435,6 +435,34 @@ EOF
     fi
 }
 
+# Las llamadas normales del iPhone (app Teléfono) solo se contestan desde la
+# isla por aquí: el iPhone no les pone botones. Se le pregunta a BlueFerry
+# (su servicio tiene que estar corriendo) y se dice qué hacer en cada estado.
+check_calls() {
+    local state
+    state="$(timeout 5 blueferry calls 2>/dev/null | sed -n 's/^Calls: \([a-z_]*\).*/\1/p' || true)"
+
+    case "$state" in
+        ready)
+            ok "llamadas del iPhone en la PC: listas (se contestan desde la isla)" ;;
+        disabled)
+            ok "llamadas del iPhone en la PC: apagadas (para contestar las normales desde la isla: ./install.sh --calls)" ;;
+        unavailable)
+            warn "llamadas del iPhone: oFono no corre o no te deja usarlo (./install.sh --calls)" ;;
+        searching)
+            warn "llamadas del iPhone: oFono no encuentra el iPhone. Con el iPhone conectado:"
+            warn "  sudo systemctl restart ofono   (después de WirePlumber; ver blueferry/install.sh --status)" ;;
+        connecting)
+            ok "llamadas del iPhone en la PC: conectando con el iPhone" ;;
+        bluez_conflict)
+            warn "llamadas del iPhone: bluetoothd se queda el canal (./install.sh --blueferry --calls)" ;;
+        "")
+            ok "llamadas del iPhone: sin datos (¿BlueFerry está corriendo y el iPhone conectado?)" ;;
+        *)
+            ok "llamadas del iPhone: $state" ;;
+    esac
+}
+
 check() {
     say "Revisión"
     local problems=0
@@ -523,6 +551,7 @@ check() {
             warn "tu BlueFerry es de antes de -P hfp: actualízalo (./install.sh --blueferry)"
             problems=$((problems + 1))
         fi
+        check_calls
     else
         warn "BlueFerry no está: sin notificaciones del iPhone (./install.sh --blueferry)"
     fi

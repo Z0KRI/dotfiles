@@ -38,8 +38,6 @@ Singleton {
 
     readonly property QtObject colors: QtObject {
         // --- Brand Colors and Accent Colors ---
-        readonly property color primary: root.isDark ? "#2563eb" : "#1d4ed8"
-        readonly property color secondary: root.isDark ? "#1c2838" : "#e2e8f0"
         readonly property color accent: {
             const palette = root.accents[root.accentName] ?? root.accents.blue;
             return root.isDark ? palette.dark : palette.light;
@@ -47,10 +45,8 @@ Singleton {
 
         // --- Surfaces and backgrounds ---
         readonly property color neutral: root.isDark ? "#282828" : "#f1f5f9"
-        readonly property color surface: root.isDark ? "#313244" : "#ffffff"
         readonly property color base100: root.isDark ? "#181818" : "#ffffff"
         readonly property color base800: root.isDark ? "#f5f5f5" : "#0f172a"
-        readonly property color border: root.isDark ? "#282828" : "#cbd5e1"
 
         // --- Text and Content ---
         readonly property color baseContent: root.isDark ? "#a6adbb" : "#334155"
@@ -66,12 +62,6 @@ Singleton {
         readonly property int xs: 2
         readonly property int sm: 6
         readonly property int md: 12
-        readonly property int lg: 20
-    }
-
-    readonly property QtObject radius: QtObject {
-        readonly property int sm: 8
-        readonly property int md: 14
         readonly property int lg: 20
     }
 
@@ -169,8 +159,6 @@ Singleton {
         readonly property color sheen: Qt.rgba(1, 1, 1, 0.07)       // luz interior, arriba
 
         readonly property color content: "#ffffff"
-        readonly property color contentMuted: Qt.rgba(1, 1, 1, 0.62)
-        readonly property color hover: Qt.rgba(1, 1, 1, 0.12)
         // La fila elegida: el acento, casi opaco, para que el texto blanco
         // se lea encima en cualquier fondo.
         readonly property color selection: Qt.alpha(root.colors.accent, 0.82)
@@ -241,6 +229,20 @@ Singleton {
         readonly property int fontHero: 22
     }
 
+    // El ícono de batería para un nivel de 0 a 1: cargando gana; de 60 % para
+    // arriba, llena; hasta 20 %, baja. Lo usan los AirPods, los teclados y el
+    // iPhone, en la isla y en Ajustes.
+    function batteryIcon(level: real, charging: bool): string {
+        const glyphs = root.systemIcons.batteryLevel;
+        if (charging)
+            return glyphs.charging;
+        if (level > 0.6)
+            return glyphs.full;
+        if (level > 0.2)
+            return glyphs.medium;
+        return glyphs.low;
+    }
+
     readonly property QtObject systemIcons: QtObject {
         // El logo de Arch es un glifo de Nerd Font: su tamaño va por `ink`
         // (lo que mide el DIBUJO), no por tamaño de fuente. Ver Icon.qml.
@@ -288,7 +290,6 @@ Singleton {
         readonly property string history: "\ue1f5"        // history
         readonly property string warmth: "\ue188"         // thermometer-sun
         readonly property string phoneCall: "\ue134"      // phone-call
-        readonly property string battery: "\ue057"        // battery-medium
         readonly property string scanning: "\ue1ba"       // bluetooth-searching
         readonly property string cpu: "\ue0a9"            // cpu
         readonly property string memory: "\ue445"         // memory-stick
@@ -301,22 +302,18 @@ Singleton {
         readonly property string monitorOff: "\ue1dc"     // monitor-off
         readonly property string rotate: "\ue149"         // rotate-cw
         readonly property string mirror: "\ue09e"         // copy
-        readonly property string textSize: "\ue587"       // a-large-small
         readonly property string resolution: "\ue2ec"     // scaling
         readonly property string vrr: "\ue1b4"            // zap
 
-        // AirPods (Lucide): modos de ruido, conversación y batería.
+        // AirPods (Lucide): modos de ruido, conversación y modo Apple. Su
+        // batería usa la de todos (batteryLevel).
         readonly property var airpods: ({
             off: "\ue401",            // circle-off
             transparency: "\ue382",   // ear
             adaptive: "\ue412",       // sparkles
             anc: "\ue383",            // ear-off
             conversation: "\ue51e",   // speech
-            appleMode: "\ue34e",      // apple
-            batteryFull: "\ue055",    // battery-full
-            batteryMedium: "\ue057",  // battery-medium
-            batteryLow: "\ue056",     // battery-low
-            batteryCharging: "\ue054" // battery-charging
+            appleMode: "\ue34e"       // apple
         })
 
         // Teclado: Ajustes › Teclado, la hoja de emparejamiento y la isla.
@@ -324,10 +321,11 @@ Singleton {
         readonly property string command: "\ue09a"        // command
         readonly property string swapKeys: "\ue24a"       // arrow-left-right
         readonly property string languages: "\ue0fe"      // languages
-        readonly property string missionControl: "\ue426" // app-window
         readonly property string launchpad: "\ue0ff"      // layout-grid
-        readonly property string pairCode: "\ue4a3"       // key-round
         readonly property string warning: "\ue193"        // alert-triangle
+
+        // Batería, de todo lo que la tiene (AirPods, teclados, el iPhone).
+        // Cuál toca según el nivel lo decide Theme.batteryIcon().
         readonly property var batteryLevel: ({
             full: "\ue055",      // battery-full
             medium: "\ue057",    // battery-medium
@@ -335,20 +333,34 @@ Singleton {
             charging: "\ue054",  // battery-charging
             warning: "\ue3ac"    // battery-warning
         })
+
         // Spotlight: los chips de modo y el glifo de respaldo de cada tipo de
         // resultado (cuando el tema de íconos no trae uno).
         readonly property var launcher: ({
-            all: "",         // search
-            apps: "",        // layout-grid
-            files: "",       // folder
-            clipboard: "",   // clipboard
-            file: "",        // file
-            image: "",       // image
-            text: "",        // file-text
-            web: "",         // globe
-            link: "",        // link
-            command: "",     // terminal
-            enter: ""        // corner-down-left
+            all: "\ue151",         // search
+            apps: "\ue0ff",        // layout-grid
+            files: "\ue0d7",       // folder
+            clipboard: "\ue085",   // clipboard
+            file: "\ue0c0",        // file
+            image: "\ue0f6",       // image
+            text: "\ue0cc",        // file-text
+            web: "\ue0e8",         // globe
+            link: "\ue102",        // link
+            command: "\ue181",     // terminal
+            enter: "\ue0a1"        // corner-down-left
+        })
+
+        // Responder un mensaje desde la isla: mandar, y mientras se manda.
+        readonly property string send: "\ue152"          // send
+        readonly property string sending: "\ue109"       // loader
+
+        // Llamada en curso (Lucide). Colgar es el mismo teléfono, girado.
+        readonly property var call: ({
+            phone: "\ue133",         // phone
+            speaker: "\ue1ab",       // volume-2
+            mic: "\ue118",           // mic
+            micOff: "\ue119",        // mic-off
+            more: "\ue0b6"           // ellipsis
         })
 
         // Menú de Arch (antes iban vacíos: sus glifos se perdieron al copiarlos).
@@ -418,6 +430,17 @@ Singleton {
         readonly property int artOpenRadius: 13
 
         readonly property int spacing: 16
+
+        // Los avisos de una línea de un aparato (AirPods, teclados): las
+        // medidas que comparten la vista (DevicePeek) y la cuenta del ancho
+        // (PeekWidth). Cambiar una aquí cambia las dos.
+        readonly property int peekEdge: 12        // aire a cada lado
+        readonly property int peekGlyph: 14       // los íconos
+        readonly property int peekGap: 8          // ícono → nombre
+        readonly property int peekSplit: 16       // nombre → lo de la derecha
+        readonly property int peekIconGap: 6      // ícono → texto, a la derecha
+        readonly property int peekText: 12
+        readonly property int peekMaxWidth: 460   // más allá, el nombre se corta
 
         readonly property color bg: "#000000"
         readonly property color fg: "#f2f2f7"

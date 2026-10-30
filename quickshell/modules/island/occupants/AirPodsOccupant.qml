@@ -1,17 +1,17 @@
-// Tus AirPods, como en el iPhone: al conectarlas la isla se ensancha un
+// Tus AirPods, como en el iPhone: al conectarlos la isla se ensancha un
 // momento con su nombre y la batería, y al cambiar el control de ruido (desde
 // el Centro de control o apretando el tallo) enseña el modo nuevo.
 //
 // Se va solo, como el volumen. Va por encima de él (70 contra 60) y por
 // debajo de las notificaciones.
 //
-// Su ancho sigue al texto: el nombre de tus AirPods completo y lo de la
-// derecha, entre el ancho mínimo de la isla y un tope (más allá, el nombre se
-// corta con "…").
+// Se ve igual que el aviso de un teclado (DevicePeek), y su ancho sigue al
+// texto con la misma cuenta (PeekWidth).
 
 import QtQuick
 import qs.core.theme
-import qs.core.components.atoms
+import qs.core.components.molecules
+import qs.core.utils
 import qs.domain.airpods
 
 IslandOccupant {
@@ -97,13 +97,7 @@ IslandOccupant {
             return Theme.systemIcons.airpods[AirPods.mode];
         if (!root.hasBattery)
             return "";
-        if (root.charging)
-            return Theme.systemIcons.airpods.batteryCharging;
-        if (AirPods.lowest > 0.6)
-            return Theme.systemIcons.airpods.batteryFull;
-        if (AirPods.lowest > 0.2)
-            return Theme.systemIcons.airpods.batteryMedium;
-        return Theme.systemIcons.airpods.batteryLow;
+        return Theme.batteryIcon(AirPods.lowest, root.charging);
     }
 
     readonly property string detailText: {
@@ -114,95 +108,24 @@ IslandOccupant {
         return "Conectados";
     }
 
-    // ── el ancho ──────────────────────────────────────────────────
-    //
-    // Se mide el texto con la misma fuente que la vista. Las medidas de
-    // abajo son las que usa la vista: cambiar una aquí la cambia allá.
-    readonly property int edge: 12          // aire a cada lado
-    readonly property int glyph: 14         // los íconos
-    readonly property int gap: 8            // ícono → texto
-    readonly property int split: 16         // nombre → lo de la derecha
-    readonly property int textSize: 12
-    readonly property int maxWidth: 460
-
-    TextMetrics {
-        id: nameMetrics
-        font.family: Theme.font.ui
-        font.pixelSize: root.textSize
-        font.weight: Font.DemiBold
-        text: AirPods.name
+    PeekWidth {
+        id: measure
+        title: AirPods.name
+        detailText: root.detailText
+        hasDetailIcon: root.detailIcon !== ""
     }
 
-    TextMetrics {
-        id: detailMetrics
-        font.family: Theme.font.ui
-        font.pixelSize: root.textSize
-        text: root.detailText
-    }
-
-    contentWidth: {
-        const detail = (root.detailIcon !== "" ? root.glyph + 6 : 0) + detailMetrics.advanceWidth;
-        const inner = root.edge + root.glyph + root.gap + nameMetrics.advanceWidth
-                      + root.split + detail + root.edge;
-        const total = Math.ceil(inner) + Theme.island.closedTopRadius * 2;   // las alas
-        return Math.max(Theme.island.minWidth, Math.min(root.maxWidth, total));
-    }
+    contentWidth: measure.width
 
     view: Component {
-        Item {
+        DevicePeek {
             anchors.fill: parent
-
-            Icon {
-                id: glyph
-
-                anchors.left: parent.left
-                anchors.leftMargin: root.edge
-                anchors.verticalCenter: parent.verticalCenter
-
-                width: root.glyph
-                icon: Theme.systemIcons.device.headphones
-                size: root.glyph
-                color: Theme.island.fg
-            }
-
-            Label {
-                anchors.left: glyph.right
-                anchors.leftMargin: root.gap
-                anchors.right: detail.left
-                anchors.rightMargin: root.split
-                anchors.verticalCenter: parent.verticalCenter
-
-                text: AirPods.name
-                elide: Text.ElideRight
-                color: Theme.island.fg
-                font.pixelSize: root.textSize
-                font.weight: Font.DemiBold
-            }
-
-            Row {
-                id: detail
-
-                anchors.right: parent.right
-                anchors.rightMargin: root.edge
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-
-                Icon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.detailIcon !== ""
-                    width: root.glyph
-                    size: root.glyph
-                    icon: root.detailIcon
-                    color: root.lowBattery ? Theme.colors.error : Theme.island.fg
-                }
-
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.detailText
-                    color: root.showsMode || root.hasBattery ? Theme.island.fg : Theme.island.muted
-                    font.pixelSize: root.textSize
-                }
-            }
+            glyph: Theme.systemIcons.device.headphones
+            title: AirPods.name
+            detailIcon: root.detailIcon
+            detailText: root.detailText
+            alert: root.lowBattery
+            dim: !root.showsMode && !root.hasBattery
         }
     }
 }

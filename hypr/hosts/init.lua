@@ -46,9 +46,9 @@ if package.searchpath("hosts.displays", package.path) then
     require("hosts.displays")
 end
 
--- La distribución de tu teclado Apple (Ajustes › Teclado › Distribución; la
--- escribe tu shell, tampoco va a git). Al final por la misma razón: pisa
--- solo lo de ese teclado.
+-- Lo de cada teclado (Ajustes › Teclado: su distribución y, en un Apple, ⌘ y
+-- ⌥ cambiadas; lo escribe tu shell, tampoco va a git). Al final por la misma
+-- razón: pisa solo lo de ese teclado.
 if package.searchpath("hosts.keyboard", package.path) then
     require("hosts.keyboard")
 end

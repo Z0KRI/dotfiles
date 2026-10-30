@@ -151,6 +151,12 @@ arranca solo al iniciar sesión, y su paquete ya deja `bluetoothd` con
 - **Llamadas** (experimental): `./install.sh --calls` instala oFono del AUR,
   le da permiso a tu usuario, enlaza `blueferry/wireplumber/51-bluez-ofono.conf`
   y las enciende. `blueferry/install.sh --status` revisa cómo va.
+  Con eso las llamadas normales suenan en la isla con **Contestar** y
+  **Rechazar** (con el nombre que puso el iPhone, aunque BlueFerry solo sepa el
+  número) y, contestadas, se quedan como en el iPhone: plegada, el teléfono
+  verde y el tiempo; desplegada, audio, silenciar, más y colgar. La shell las
+  sigue con `gdbus monitor` y `busctl` (vienen con glib2 y systemd). Las de
+  WhatsApp y otras apps se contestan con los botones del iPhone, en el iPhone.
 
 ## AirPods (LibrePods)
 

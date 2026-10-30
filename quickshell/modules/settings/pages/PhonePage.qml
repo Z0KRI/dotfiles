@@ -34,6 +34,16 @@ SettingsPage {
         bluez_conflict: "Bluetooth tiene el canal (falta -P hfp)"
     })
 
+    // Qué hacer en cada estado que no es "Listas".
+    readonly property var callFixes: ({
+        disabled: "Para contestar aquí las llamadas normales: ./install.sh --calls",
+        unavailable: "Arráncalo con ./install.sh --calls.",
+        searching: "Reinicia oFono después de WirePlumber: sudo systemctl restart ofono",
+        connecting: "Espera unos segundos con el iPhone conectado.",
+        ready: "Las llamadas normales se contestan desde la isla; hablas por la PC.",
+        bluez_conflict: "Actualiza BlueFerry: ./install.sh --blueferry --calls"
+    })
+
     SettingsHero {
         icon: Theme.systemIcons.device.phone
         tint: "#30b94d"
@@ -54,7 +64,7 @@ SettingsPage {
 
         SettingsRow {
             visible: PhoneService.battery >= 0
-            glyph: Theme.systemIcons.battery
+            glyph: Theme.batteryIcon(PhoneService.battery, false)
             title: "Batería del iPhone"
             value: Math.round(PhoneService.battery * 100) + " %"
         }
@@ -76,8 +86,9 @@ SettingsPage {
             if (Phone.settingsError !== "")
                 return "BlueFerry no respondió: " + Phone.settingsError;
             return "Con los botones del iPhone contestas EN el iPhone: hablas por él o por "
-                 + "tus AirPods. Para que el audio venga a la PC: ./install.sh --calls "
-                 + "(experimental).";
+                 + "tus AirPods. Las llamadas normales (app Teléfono) llegan sin esos "
+                 + "botones: esas se contestan aquí con el audio de las llamadas en la PC "
+                 + "(./install.sh --calls, experimental).";
         }
 
         ToggleRow {
@@ -85,12 +96,12 @@ SettingsPage {
             title: "Contestar desde la isla"
             subtitle: {
                 if (!Phone.callButtons)
-                    return "Las llamadas del iPhone llegan con Contestar y Rechazar.";
+                    return "Las llamadas de apps (WhatsApp y otras) llegan con Contestar y Rechazar.";
                 if (Phone.notificationPolicy !== "all")
                     return "Inactivo: las llamadas solo llegan con todas las notificaciones del iPhone.";
                 if (!Phone.contentShown)
                     return "Inactivo: BlueFerry oculta el contenido de las notificaciones.";
-                return "Las llamadas del iPhone llegan con Contestar y Rechazar.";
+                return "Las llamadas de apps (WhatsApp y otras) llegan con Contestar y Rechazar.";
             }
             checked: Phone.callButtons
             onToggled: Phone.setCallButtons(!Phone.callButtons)
@@ -113,6 +124,9 @@ SettingsPage {
         SettingsRow {
             glyph: Theme.systemIcons.audioOutput
             title: "Audio de las llamadas en la PC"
+            subtitle: Phone.statusKnown
+                ? (root.callFixes[Phone.pcCalls ? Phone.pcCallsState : "disabled"] ?? "")
+                : ""
             value: Phone.statusKnown
                 ? (Phone.pcCalls ? (root.callStates[Phone.pcCallsState] ?? Phone.pcCallsState) : "Apagado")
                 : "…"

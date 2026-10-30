@@ -101,11 +101,6 @@ ListView {
             root.currentIndex = index;
     }
 
-    function activateCurrent(): void {
-        if (root.currentEntry)
-            root.activated(root.currentEntry);
-    }
-
     delegate: Item {
         id: row
 

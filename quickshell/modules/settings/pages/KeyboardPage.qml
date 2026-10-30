@@ -91,10 +91,7 @@ SettingsPage {
 
                 Icon {
                     visible: keyboardRow.modelData.battery >= 0
-                    icon: keyboardRow.modelData.charging ? Theme.systemIcons.batteryLevel.charging
-                        : keyboardRow.modelData.battery > 0.6 ? Theme.systemIcons.batteryLevel.full
-                        : keyboardRow.modelData.battery > 0.2 ? Theme.systemIcons.batteryLevel.medium
-                        : Theme.systemIcons.batteryLevel.low
+                    icon: Theme.batteryIcon(keyboardRow.modelData.battery, keyboardRow.modelData.charging)
                     size: 16
                     color: keyboardRow.low ? Theme.colors.error : Theme.window.textMuted
                 }

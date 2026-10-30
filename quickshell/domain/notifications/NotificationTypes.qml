@@ -209,10 +209,13 @@ Singleton {
         // tiene nombre, viene una sola.
         if (kind === root.markCall) {
             const lines = root.unescapeMarkup(body).split("\n");
+            const heading = root.unescapeMarkup(root.strip(summary));
 
             return {
                 kind: "call",
-                appName: root.unescapeMarkup(root.strip(summary)),
+                // BlueFerry escribe "Incoming call" o "Call waiting".
+                appName: /waiting/i.test(heading) ? "Llamada en espera"
+                         : /incoming/i.test(heading) ? "Llamada" : heading,
                 title: (lines[0] || "").trim(),
                 message: lines.length > 1 ? (lines[1] || "").trim() : "",
                 image: String(n.image || ""),
@@ -345,6 +348,46 @@ Singleton {
                 // contesta EN el iPhone (hablas por él o por tus AirPods).
                 answerAction: "ancs-positive",
                 declineAction: "ancs-negative",
+                source: n
+            };
+        }
+
+        // ── …o que suena sin botones ──
+        //
+        // El iPhone avisa de la llamada pero no manda Aceptar/Rechazar: pasa
+        // con las llamadas normales (app Teléfono), y con todas si los botones
+        // del iPhone están apagados. Se enseña como llamada para que no se
+        // pierda entre las demás, pero sin Contestar (`answerAction` vacío).
+        // Con ./install.sh --calls listo, la de BlueFerry (📞, que sí se
+        // contesta, en la PC) llega a la par y la reemplaza: Notifications.
+        const ringingOnly = root.isCallApp(app)
+                            && root.callWords.test(title + " " + message)
+                            && !root.missedWords.test(title + " " + message);
+
+        if (ringingOnly) {
+            const lines = message.split("\n");
+
+            return {
+                kind: "call",
+                appName: app.length > 0 ? app : "iPhone",
+                title: title.length > 0 ? title : message,
+
+                // El iPhone pone la etiqueta del número ("mobile") en la
+                // primera línea. Sirve para nombrar la llamada de BlueFerry.
+                callerLabel: lines.length > 1 ? lines[0].trim() : "",
+                message: title.length > 0 ? message.split("\n").join(root.titleJoiner) : "",
+                image: String(n.image || ""),
+                icon: "",
+                glyph: AppGlyphs.glyph("", "call"),
+                fromPhone: true,
+                replyable: false,
+
+                // Se queda mientras suena: cuando deja de sonar, el iPhone
+                // retira su notificación y BlueFerry cierra la de aquí.
+                holds: true,
+                keep: false,
+                answerAction: "",
+                declineAction: "",
                 source: n
             };
         }

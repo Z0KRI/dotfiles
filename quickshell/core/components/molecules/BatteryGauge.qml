@@ -25,15 +25,7 @@ Column {
 
     Icon {
         anchors.horizontalCenter: parent.horizontalCenter
-        icon: {
-            if (root.charging)
-                return Theme.systemIcons.airpods.batteryCharging;
-            if (root.level > 0.6)
-                return Theme.systemIcons.airpods.batteryFull;
-            if (root.level > 0.2)
-                return Theme.systemIcons.airpods.batteryMedium;
-            return Theme.systemIcons.airpods.batteryLow;
-        }
+        icon: Theme.batteryIcon(root.level, root.charging)
         size: 18
         color: root.low ? Theme.colors.error : root.contentColor
     }

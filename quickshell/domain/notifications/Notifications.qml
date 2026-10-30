@@ -18,6 +18,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.data.notifications
+import qs.domain.phone
 
 Singleton {
     id: root
@@ -37,7 +38,26 @@ Singleton {
     // REEMPLAZA el contenido de una notificación que ya estaba: `classify` lee
     // `summary` y `body`, y QML apunta como dependencia todo lo que se lee
     // mientras evalúa, aunque se lea dentro de una función.
-    readonly property var typed: NotificationTypes.classify(root.current)
+    readonly property var typed: root.named(NotificationTypes.classify(root.current))
+
+    // La llamada de BlueFerry (📞) trae el contacto si BlueFerry lo conoce; si
+    // no, solo el número. El iPhone sí lo dijo en su propio aviso (la copia
+    // sin botones, que no se enseña): de ahí salen el nombre y, arriba, la
+    // etiqueta ("mobile"), como en el iPhone. El número queda debajo.
+    function named(typed) {
+        if (typed.kind !== "call" || typed.answerAction !== "answer")
+            return typed;
+
+        const hint = Calls.hintFor(typed.title);
+        if (!hint)
+            return typed;
+
+        return Object.assign({}, typed, {
+            appName: hint.label.length > 0 ? hint.label : typed.appName,
+            title: hint.name,
+            message: typed.title
+        });
+    }
     
     readonly property bool replyable: root.typed.replyable
     readonly property bool holds: root.typed.holds
@@ -55,6 +75,10 @@ Singleton {
     // si son los botones del iPhone (se contesta en el iPhone).
     readonly property string answerAction: root.typed.answerAction
     readonly property string declineAction: root.typed.declineAction
+
+    // ¿Se puede contestar desde aquí? Una llamada del iPhone que llegó sin
+    // botones suena igual, pero solo se contesta en el iPhone.
+    readonly property bool answerable: root.answerAction !== ""
 
     // ── el historial ──────────────────────────────────────────────
     //
@@ -162,12 +186,91 @@ Singleton {
         if (!notification)
             return;
 
+        const typed = NotificationTypes.classify(notification);
+
+        if (typed.kind === "call") {
+            root.showCall(notification, typed);
+            return;
+        }
+
         if (!root.hasCurrent) {
             root.current = notification;
             return;
         }
 
         root.queue = root.queue.concat([notification]);
+    }
+
+    // ── llamadas ──────────────────────────────────────────────────
+    //
+    // Una llamada no hace cola detrás de un mensaje: se adelanta, y lo que se
+    // estaba enseñando vuelve al frente de la cola.
+    //
+    // Y de una misma llamada no se enseñan dos. Con ./install.sh --calls, una
+    // llamada normal llega dos veces: la del iPhone (📱 Teléfono, sin
+    // botones) y la de BlueFerry (📞, con Contestar). El iPhone suele ganar
+    // la carrera, y antes su tarjeta tapaba a la que sí se contesta. Ahora se
+    // queda la que se puede contestar, llegue primero o después.
+    function isCall(item): bool {
+        return !!item && NotificationTypes.classify(item).kind === "call";
+    }
+
+    function isAnswerableCall(item): bool {
+        if (!item)
+            return false;
+        const typed = NotificationTypes.classify(item);
+        return typed.kind === "call" && typed.answerAction !== "";
+    }
+
+    // Una llamada que solo avisa (sin botones).
+    function isMirror(item): bool {
+        if (!item)
+            return false;
+        const typed = NotificationTypes.classify(item);
+        return typed.kind === "call" && typed.answerAction === "";
+    }
+
+    function showCall(notification, typed): void {
+        const answerable = typed.answerAction !== "";
+
+        // El aviso del iPhone nombra al que llama aunque luego sobre: se
+        // apunta antes de decidir si se enseña.
+        if (!answerable)
+            Calls.noteCaller(typed.title, typed.callerLabel);
+
+        // Llega la que solo avisa y ya hay una que se contesta: sobra.
+        if (!answerable && (root.isAnswerableCall(root.current)
+                            || root.queue.some(item => root.isAnswerableCall(item)))) {
+            notification.expire();
+            return;
+        }
+
+        // Llega la que se contesta: las que solo avisaban, fuera.
+        let mirrors = [];
+        if (answerable) {
+            mirrors = root.queue.filter(item => root.isMirror(item));
+            root.queue = root.queue.filter(item => !root.isMirror(item));
+        }
+
+        const leaving = root.current;
+
+        if (!leaving) {
+            root.current = notification;
+        } else if (answerable && root.isMirror(leaving)) {
+            root.current = notification;
+            mirrors.push(leaving);
+        } else if (!root.isCall(leaving)) {
+            root.queue = [leaving].concat(root.queue);
+            root.current = notification;
+        } else {
+            // Ya suena otra llamada: esta espera su turno.
+            root.queue = root.queue.concat([notification]);
+        }
+
+        // Después de poner la nueva, igual que en dismissCurrent(): expirar
+        // cambia la lista del servidor y prune() no debe ver un hueco.
+        for (let i = 0; i < mirrors.length; ++i)
+            mirrors[i].expire();
     }
 
     // Saca la siguiente válida de la cola y la devuelve, o null si no queda
