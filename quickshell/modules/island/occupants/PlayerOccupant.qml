@@ -6,13 +6,18 @@
 // de cuatro segundos no. La decisión vive en `active`, que es la propiedad que
 // contesta a "¿tengo algo que enseñar ahora mismo?".
 //
-// Las medidas son las de Boring Notch: 185x32 cerrado, 640x190 abierto, y la
-// carátula de 20px con radio 4 a 90px con radio 13.
+// Plegado tiene las medidas de Boring Notch (185x32, carátula de 20 px).
+// Desplegado (640x190) se ve como el reproductor de macOS: la carátula grande
+// con su halo, el programa que suena en la esquina y la línea de tiempo que
+// se arrastra.
+//
+// Las dos carátulas son CoverArt: sin imagen, la nota o la tele según
+// Player.kind.
 
 import QtQuick
-import Quickshell.Widgets
 import qs.core.theme
 import qs.core.components.atoms
+import qs.core.components.molecules
 import qs.domain.media
 import qs.domain.island
 
@@ -41,9 +46,8 @@ IslandOccupant {
         Item {
             anchors.fill: parent
 
-            ClippingRectangle {
-                id: cover
-
+            // Chica, sin halo: en 32 px de alto se saldría de la isla.
+            CoverArt {
                 anchors.left: parent.left
                 anchors.leftMargin: 6
                 anchors.verticalCenter: parent.verticalCenter
@@ -51,17 +55,10 @@ IslandOccupant {
                 width: Theme.island.artClosed
                 height: Theme.island.artClosed
                 radius: Theme.island.artClosedRadius
-                color: Theme.island.track
 
-                Image {
-                    anchors.fill: parent
-                    source: Player.artUrl
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    sourceSize.width: 64
-                    sourceSize.height: 64
-                }
+                source: Player.artUrl
+                glyph: Theme.systemIcons.cover[Player.kind]
+                glyphSize: 11
             }
 
             // Cuatro barras que suben y bajan desfasadas. Cada una va dentro de
@@ -125,21 +122,30 @@ IslandOccupant {
         }
     }
 
-    // ── abierto: 640x190, la vista principal de Boring Notch ────────
+    // ── abierto: como el reproductor de macOS ──────────────────────
+    //
+    // La carátula grande a la izquierda. A la derecha: arriba el título y
+    // "artista — disco", y en la esquina el programa que suena; al centro los
+    // botones, con reproducir/pausar en un círculo; abajo la línea de tiempo,
+    // que se arrastra para adelantar o regresar.
     expandedView: Component {
         Item {
             anchors.fill: parent
+            // La carátula cerca del borde, como en macOS, pero con aire para
+            // que su halo asome también por la izquierda. El cuerpo de la isla
+            // empieza después de las alas (openTopRadius).
             anchors.topMargin: Theme.island.openTopRadius
-            anchors.leftMargin: 26
-            anchors.rightMargin: 26
-            anchors.bottomMargin: 22
+            anchors.leftMargin: 16
+            anchors.rightMargin: 14
+            anchors.bottomMargin: 18
 
             // `position` no se actualiza sola. Mientras esta vista exista,
             // alguien tiene que pedirle al reproductor que lo diga.
             Component.onCompleted: Player.watchPosition()
             Component.onDestruction: Player.unwatchPosition()
 
-            ClippingRectangle {
+            // Con su halo: la carátula difuminada asoma por los bordes.
+            CoverArt {
                 id: bigCover
 
                 anchors.left: parent.left
@@ -148,57 +154,150 @@ IslandOccupant {
                 width: Theme.island.artOpen
                 height: Theme.island.artOpen
                 radius: Theme.island.artOpenRadius
-                color: Theme.island.track
+                decodeSize: Theme.island.artOpen * 2
 
-                Image {
-                    anchors.fill: parent
-                    source: Player.artUrl
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    sourceSize.width: 180
-                    sourceSize.height: 180
+                source: Player.artUrl
+                glyph: Theme.systemIcons.cover[Player.kind]
+                glyphSize: 48
+                glow: true
+            }
+
+            // Todo lo de la derecha vive dentro de la altura de la carátula.
+            Item {
+                id: side
+
+                anchors.left: bigCover.right
+                anchors.leftMargin: 18
+                anchors.right: parent.right
+                anchors.top: bigCover.top
+                anchors.bottom: bigCover.bottom
+            }
+
+            // El programa que suena, en la esquina, con sus tres barras.
+            Row {
+                id: source
+
+                anchors.right: side.right
+                anchors.top: side.top
+                anchors.topMargin: 2
+
+                visible: Player.source.length > 0
+                spacing: 6
+
+                Row {
+                    anchors.bottom: sourceName.baseline
+                    spacing: 1.5
+
+                    Repeater {
+                        model: [4, 7, 10]
+
+                        Rectangle {
+                            required property int modelData
+
+                            anchors.bottom: parent.bottom
+                            width: 2.5
+                            height: modelData
+                            radius: 1
+                            color: Theme.island.muted
+                        }
+                    }
+                }
+
+                Label {
+                    id: sourceName
+
+                    text: Player.source
+                    color: Theme.island.muted
+                    font.pixelSize: 11
                 }
             }
 
             Column {
                 id: header
 
-                anchors.left: bigCover.right
-                anchors.leftMargin: Theme.island.spacing
-                anchors.right: parent.right
-                anchors.top: parent.top
+                anchors.left: side.left
+                anchors.right: source.visible ? source.left : side.right
+                anchors.rightMargin: source.visible ? 14 : 0
+                anchors.top: side.top
 
-                spacing: 2
+                spacing: 3
 
                 Label {
                     width: parent.width
                     text: Player.title
                     color: Theme.island.fg
                     font.pixelSize: 17
-                    font.bold: true
+                    font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
 
                 Label {
                     width: parent.width
-                    text: Player.artist
+                    visible: Player.subtitle.length > 0
+                    text: Player.subtitle
                     color: Theme.island.muted
                     font.pixelSize: 13
                     elide: Text.ElideRight
                 }
             }
 
+            // Anterior · reproducir/pausar · siguiente. Los de los lados sin
+            // fondo; el del centro en su círculo, como en macOS.
+            Row {
+                id: controls
+
+                anchors.horizontalCenter: side.horizontalCenter
+                anchors.bottom: timeline.visible ? timeline.top : side.bottom
+                anchors.bottomMargin: timeline.visible ? 10 : 0
+
+                spacing: 18
+
+                IslandButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 40
+                    height: 40
+                    flat: true
+                    enabled: Player.canGoPrevious
+                    icon: Theme.systemIcons.transport.previous
+                    iconFamily: Theme.font.mono
+                    iconSize: 17
+                    onTapped: Player.previous()
+                }
+
+                IslandButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 44
+                    height: 44
+                    enabled: Player.canControl
+                    icon: Player.isPlaying ? Theme.systemIcons.transport.pause
+                                           : Theme.systemIcons.transport.play
+                    iconFamily: Theme.font.mono
+                    iconSize: 17
+                    onTapped: Player.togglePlaying()
+                }
+
+                IslandButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 40
+                    height: 40
+                    flat: true
+                    enabled: Player.canGoNext
+                    icon: Theme.systemIcons.transport.next
+                    iconFamily: Theme.font.mono
+                    iconSize: 17
+                    onTapped: Player.next()
+                }
+            }
+
+            // 0:05 ──●────────── 4:58
             Item {
                 id: timeline
 
-                anchors.left: bigCover.right
-                anchors.leftMargin: Theme.island.spacing
-                anchors.right: parent.right
-                anchors.top: header.bottom
-                anchors.topMargin: 16
+                anchors.left: side.left
+                anchors.right: side.right
+                anchors.bottom: side.bottom
 
-                height: 16
+                height: 14
                 visible: Player.hasTimeline
 
                 Label {
@@ -207,130 +306,37 @@ IslandOccupant {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 38
+                    width: 34
                     text: Player.elapsed
                     color: Theme.island.muted
                     font.pixelSize: 11
+                    font.features: { "tnum": 1 }
                 }
 
                 Label {
-                    id: remaining
+                    id: duration
 
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 38
-                    text: Player.remaining
+                    width: 34
+                    text: Player.duration
                     color: Theme.island.muted
                     font.pixelSize: 11
+                    font.features: { "tnum": 1 }
                     horizontalAlignment: Text.AlignRight
                 }
 
-                Rectangle {
+                ScrubBar {
                     anchors.left: elapsed.right
-                    anchors.leftMargin: 10
-                    anchors.right: remaining.left
-                    anchors.rightMargin: 10
+                    anchors.leftMargin: 8
+                    anchors.right: duration.left
+                    anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
 
-                    height: 5
-                    radius: height / 2
-                    color: Theme.island.track
-
-                    Rectangle {
-                        width: parent.width * Player.progress
-                        height: parent.height
-                        radius: parent.radius
-                        color: Theme.island.fg
-
-                        // El reloj late una vez por segundo; la animación
-                        // rellena el hueco para que no avance a saltos.
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: 1000
-                                easing.type: Easing.Linear
-                            }
-                        }
-                    }
-                }
-            }
-
-            Row {
-                anchors.horizontalCenter: timeline.horizontalCenter
-                anchors.bottom: parent.bottom
-
-                spacing: 38
-
-                Item {
-                    width: 46
-                    height: 36
-
-                    opacity: Player.canGoPrevious ? 1 : 0.35
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: Player.previousIcon
-                        color: Theme.island.fg
-                        font.family: Theme.font.mono
-                        font.pixelSize: 20
-                    }
-
-                    HoverHandler {
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        enabled: Player.canGoPrevious
-                        onTapped: Player.previous()
-                    }
-                }
-
-                Item {
-                    width: 46
-                    height: 36
-
-                    opacity: Player.canControl ? 1 : 0.35
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: Player.playIcon
-                        color: Theme.island.fg
-                        font.family: Theme.font.mono
-                        font.pixelSize: 26
-                    }
-
-                    HoverHandler {
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        enabled: Player.canControl
-                        onTapped: Player.togglePlaying()
-                    }
-                }
-
-                Item {
-                    width: 46
-                    height: 36
-
-                    opacity: Player.canGoNext ? 1 : 0.35
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: Player.nextIcon
-                        color: Theme.island.fg
-                        font.family: Theme.font.mono
-                        font.pixelSize: 20
-                    }
-
-                    HoverHandler {
-                        cursorShape: Qt.PointingHandCursor
-                    }
-
-                    TapHandler {
-                        enabled: Player.canGoNext
-                        onTapped: Player.next()
-                    }
+                    value: Player.progress
+                    seekable: Player.canSeek
+                    onSeeked: value => Player.seekTo(value)
                 }
             }
         }

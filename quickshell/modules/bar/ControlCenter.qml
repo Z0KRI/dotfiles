@@ -160,6 +160,7 @@ DropdownWindow {
                 title: Player.hasTrack ? Player.title : "No se reproduce nada"
                 subtitle: Player.hasTrack ? Player.artist : ""
                 artUrl: Player.hasTrack ? Player.artUrl : ""
+                artGlyph: Theme.systemIcons.cover[Player.kind]
                 playing: Player.isPlaying
                 canControl: Player.canControl
                 canGoPrevious: Player.canGoPrevious

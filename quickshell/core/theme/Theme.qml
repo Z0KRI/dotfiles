@@ -369,11 +369,26 @@ Singleton {
         readonly property string power: "\ue140"          // power
         readonly property string logout: "\ue10e"         // log-out
 
+        // Los del reproductor de la isla: rellenos, como los de macOS. Son de
+        // la Nerd Font (Font Awesome), no de Lucide, que solo tiene contornos.
+        readonly property var transport: ({
+            play: "\uf04b",       // fa-play
+            pause: "\uf04c",      // fa-pause
+            previous: "\uf04a",   // fa-backward
+            next: "\uf04e"        // fa-forward
+        })
+
         readonly property var media: ({
             play: "",
             pause: "",
             previous: "",
             next: ""
+        })
+
+        // Sin carátula: lo que suena, según Player.kind (Lucide).
+        readonly property var cover: ({
+            music: "\ue122",      // music (el mismo de `music`)
+            video: "\ue5ec"       // tv-minimal-play
         })
 
         readonly property var volume: ({
@@ -423,11 +438,12 @@ Singleton {
         readonly property int openTopRadius: 19
         readonly property int openBottomRadius: 24
 
-        // La carátula: 20/4 plegada, 90/13 desplegada.
+        // La carátula: 20/4 plegada; desplegada, grande como en el
+        // reproductor de macOS, casi del alto de la isla.
         readonly property int artClosed: 20
         readonly property int artClosedRadius: 4
-        readonly property int artOpen: 90
-        readonly property int artOpenRadius: 13
+        readonly property int artOpen: 136
+        readonly property int artOpenRadius: 10
 
         readonly property int spacing: 16
 

@@ -69,6 +69,7 @@ Singleton {
     readonly property string image: root.typed.image
     readonly property string icon: root.typed.icon
     readonly property string glyph: root.typed.glyph
+    readonly property string glyphFamily: root.typed.glyphFamily
 
     // En una llamada: qué acción contesta y cuál rechaza. "answer"/"decline"
     // si viene de --calls (el audio va a la PC), "ancs-positive"/"ancs-negative"

@@ -30,7 +30,20 @@ Singleton {
 
     readonly property string title: root.hasPlayer ? root.player.trackTitle : ""
     readonly property string artist: root.hasPlayer ? root.player.trackArtist : ""
+    readonly property string album: root.hasPlayer ? root.player.trackAlbum : ""
     readonly property string artUrl: root.hasPlayer ? root.player.trackArtUrl : ""
+
+    // Qué programa suena ("Google Chrome", "Spotify"): el nombre con que el
+    // reproductor se presenta por MPRIS, y el de su .desktop ("spotify",
+    // "mpv"), que no cambia con el idioma.
+    readonly property string source: root.hasPlayer ? root.player.identity : ""
+    readonly property string desktopEntry: root.hasPlayer ? root.player.desktopEntry : ""
+
+    // La dirección de lo que suena (xesam:url): el archivo en mpv, la canción
+    // en Spotify. Los navegadores casi nunca la dan.
+    readonly property string url: root.hasPlayer
+        ? String(root.player.metadata["xesam:url"] ?? "")
+        : ""
 
     readonly property bool hasLength: root.hasPlayer
                                       && root.player.lengthSupported
@@ -45,6 +58,7 @@ Singleton {
     readonly property bool canGoNext: root.hasPlayer && root.player.canGoNext
     readonly property bool canGoPrevious: root.hasPlayer && root.player.canGoPrevious
     readonly property bool canControl: root.hasPlayer && root.player.canControl
+    readonly property bool canSeek: root.hasPlayer && root.player.canSeek
 
     // Cuántos están mirando la línea de tiempo.
     property int positionWatchers: 0
@@ -70,6 +84,13 @@ Singleton {
     function togglePlaying(): void {
         if (root.hasPlayer && root.player.canControl)
             root.player.togglePlaying();
+    }
+
+    // Saltar a ese segundo de la pista. `position` se puede escribir: MPRIS
+    // lo convierte en su SetPosition.
+    function seek(seconds): void {
+        if (root.canSeek)
+            root.player.position = Math.max(0, Math.min(root.length, seconds));
     }
 
     // Empujar a `position` a que se entere de que el tiempo pasa.

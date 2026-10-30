@@ -167,8 +167,8 @@ IslandOccupant {
 
                 image: Notifications.image
                 icon: ""
-                glyph: "\uf095"
-                fontFamily: Theme.font.mono
+                glyph: Notifications.glyph
+                fontFamily: Notifications.glyphFamily
                 color: Theme.island.fg
             }
 
@@ -321,7 +321,7 @@ IslandOccupant {
                 image: Notifications.image
                 icon: Notifications.icon
                 glyph: Notifications.glyph
-                fontFamily: Theme.font.mono
+                fontFamily: Notifications.glyphFamily
                 color: Theme.island.fg
             }
 
@@ -387,7 +387,7 @@ IslandOccupant {
                 image: Notifications.image
                 icon: Notifications.icon
                 glyph: Notifications.glyph
-                fontFamily: Theme.font.mono
+                fontFamily: Notifications.glyphFamily
                 color: Theme.island.fg
             }
 

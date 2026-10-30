@@ -2,9 +2,9 @@
 // Carátula, título, artista y controles. No sabe de MPRIS: recibe datos.
 
 import QtQuick
-import Quickshell.Widgets
 import qs.core.theme
 import qs.core.components.atoms
+import qs.core.components.molecules
 
 ControlTile {
     id: root
@@ -12,6 +12,8 @@ ControlTile {
     property string title: ""
     property string subtitle: ""
     property string artUrl: ""
+    // Lo que se dibuja si no hay carátula: la nota, o la tele para un video.
+    property string artGlyph: Theme.systemIcons.cover.music
     property bool playing: false
     property bool canControl: false
     property bool canGoPrevious: false
@@ -23,8 +25,9 @@ ControlTile {
 
     padding: 14
 
-    // Carátula, o una nota si no hay.
-    ClippingRectangle {
+    // Carátula, o su glifo si no hay. Se decodifica a 64 px, lo mismo que pide
+    // la isla plegada: las dos comparten la misma copia en la caché.
+    CoverArt {
         id: art
 
         anchors.top: parent.top
@@ -32,32 +35,12 @@ ControlTile {
         width: 38
         height: 38
         radius: 10
+
+        source: root.artUrl
+        glyph: root.artGlyph
+        glyphSize: 16
         color: Theme.glass.control
-
-        Icon {
-            anchors.centerIn: parent
-            visible: cover.status !== Image.Ready
-            icon: Theme.systemIcons.music
-            size: 16
-            color: Theme.glass.contentMuted
-        }
-
-        Image {
-            id: cover
-            anchors.fill: parent
-            source: root.artUrl
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-
-            // Se decodifica al tamaño en que se ve (con margen para HiDPI), no
-            // al original: una carátula de 640×640 son 1.6 MB en memoria para
-            // pintar 38 px. Y 64 es el mismo tamaño que pide la isla plegada,
-            // así las dos comparten la misma copia en la caché de imágenes.
-            sourceSize.width: 64
-            sourceSize.height: 64
-
-            visible: status === Image.Ready
-        }
+        glyphColor: Theme.glass.contentMuted
     }
 
     Column {

@@ -6,8 +6,13 @@
 //     y `height` iguales.
 //
 // `on` es el blanco del iPhone para lo que está encendido (el micrófono
-// silenciado): fondo blanco y el contenido en negro. `hint` es una línea que
-// sale encima al pasar el ratón: la isla no tiene tooltips de sistema.
+// silenciado): fondo blanco y el contenido en negro. `flat`: sin fondo hasta
+// que pasas el ratón (anterior y siguiente del reproductor). `hint` es una
+// línea que sale encima al pasar el ratón: la isla no tiene tooltips de
+// sistema.
+//
+// El ícono es de Lucide; `iconFamily` lo cambia (los del reproductor son de
+// la Nerd Font).
 
 import QtQuick
 import qs.core.theme
@@ -18,6 +23,7 @@ Rectangle {
 
     property string text: ""
     property string icon: ""
+    property string iconFamily: Theme.font.icon
     property int iconSize: 18
     property real iconRotation: 0
     property string hint: ""
@@ -28,6 +34,7 @@ Rectangle {
     property int fontSize: 12
     property bool bold: false
     property bool on: false
+    property bool flat: false
 
     signal tapped()
 
@@ -44,6 +51,8 @@ Rectangle {
             return hover.hovered && root.enabled ? Qt.lighter(root.tint, 1.12) : root.tint;
         if (root.on)
             return "#ffffff";
+        if (root.flat)
+            return hover.hovered && root.enabled ? Qt.rgba(1, 1, 1, 0.12) : "transparent";
         return hover.hovered && root.enabled ? Qt.rgba(1, 1, 1, 0.3) : Theme.island.track;
     }
 
@@ -66,6 +75,7 @@ Rectangle {
         visible: root.text === "" && root.icon !== ""
         anchors.centerIn: parent
         icon: root.icon
+        font.family: root.iconFamily
         size: root.iconSize
         rotation: root.iconRotation
         color: root.ink

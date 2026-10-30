@@ -68,6 +68,7 @@ Singleton {
             image: "",
             icon: "",
             glyph: AppGlyphs.fallback,
+            glyphFamily: AppGlyphs.defaultFamily,
             fromPhone: false,
             replyable: false,
             holds: false,
@@ -193,6 +194,7 @@ Singleton {
                 image: "",
                 icon: "",
                 glyph: AppGlyphs.glyph("", "missed-call"),
+                glyphFamily: AppGlyphs.family("", "missed-call"),
                 fromPhone: true,
                 replyable: false,
                 holds: false,
@@ -221,6 +223,7 @@ Singleton {
                 image: String(n.image || ""),
                 icon: "",
                 glyph: AppGlyphs.glyph("", "call"),
+                glyphFamily: AppGlyphs.family("", "call"),
                 fromPhone: true,
                 replyable: false,
 
@@ -251,6 +254,7 @@ Singleton {
                 image: String(n.image || ""),
                 icon: "",
                 glyph: AppGlyphs.glyph("", "phone-message"),
+                glyphFamily: AppGlyphs.family("", "phone-message"),
                 fromPhone: true,
 
                 // Lo único a lo que se puede contestar desde aquí: BlueFerry
@@ -274,6 +278,7 @@ Singleton {
                 image: "",
                 icon: "",
                 glyph: AppGlyphs.glyph("", "phone-battery"),
+                glyphFamily: AppGlyphs.family("", "phone-battery"),
                 fromPhone: true,
                 replyable: false,
                 holds: false,
@@ -335,6 +340,7 @@ Singleton {
                 image: String(n.image || ""),
                 icon: "",
                 glyph: AppGlyphs.glyph("", "call"),
+                glyphFamily: AppGlyphs.family("", "call"),
                 fromPhone: true,
                 replyable: false,
 
@@ -379,6 +385,7 @@ Singleton {
                 image: String(n.image || ""),
                 icon: "",
                 glyph: AppGlyphs.glyph("", "call"),
+                glyphFamily: AppGlyphs.family("", "call"),
                 fromPhone: true,
                 replyable: false,
 
@@ -403,6 +410,7 @@ Singleton {
             // genérico para todo, y el glifo de la app dice mucho más.
             icon: "",
             glyph: AppGlyphs.glyph(app, "phone-app"),
+            glyphFamily: AppGlyphs.family(app, "phone-app"),
             fromPhone: true,
             replyable: false,
             holds: false,
@@ -437,6 +445,7 @@ Singleton {
             image: String(n.image || ""),
             icon: icon,
             glyph: AppGlyphs.glyph(app.length > 0 ? app : entry, "desktop"),
+            glyphFamily: AppGlyphs.family(app.length > 0 ? app : entry, "desktop"),
             fromPhone: false,
             replyable: false,
             holds: false,

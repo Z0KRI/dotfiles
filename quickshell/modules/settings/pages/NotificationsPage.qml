@@ -68,7 +68,7 @@ SettingsPage {
 
                 // La tabla de glifos vive en el tema (AppGlyphs), no en las reglas.
                 icon: AppGlyphs.forApp(app.modelData.name)
-                iconFamily: Theme.font.mono
+                iconFamily: AppGlyphs.familyForApp(app.modelData.name)
                 tint: app.modelData.phone ? "#30b94d" : "#8e8e93"
                 title: app.modelData.name
                 subtitle: app.modelData.phone ? "Desde el iPhone" : ""
