@@ -1,18 +1,12 @@
 pragma Singleton
 
-// A qué símbolo se parece cada aplicación.
-//
-// Vive en el tema porque es apariencia, no lógica: cambiar el glifo de
-// WhatsApp no cambia nada de cómo se interpreta una notificación. Y están aquí
-// y no en una tabla de iconos del sistema porque son glifos de Nerd Font: no
-// dependen del tema de iconos instalado, así que no fallan nunca. Eso es justo
-// lo que se quiere de un respaldo.
-
 import QtQuick
 import Quickshell
 
 Singleton {
     id: root
+
+    readonly property string defaultFamily: Theme.font.mono
 
     // Cuando no reconocemos nada: una campana.
     readonly property string fallback: "\uf0f3"
@@ -26,16 +20,17 @@ Singleton {
         "phone-battery": "\uf243"
     })
 
-    // Por NOMBRE de aplicación. Se recorre en orden y gana la primera que
-    // encaje, así que lo específico va arriba. La comparación es en minúsculas
-    // y por trozo, no completa: "WhatsApp Business" encaja con "whatsapp".
-    //
-    // Aquí es donde vas añadiendo lo que uses.
     readonly property var byApp: [
+        { match: "warp", glyph: "\ue20a", family: Theme.font.icon },
+        { match: "x",   glyph: "\ue8c9" },
+        { match: "spotify", glyph: "\uf1bc" },
+        { match: "health",   glyph: "\uf004" },
+        { match: "reddit",   glyph: "\uf281" },
+        { match: "google",   glyph: "\ue7f0" },
         { match: "whatsapp",   glyph: "\uf232" },
         { match: "telegram",   glyph: "\uf2c6" },
         { match: "instagram",  glyph: "\uf16d" },
-        { match: "messenger",  glyph: "\uf09a" },
+        { match: "messenger",  glyph: "\uf25f" },
         { match: "facebook",   glyph: "\uf09a" },
         { match: "twitter",    glyph: "\uf099" },
         { match: "slack",      glyph: "\uf198" },
@@ -53,8 +48,8 @@ Singleton {
         { match: "mensaje",    glyph: "\uf075" },
         { match: "message",    glyph: "\uf075" },
         { match: "signal",     glyph: "\uf075" },
-        { match: "discord",    glyph: "\uf075" },
-        { match: "zen",        glyph: "\uf269" },
+        { match: "discord",   glyph: "\uf1ff" },
+        { match: "zen",        glyph: "\ue745" },
         { match: "firefox",    glyph: "\uf269" },
         { match: "chrom",      glyph: "\uf268" },
         { match: "code",       glyph: "\uf121" }
@@ -70,15 +65,25 @@ Singleton {
         return root.forApp(appName);
     }
 
-    function forApp(appName): string {
+
+    function family(appName, kind): string {
+        if (root.byKind[String(kind || "")])
+            return root.defaultFamily;
+
+        return root.familyForApp(appName);
+    }
+
+    // La primera que encaje con el nombre, o null.
+    function entryFor(appName) {
         const name = String(appName || "").toLowerCase();
-        const table = root.byApp;
+        return root.byApp.find(entry => name.indexOf(entry.match) !== -1) ?? null;
+    }
 
-        for (let i = 0; i < table.length; ++i) {
-            if (name.indexOf(table[i].match) !== -1)
-                return table[i].glyph;
-        }
+    function forApp(appName): string {
+        return root.entryFor(appName)?.glyph ?? root.fallback;
+    }
 
-        return root.fallback;
+    function familyForApp(appName): string {
+        return root.entryFor(appName)?.family ?? root.defaultFamily;
     }
 }
