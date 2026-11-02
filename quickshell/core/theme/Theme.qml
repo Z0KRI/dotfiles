@@ -170,6 +170,23 @@ Singleton {
         readonly property int clipboardWidth: 360
         readonly property int clipboardHeight: 352
 
+        // Mission Control y los fondos: el mismo cajón de tarjetas verticales.
+        // Crece desde un tope de 300 de ancho; su ancho final depende de
+        // cuántas tarjetas lleva (ver deckWidth()).
+        readonly property int deckClosedWidth: 300
+        readonly property int cardWidth: 148
+        readonly property int cardHeight: 300
+        readonly property int cardRadius: 16
+        readonly property int cardGap: 16
+        readonly property int cardLabel: 28        // la pastilla con el nombre
+        readonly property int deckSide: 28         // aire a los lados del cajón
+        readonly property int deckEnd: 18          // aire arriba y abajo
+        readonly property int deckHeight: root.frame.deckEnd * 2 + root.frame.cardHeight
+                                          + 10 + root.frame.cardLabel
+        readonly property real missionDim: 0.28    // cuánto se oscurece la pantalla
+        readonly property color cardChosen: "#4db2ff"
+        readonly property color cardGlow: Qt.rgba(0, 0.57, 1, 0.28)
+
         // El aire entre la orilla de un cajón o panel y lo que lleva dentro.
         readonly property int inset: 14
 
@@ -237,6 +254,20 @@ Singleton {
         readonly property int fontCaption: 11
         readonly property int fontTitle: 15
         readonly property int fontHero: 22
+    }
+
+    // El ancho del cajón de tarjetas (Mission Control, fondos) para `cards`
+    // tarjetas: las tarjetas, sus huecos y el aire de los lados.
+    function deckWidth(cards: int): int {
+        const n = Math.max(1, cards);
+        return n * root.frame.cardWidth + (n - 1) * root.frame.cardGap + root.frame.deckSide * 2;
+    }
+
+    // Cuántas tarjetas caben a lo ancho de una pantalla, dejando `margin` a
+    // cada lado. Más que eso, el cajón se desplaza de lado.
+    function deckFits(screenWidth: real, margin: real): int {
+        const room = screenWidth - margin * 2 - root.frame.deckSide * 2 + root.frame.cardGap;
+        return Math.max(1, Math.floor(room / (root.frame.cardWidth + root.frame.cardGap)));
     }
 
     // El ícono de batería para un nivel de 0 a 1: cargando gana; de 60 % para

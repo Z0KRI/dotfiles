@@ -10,6 +10,7 @@ import qs.core.theme
 import qs.core.components.atoms
 import qs.core.components.molecules
 import qs.core.components.templates
+import qs.domain.desktop
 import qs.domain.session
 import qs.domain.settings
 
@@ -42,6 +43,13 @@ FrameDrawer {
         text: "Ajustes del sistema…"
         shortcut: "Super ,"
         onTriggered: root.run(() => SettingsControl.open(""))
+    }
+
+    // El selector sale del borde de abajo; lo que estuviera ahí se cierra.
+    Entry {
+        icon: Theme.systemIcons.launcher.image
+        text: "Fondo de pantalla…"
+        onTriggered: root.run(() => Wallpapers.open())
     }
 
     Separator {}

@@ -13,6 +13,8 @@
 // sola vez. Las que se manejan desde Hyprland abren su puerta por IPC:
 //   qs ipc call launcher open|close|toggle
 //   qs ipc call clipboard open|close|toggle
+//   qs ipc call mission   open|close|toggle
+//   qs ipc call wallpaper open|close|toggle|next|previous
 //   qs ipc call notifications open|close|toggle
 //   qs ipc call settings open|close|toggle|go <sección>
 //   qs ipc call capture  region|screen|color
@@ -24,16 +26,21 @@ import Quickshell
 import qs.modules.bar
 import qs.modules.launcher
 import qs.modules.clipboard
+import qs.modules.mission
+import qs.modules.wallpaper
 import qs.modules.island
 import qs.modules.settings
 import qs.modules.capture
 import qs.modules.keys
 
 ShellRoot {
+    // El fondo primero: es lo de más abajo.
+    Wallpaper {}
     Bar {}
     Island {}
     Launcher {}
     Clipboard {}
+    Mission {}
     Settings {}
     Capture {}
     MediaKeys {}

@@ -97,6 +97,26 @@ Singleton {
             Hyprland.dispatch("hl.dsp.focus({ window = 'address:0x" + toplevel.address + "' })");
     }
 
+    // ── Escritorios (Mission Control) ─────────────────────────────
+
+    // Los escritorios normales de un monitor, por número. Fuera los
+    // especiales (el scratchpad tiene id negativo).
+    function workspacesOn(monitorName) {
+        return Hyprland.workspaces.values
+            .filter(ws => ws && ws.id > 0 && ws.monitor && ws.monitor.name === monitorName)
+            .sort((a, b) => a.id - b.id);
+    }
+
+    // Todos los números en uso, en cualquier monitor.
+    readonly property var workspaceIds: Hyprland.workspaces.values.map(ws => ws.id)
+
+    // Ir a un escritorio. Si no existe, Hyprland lo crea en el monitor
+    // enfocado. Con la sintaxis de la config Lua, la misma de keybindings.lua
+    // (CONTROL + flechas): `workspace.activate()` de Quickshell manda la vieja.
+    function focusWorkspace(id): void {
+        Hyprland.dispatch("hl.dsp.focus({ workspace = " + Number(id) + " })");
+    }
+
     function remember(toplevel) {
         const workspace = toplevel.workspace;
         if (!workspace || toplevel.address === "")

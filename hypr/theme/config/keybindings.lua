@@ -129,6 +129,9 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(p.terminal))
 hl.bind("CONTROL + left",  hl.dsp.focus({ workspace = "m-1" }))
 hl.bind("CONTROL + right", hl.dsp.focus({ workspace = "m+1" }))
 
+-- Mission Control, como Ctrl + ↑ en macOS (y F3 en el teclado Apple, abajo).
+hl.bind("CONTROL + up", hl.dsp.exec_cmd(p.mission))
+
 
 ---------------------
 ---- SCREENSHOTS ----
@@ -251,14 +254,14 @@ hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_S
 -- Con "Usar F1, F2… como estándar" (Ajustes › Teclado) en el Apple salen con fn.
 --
 --   F1 / F2     brillo (la isla enseña el nivel)
---   F3          Mission Control: XF86LaunchA. Hyprland no trae vista de
---               ventanas, así que queda libre.
+--   F3          Mission Control (XF86LaunchA): el de tu shell
 --   F4          Launchpad (XF86LaunchB) o la lupa de los de 2021 (XF86Search)
 --   F7 F8 F9    anterior / reproducir-pausar / siguiente
 --   F10–F12     volumen: los de arriba (MULTIMEDIA KEYS)
 hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd(p.brightness .. " up"),   { locked = true, repeating = true })
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(p.brightness .. " down"), { locked = true, repeating = true })
 
+hl.bind("XF86LaunchA", hl.dsp.exec_cmd(p.mission))
 hl.bind("XF86LaunchB", hl.dsp.exec_cmd(p.launchpad))
 hl.bind("XF86Search",  hl.dsp.exec_cmd(p.menu))
 

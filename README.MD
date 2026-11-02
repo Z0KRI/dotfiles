@@ -57,7 +57,7 @@ quickshell/                      capas, como en S.I.R.A:
 ├── core/                        componentes (atoms → templates), tema y utilidades
 ├── data/                        lo único que habla con el sistema (Pipewire, BlueZ, hyprctl…)
 ├── domain/                      las reglas (qué se muestra, cuándo, cómo se guarda)
-└── modules/                     las features: bar, island, launcher, clipboard, settings, capture, keys
+└── modules/                     las features: bar, island, launcher, clipboard, mission, wallpaper, settings, capture, keys
 
 blueferry/                       llamadas del iPhone: oFono + WirePlumber (opcional)
 applications/                    el .desktop de Ajustes
@@ -89,6 +89,7 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 | `CTRL + SUPER + F` | pantalla completa en un workspace propio (otra vez: la regresa) |
 | `SUPER + V` | flotar / desflotar |
 | `CTRL + ←/→` | workspace anterior / siguiente |
+| `CTRL + ↑` | Mission Control |
 | `SUPER + ALT + 1…0` | mandar la ventana al workspace 1…10 |
 | `SUPER + S` / `SUPER + ALT + S` | scratchpad: ver / mandar ventana |
 | `SUPER + SHIFT + 3` | captura del monitor (Imágenes/Capturas + portapapeles) |
@@ -96,6 +97,7 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 | `SUPER + flechas` / `+ SHIFT` | mover el foco / intercambiar ventanas |
 | `SUPER + SHIFT + Q` | salir de Hyprland |
 | `F1` / `F2` (teclado Apple) | brillo, con su nivel en la isla |
+| `F3` (Mission Control) | Mission Control |
 | `F4` (Launchpad) | Spotlight en Aplicaciones; la lupa de los de 2021, la búsqueda general |
 | `F7` / `F8` / `F9` | anterior / reproducir-pausar / siguiente |
 | `F10` / `F11` / `F12` | silencio / bajar / subir volumen |
@@ -154,6 +156,20 @@ de la shell. Es la dirección "C · Marco" del lienzo de diseño *Shell orgánic
   abierto). Comparten ese borde: abrir uno cierra el otro. El portapapeles dice
   qué es cada entrada (código, ruta, comando, enlace, imagen) y enseña la
   miniatura de las imágenes.
+- **Mission Control** (`F3` en el teclado Apple, `CTRL + ↑` en cualquiera) sale
+  del mismo borde, con una tarjeta vertical por escritorio del monitor: el
+  fondo de pantalla, sus ventanas (ícono y nombre de cada app) y abajo las
+  apps unidas con « + ». Si ninguno está vacío, al final hay uno vacío para
+  estrenar. Clic o `Enter` te lleva; la pantalla de atrás se oscurece.
+- **El fondo de pantalla** lo pinta la shell (con un fundido al cambiar), el
+  mismo en todos los monitores. Los fondos son **las imágenes de
+  `~/Pictures/Wallpapers`**: lo que pongas o quites ahí aparece o desaparece
+  del selector solo, sin reiniciar nada. El selector es el mismo cajón de
+  tarjetas que Mission Control y se abre desde el menú del sistema › «Fondo de
+  pantalla…» (o Ajustes › Apariencia). Elegir uno lo pone al momento; `← →`
+  recorren. Con la carpeta vacía se ve el fondo de Hyprland.
+- Los cuatro de abajo (Spotlight, portapapeles, Mission Control y fondos)
+  comparten el borde: abrir uno cierra el que estuviera.
 - **Ocultar automáticamente** (Ajustes › Barra de menús) guarda las pestañas en
   el marco; al acercar el mouse al borde salen como una barra sólida de lado a
   lado. En **pantalla completa** el marco se va.
@@ -170,6 +186,8 @@ Lo que hacen los atajos también se puede llamar a mano:
 qs ipc call launcher open|close|toggle
 qs ipc call launcher mode apps      # apps, files o all
 qs ipc call clipboard open|close|toggle
+qs ipc call mission open|close|toggle
+qs ipc call wallpaper open|close|toggle|next|previous
 qs ipc call notifications open|close|toggle   # en el monitor enfocado
 qs ipc call settings open|close|toggle
 qs ipc call settings go wifi        # bluetooth, airpods, iphone, sound, about…

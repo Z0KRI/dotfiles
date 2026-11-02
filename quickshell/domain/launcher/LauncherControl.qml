@@ -7,9 +7,9 @@
 //   apps       solo aplicaciones
 //   files      solo archivos
 //
-// El portapapeles salió de aquí: es su propio panel (ClipboardControl), y
-// los dos comparten el borde de abajo, así que abrir uno cierra el otro
-// (esa regla vive en ClipboardControl).
+// Spotlight sale del borde de abajo, que comparte con el portapapeles,
+// Mission Control y los fondos: uno a la vez. Quién lo tiene lo decide
+// BottomEdge; aquí `shown` solo pregunta si es de Spotlight.
 //
 // Reglas:
 //   - Abrir sin modo es abrir la búsqueda general.
@@ -19,22 +19,23 @@
 pragma Singleton
 
 import Quickshell
+import qs.domain.desktop
 
 Singleton {
     id: root
 
     readonly property var modes: ["all", "apps", "files"]
 
-    property bool shown: false
+    readonly property bool shown: BottomEdge.owner === "spotlight"
     property string mode: "all"
 
     function open(): void {
         root.mode = "all";
-        root.shown = true;
+        BottomEdge.claim("spotlight");
     }
 
     function close(): void {
-        root.shown = false;
+        BottomEdge.release("spotlight");
     }
 
     function toggle(): void {
@@ -55,7 +56,7 @@ Singleton {
         }
 
         root.mode = mode;
-        root.shown = true;
+        BottomEdge.claim("spotlight");
     }
 
     // Cambiar de modo con Spotlight ya abierto (los chips, Super + 1…3, Tab).

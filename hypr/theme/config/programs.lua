@@ -16,6 +16,8 @@ M.menu     = "qs ipc call launcher open"
 -- El panel del portapapeles, en la esquina de abajo a la derecha (como Win + V).
 -- Llamarlo otra vez con el panel abierto lo cierra.
 M.clipboard = "qs ipc call clipboard toggle"
+-- Mission Control: un escritorio por tarjeta, desde el borde de abajo.
+M.mission  = "qs ipc call mission toggle"
 M.settings = "qs ipc call settings toggle"
 
 -- Capturas: se guardan en Imágenes/Capturas y quedan en el portapapeles,

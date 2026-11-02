@@ -23,6 +23,9 @@
 // Dos formas (ver DrawerShape):
 //   attach: "bottom"   al centro del borde de abajo
 //   attach: "corner"   en la esquina de abajo a la derecha
+//
+// Con `dim`, la pantalla de atrás se oscurece mientras está abierto (Mission
+// Control, para que las tarjetas resalten).
 
 import QtQuick
 import Quickshell
@@ -51,6 +54,9 @@ PanelWindow {
     // haya (el marco y, si está abierto, el panel de notificaciones).
     property real bottomInset: 0
     property real rightInset: 0
+
+    // Cuánto se oscurece lo de atrás con el cajón abierto (0 = nada).
+    property real dim: 0
 
     signal dismissed()
 
@@ -126,6 +132,13 @@ PanelWindow {
     mask: Region {
         width: root.open ? root.width : 0
         height: root.open ? root.height : 0
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: root.dim > 0
+        color: "black"
+        opacity: root.dim * Math.max(0, Math.min(1, root.progress))
     }
 
     MouseArea {

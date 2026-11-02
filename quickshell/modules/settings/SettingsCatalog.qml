@@ -64,7 +64,7 @@ Singleton {
             {
                 id: "appearance", title: "Apariencia", tint: "#1c1c1e",
                 icon: Theme.systemIcons.darkMode,
-                keywords: "oscuro claro modo acento color liquid glass vidrio transparencia"
+                keywords: "oscuro claro modo acento color liquid glass vidrio transparencia fondo pantalla wallpaper"
             },
             {
                 id: "displays", title: "Pantallas", tint: "#0a84ff",

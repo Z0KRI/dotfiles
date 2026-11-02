@@ -1,4 +1,4 @@
-// Ajustes › Apariencia: modo, color de acento y Liquid Glass.
+// Ajustes › Apariencia: modo, color de acento, fondo de pantalla y Liquid Glass.
 //
 // La vista previa del vidrio es una barra lateral de Ajustes en miniatura,
 // con el mismo color del tema (Theme.window.sidebar): mueves el deslizador y
@@ -74,6 +74,39 @@ SettingsPage {
                         selected: Appearance.accent === modelData
                         onActivated: Appearance.setAccent(modelData)
                     }
+                }
+            }
+        }
+    }
+
+    // El fondo: cuál está puesto y el botón al selector (el cajón de tarjetas
+    // que sale del borde de abajo). Los fondos no se agregan aquí: son las
+    // imágenes de la carpeta.
+    SettingsGroup {
+        header: "Fondo de pantalla"
+        footer: "Se leen solos de " + Wallpapers.folder + ": lo que pongas o quites ahí "
+                + "aparece o desaparece del selector, sin reiniciar nada."
+
+        SettingsRow {
+            glyph: Theme.systemIcons.launcher.image
+            title: Wallpapers.current ? Wallpapers.current.name : "Ninguno"
+            subtitle: Wallpapers.empty
+                ? "La carpeta está vacía: se ve el fondo de Hyprland."
+                : Wallpapers.list.length + (Wallpapers.list.length === 1 ? " fondo" : " fondos")
+
+            Row {
+                spacing: 6
+
+                PushButton {
+                    text: "Abrir la carpeta"
+                    onClicked: Wallpapers.openFolder()
+                }
+
+                PushButton {
+                    primary: true
+                    enabled: !Wallpapers.empty
+                    text: "Elegir…"
+                    onClicked: Wallpapers.open()
                 }
             }
         }

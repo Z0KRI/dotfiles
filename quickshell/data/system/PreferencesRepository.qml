@@ -27,6 +27,10 @@ Singleton {
     property alias accent: adapter.accent
     property alias glass: adapter.glass
 
+    // ── Fondo de pantalla ───────────────────────────────────
+    // La ruta del elegido. Si deja de estar en la carpeta, se usa el primero.
+    property alias wallpaper: adapter.wallpaper
+
     // ── Pantallas ───────────────────────────────────────────
     property alias brightness: adapter.brightness
     property alias nightLight: adapter.nightLight
@@ -88,6 +92,7 @@ Singleton {
             property bool autoAppearance: false
             property string accent: "blue"
             property real glass: 0.5            // 0 transparente · 1 tintado
+            property string wallpaper: ""       // ruta del fondo elegido
 
             property real brightness: 1.0
             property bool nightLight: false

@@ -273,6 +273,11 @@ enable_services() {
     # Las carpetas de usuario (Imágenes, Descargas…) en el idioma del sistema.
     command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update && ok "carpetas de usuario"
 
+    # Los fondos de pantalla de la shell: lo que pongas aquí aparece solo en
+    # el selector (menú del sistema › Fondo de pantalla…). La shell también
+    # la crea al arrancar; aquí es para que ya exista al copiar tus fondos.
+    mkdir -p "$HOME/Pictures/Wallpapers" && ok "~/Pictures/Wallpapers"
+
     local unit
     # plocate-updatedb.timer: regenera una vez al día el índice de archivos
     # que usa Spotlight. Sin él, plocate busca en una base que nunca cambia.

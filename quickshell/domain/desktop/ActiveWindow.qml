@@ -37,6 +37,12 @@ Singleton {
         if (appId === "")
             return root.emptyName;
 
+        return root.nameOf(appId);
+    }
+
+    // El nombre corto de una app por su clase. Lo usan la barra y Mission
+    // Control, para que una app se llame igual en los dos lados.
+    function nameOf(appId) {
         const rule = root.names.find(([pattern]) => pattern.test(appId));
         if (rule)
             return rule[1];
