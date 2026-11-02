@@ -9,6 +9,7 @@ import QtQuick
 import Quickshell
 import qs.core.theme
 import qs.core.components.templates
+import qs.domain.desktop
 import qs.domain.island
 import qs.modules.island.occupants
 
@@ -113,9 +114,10 @@ Scope {
     // ocupante no hay ventana: la isla vacía no gasta memoria.
     //
     // Miden lo justo para la isla desplegada, con aire para el rebote de la
-    // animación (OutBack se pasa un poco del tamaño final).
+    // animación (OutBack se pasa un poco del tamaño final) y para lo que
+    // baja desde el marco.
     readonly property int frameWidth: Theme.island.openWidth + 96
-    readonly property int frameHeight: Theme.island.openHeight + 64
+    readonly property int frameHeight: Theme.frame.thickness + Theme.island.openHeight + 64
 
     Variants {
         model: Quickshell.screens
@@ -164,6 +166,9 @@ Scope {
 
                 // El mismo cálculo que hace el compositor para centrarla.
                 originX: Math.round((window.modelData.width - root.frameWidth) / 2)
+
+                // Cuelga del marco de su pantalla; sin marco, del borde.
+                topInset: BarVisibility.framed(window.modelData) ? Theme.frame.thickness : 0
             }
         }
     }

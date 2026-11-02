@@ -57,7 +57,7 @@ quickshell/                      capas, como en S.I.R.A:
 ├── core/                        componentes (atoms → templates), tema y utilidades
 ├── data/                        lo único que habla con el sistema (Pipewire, BlueZ, hyprctl…)
 ├── domain/                      las reglas (qué se muestra, cuándo, cómo se guarda)
-└── modules/                     las features: bar, island, launcher, settings, capture, keys
+└── modules/                     las features: bar, island, launcher, clipboard, settings, capture, keys
 
 blueferry/                       llamadas del iPhone: oFono + WirePlumber (opcional)
 applications/                    el .desktop de Ajustes
@@ -82,7 +82,7 @@ hyprctl monitors        # nombres para hl.monitor y ws.primario
 | Atajo | Qué hace |
 |---|---|
 | `SUPER + Espacio` | Spotlight: apps, archivos y web |
-| `SUPER + SHIFT + V` | Spotlight en el portapapeles (pega en la ventana donde estabas) |
+| `SUPER + SHIFT + V` | el portapapeles, en la esquina de abajo (pega en la ventana donde estabas) |
 | `SUPER + ,` | Ajustes |
 | `SUPER + Enter` / `SUPER + E` | terminal / archivos |
 | `SUPER + Q` | cerrar ventana (si el workspace queda vacío, vuelve al 1) |
@@ -106,18 +106,61 @@ siguen siendo F1–F12; si traen teclas de música o volumen propias (en muchos,
 con Fn), también sirven. Con "Usar F1, F2… como estándar" (Ajustes › Teclado)
 en el Apple salen con `fn`.
 
-Con Spotlight abierto:
+Con Spotlight abierto (sale del borde de abajo; el mejor resultado queda
+justo encima del campo, así que `↑` sube por la lista):
 
 | Atajo | Qué hace |
 |---|---|
-| `SUPER + 1 / 2 / 3` (o `CTRL`) | Aplicaciones / Archivos / Portapapeles (otra vez: búsqueda general) |
-| `Tab` / `SHIFT + Tab` | modo siguiente / anterior |
-| `Enter` | abrir (si la app ya tiene ventana, va a ella) · pegar · buscar |
-| `CTRL + Enter` | abrir otra ventana · mostrar en carpeta · solo copiar |
-| `SHIFT + Supr` | borrar la entrada del portapapeles |
-| `Retroceso` (campo vacío) | volver a la búsqueda general |
+| `SUPER + 1 / 2` (o `CTRL`) | Aplicaciones / Archivos (otra vez: Todo) |
+| `SUPER + 3` (o `CTRL`) | cerrar Spotlight y abrir el portapapeles |
+| `Tab` / `SHIFT + Tab` | modo siguiente / anterior (Todo, Apps, Archivos) |
+| `Enter` | abrir (si la app ya tiene ventana, va a ella) · buscar |
+| `CTRL + Enter` | abrir otra ventana · mostrar en carpeta |
+| `Retroceso` (campo vacío) | volver a Todo |
 | `> comando` | ejecutar un comando |
 | `Esc` | borrar lo escrito; con el campo vacío, cerrar |
+
+Con el portapapeles abierto:
+
+| Atajo | Qué hace |
+|---|---|
+| `Enter` | pegar en la ventana donde estabas (o solo copiar, según Ajustes) |
+| `CTRL + Enter` | solo copiar |
+| `SHIFT + Supr` | borrar esa entrada |
+| `Esc` | borrar lo escrito; con el campo vacío, cerrar |
+
+## El marco
+
+La barra de menús ya no flota: es un **marco** negro de 6 px alrededor de cada
+pantalla, con las esquinas de adentro redondeadas, del que cuelgan las piezas
+de la shell. Es la dirección "C · Marco" del lienzo de diseño *Shell orgánica*.
+
+- **Dos pestañas** bajan del borde de arriba hasta 38 px (6 del marco + 32 de
+  la barra): la izquierda con el logo de Arch y la app activa; la derecha con
+  Spotlight, el Centro de control, el reloj y las notificaciones. Donde se unen
+  al marco, la curva es cóncava (un "ala" de 14 px), como la de la isla.
+- **La isla** cuelga del marco entre las dos, a la misma altura.
+- **El Centro de control y el calendario** crecen desde la pestaña derecha;
+  **el menú del sistema** sale del borde izquierdo, a media pantalla. Los tres
+  abren con el mismo rebote que la isla y se cierran con un clic afuera o `Esc`.
+- **Las notificaciones** (la campana; con punto azul si llegó algo desde la
+  última vez): el borde derecho engorda 372 px de arriba abajo, como una barra
+  lateral, y la pestaña se disuelve en él. Las ventanas se apartan para dejarle
+  sitio en vez de quedar debajo. Lleva el historial (tocar una la abre; la ×
+  la descarta; los mensajes del iPhone se responden ahí mismo), "Borrar todo"
+  y No molestar. No es un menú: se cierra con la campana, no con un clic afuera.
+- **Spotlight** sale del borde de abajo, al centro, y **el portapapeles** de la
+  esquina de abajo a la derecha (junto al panel de notificaciones, si está
+  abierto). Comparten ese borde: abrir uno cierra el otro. El portapapeles dice
+  qué es cada entrada (código, ruta, comando, enlace, imagen) y enseña la
+  miniatura de las imágenes.
+- **Ocultar automáticamente** (Ajustes › Barra de menús) guarda las pestañas en
+  el marco; al acercar el mouse al borde salen como una barra sólida de lado a
+  lado. En **pantalla completa** el marco se va.
+
+Hyprland deja libre lo que ocupa el marco: `gaps_out` se cuenta desde su borde
+de adentro. Todas las medidas viven en `Theme.frame`; el trazo, en
+`core/utils/FramePath.qml`.
 
 ## La shell por IPC
 
@@ -125,7 +168,9 @@ Lo que hacen los atajos también se puede llamar a mano:
 
 ```bash
 qs ipc call launcher open|close|toggle
-qs ipc call launcher mode clipboard # apps, files, clipboard o all
+qs ipc call launcher mode apps      # apps, files o all
+qs ipc call clipboard open|close|toggle
+qs ipc call notifications open|close|toggle   # en el monitor enfocado
 qs ipc call settings open|close|toggle
 qs ipc call settings go wifi        # bluetooth, airpods, iphone, sound, about…
 qs ipc call capture region|screen|color
@@ -263,9 +308,12 @@ su propia llave.
   un bloqueador escuchando (hypridle + hyprlock). Aún no está configurado.
 - **No suspender** (Centro de control) inhibe la inactividad, pero sin un
   demonio de inactividad todavía no hay nada que inhibir.
-- **Spotlight**: calculadora, secciones de Ajustes como resultados y
-  miniaturas de las imágenes del portapapeles.
+- **Spotlight**: calculadora y secciones de Ajustes como resultados.
+- **Portapapeles**: cliphist no guarda cuándo se copió cada cosa, así que el
+  panel no dice "hace 2 min" como el lienzo; solo el tipo.
 - **Liquid Glass**: Spotlight ya lo tiene (átomo `GlassSurface` + `hl.layer_rule`
-  con desenfoque). Falta llevarlo a la barra, la isla y el Centro de control:
-  cada capa necesita su propia regla por namespace. La refracción de Apple
-  (el vidrio que deforma lo de atrás en los bordes) no está: necesita un shader.
+  con desenfoque). El marco (barra, menús, Centro de control) y la isla son
+  negros a propósito: son dos ventanas que se tocan, y con vidrio translúcido
+  se vería la unión. Para el marco de vidrio del lienzo habría que dibujar la
+  isla dentro del marco. La refracción de Apple (el vidrio que deforma lo de
+  atrás en los bordes) no está: necesita un shader.

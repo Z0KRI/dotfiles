@@ -6,10 +6,10 @@
 // de cuatro segundos no. La decisión vive en `active`, que es la propiedad que
 // contesta a "¿tengo algo que enseñar ahora mismo?".
 //
-// Plegado tiene las medidas de Boring Notch (185x32, carátula de 20 px).
-// Desplegado (640x190) se ve como el reproductor de macOS: la carátula grande
-// con su halo, el programa que suena en la esquina y la línea de tiempo que
-// se arrastra.
+// Plegado mide Theme.island.minWidth × 32, con el cuerpo de Boring Notch y
+// carátula de 20 px. Desplegado (openWidth × openHeight) se ve como el
+// reproductor de macOS: la carátula grande con su halo, el programa que suena
+// en la esquina y la línea de tiempo que se arrastra.
 //
 // Las dos carátulas son CoverArt: sin imagen, la nota o la tele según
 // Player.kind.
@@ -355,7 +355,7 @@ IslandOccupant {
 
     // Lo mismo al entrar en pantalla completa: se repliega además de retirarse.
     // Sin esto, `expanded` se queda en true mientras nadie lo ve, y al salir de
-    // pantalla completa la isla volvería abierta de golpe en 640x190.
+    // pantalla completa la isla volvería abierta de golpe en tamaño desplegado.
     onAllowedChanged: {
         if (!root.allowed)
             root.collapse();

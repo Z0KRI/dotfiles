@@ -31,7 +31,10 @@ QtObject {
     property bool active: false
 
     // ── plegado ───────────────────────────────────────────────────
-    property int contentWidth: 185
+    // Valores de respaldo (cada ocupante pone los suyos). Son los de
+    // Theme.island, alas incluidas; aquí van a mano porque este archivo no
+    // importa el tema.
+    property int contentWidth: 201
     property int contentHeight: 32
 
     // La vista, instanciada por cada ventana. Al declararla DENTRO del archivo
@@ -43,8 +46,8 @@ QtObject {
     property bool expandable: false
     property bool expanded: false
 
-    property int expandedWidth: 640
-    property int expandedHeight: 190
+    property int expandedWidth: 648
+    property int expandedHeight: 194
     property Component expandedView: null
 
     readonly property bool isExpanded: root.expandable && root.expanded

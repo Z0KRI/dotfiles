@@ -12,6 +12,8 @@
 // La raíz de tu shell. Cada feature vive en modules/ y se declara aquí una
 // sola vez. Las que se manejan desde Hyprland abren su puerta por IPC:
 //   qs ipc call launcher open|close|toggle
+//   qs ipc call clipboard open|close|toggle
+//   qs ipc call notifications open|close|toggle
 //   qs ipc call settings open|close|toggle|go <sección>
 //   qs ipc call capture  region|screen|color
 //   qs ipc call brightness up|down
@@ -21,6 +23,7 @@ import QtQuick
 import Quickshell
 import qs.modules.bar
 import qs.modules.launcher
+import qs.modules.clipboard
 import qs.modules.island
 import qs.modules.settings
 import qs.modules.capture
@@ -30,6 +33,7 @@ ShellRoot {
     Bar {}
     Island {}
     Launcher {}
+    Clipboard {}
     Settings {}
     Capture {}
     MediaKeys {}

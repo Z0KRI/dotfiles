@@ -27,8 +27,9 @@ Singleton {
 
     // Liquid Glass: escala la opacidad de un vidrio. En 0.5 la deja tal cual
     // (tu look de siempre); hacia 0 baja hasta el 40 %; hacia 1 se acerca a
-    // opaco. Una sola curva para todo el vidrio: por eso el deslizador de
-    // Ajustes mueve la barra, el Centro de control y los menús a la vez.
+    // opaco. Hoy el único vidrio es la barra lateral de Ajustes: el marco y
+    // todo lo que sale de él (barra, menús, Centro de control, notificaciones,
+    // Spotlight y el portapapeles) es negro, como la isla.
     function glassAlpha(alpha: real): real {
         const t = Math.max(0, Math.min(1, root.glassTint));
         if (t <= 0.5)
@@ -81,46 +82,31 @@ Singleton {
         readonly property var spring: [0.55, -0.04, 0.3, 1.44, 1, 1]
     }
 
-    // “Glass” style bar.
+    // Lo que va ENCIMA de una superficie oscura: los botones de la barra, los
+    // menús y los mosaicos del Centro de control. Se llama "glass" por
+    // historia (antes la barra eran píldoras de vidrio); hoy todo eso vive
+    // sobre el negro del marco.
     readonly property QtObject glass: QtObject {
-        // Píldora. Su opacidad sigue al deslizador de Liquid Glass.
-        readonly property color top: Qt.rgba(0.45, 0.45, 0.45, root.glassAlpha(0.55))
-        readonly property color middle: Qt.rgba(0.35, 0.35, 0.35, root.glassAlpha(0.55))
-        readonly property color bottom: Qt.rgba(0.25, 0.25, 0.25, root.glassAlpha(0.60))
         readonly property color border: Qt.rgba(1, 1, 1, 0.18)
 
-        // Menús desplegables y Spotlight.
-        readonly property color menu: Qt.alpha(root.colors.base100, root.glassAlpha(0.85))
-
-        // --- Space between the content and the button ---
+        // Aire entre el borde de la pestaña y un botón, arriba y abajo.
         readonly property int padding: 3
-        // --- Space between buttons ---
-        readonly property int spacing: 3
 
-        // La barra mide lo mismo que la isla cerrada y empieza en el mismo
-        // borde: las dos comparten la franja de arriba. Cambia la altura de la
-        // isla y la barra la sigue.
+        // La parte de la pestaña que queda DEBAJO del marco mide lo mismo
+        // que la isla cerrada: las dos cuelgan del mismo borde y llegan a la
+        // misma altura. Cambia la altura de la isla y la barra la sigue.
         readonly property int barHeight: root.island.closedHeight
 
-        // Botones: lo que queda dentro de la píldora.
+        // Botones de la barra.
         readonly property int itemSize: root.glass.barHeight - root.glass.padding * 2
         readonly property color hover: Qt.rgba(1, 1, 1, 0.12)
-        readonly property color active: Qt.rgba(0, 0, 0, 0.30)
 
-        // Contenido sobre vidrio: íconos y texto de la barra y del Centro de
-        // control. Fijo en blanco: el vidrio es oscuro en ambos modos, y
-        // base100 se invierte con isDark.
+        // Texto e íconos encima: blancos en ambos modos. Lo de abajo es
+        // oscuro siempre, y base100 se invierte con isDark.
         readonly property color content: "#ffffff"
         readonly property color contentMuted: Qt.rgba(1, 1, 1, 0.6)
 
-        // La barra sólida (cuando se oculta sola). Oscura en los dos modos por
-        // lo mismo que `content`: los íconos de la barra son siempre blancos.
-        // En claro conserva el azul marino de siempre; antes era base800, que
-        // en oscuro se invierte a casi blanco y dejaba los íconos sin verse.
-        readonly property color solid: root.isDark ? "#1c1c1e" : "#0f172a"
-
         // Centro de control (estilo Tahoe).
-        readonly property color panel: Qt.rgba(0.12, 0.12, 0.14, root.glassAlpha(0.55))
         readonly property color tile: Qt.rgba(1, 1, 1, 0.12)
         readonly property color tileHover: Qt.rgba(1, 1, 1, 0.18)
         readonly property color control: Qt.rgba(1, 1, 1, 0.18)   // círculo apagado
@@ -130,53 +116,77 @@ Singleton {
         readonly property int tileRadius: 22
     }
 
-    // Liquid Glass de macOS 27 (Golden Gate), para Spotlight. Lo usa el átomo
-    // GlassSurface. Cuatro capas, de abajo hacia arriba:
+    // El marco: una sola figura negra alrededor de la pantalla, con dos
+    // pestañas que bajan del borde de arriba y los cajones que salen de él
+    // (Centro de control, calendario y menú del sistema). Es la dirección
+    // "C · Marco" del lienzo "Shell orgánica"; cada medida de aquí es una de
+    // las que se probaron allí.
     //
-    //   1. El DESENFOQUE: no es de QML. Lo pinta Hyprland detrás de la capa
-    //      (hl.layer_rule en workspace_windows_rules.lua). QML no puede ver lo
-    //      que hay detrás de su ventana.
-    //   2. El TINTE: un color translúcido encima. Su opacidad sigue al
-    //      deslizador de Liquid Glass de Ajustes, igual que la barra.
-    //   3. El BORDE OSCURO: Golden Gate oscureció los bordes para separar
-    //      capas sobre fondos claros.
-    //   4. El REFLEJO: un borde de luz más brillante en la esquina de arriba a
-    //      la izquierda y en la de abajo a la derecha, como luz sobre un vidrio
-    //      grueso.
-    //
-    // El vidrio es oscuro en los dos modos, como la barra y el Centro de
-    // control: el texto encima va siempre en blanco. QML no sabe qué hay
-    // detrás, así que no puede elegir un color de texto según el fondo.
-    readonly property QtObject liquid: QtObject {
-        // Los tintes nunca bajan de 0.26: Hyprland solo desenfoca donde el
-        // alfa supera su ignore_alpha (0.2). Más transparente que eso y el
-        // vidrio dejaría de desenfocar.
-        readonly property color field: Qt.rgba(0.06, 0.06, 0.08, root.liquidAlpha(0.72))  // la barra
-        readonly property color panel: Qt.rgba(0.10, 0.10, 0.12, root.liquidAlpha(0.48))  // los resultados
+    // Dos tipos de curva, y no son la misma:
+    //   ala      CÓNCAVA. Donde una pestaña o un cajón se une al marco: la
+    //            figura entra hacia la pestaña en vez de hacer un ángulo.
+    //   esquina  CONVEXA. La punta de la pestaña o del cajón, la de afuera.
+    readonly property QtObject frame: QtObject {
+        // El mismo negro que la isla: la isla cuelga del marco y las dos
+        // piezas tienen que leerse como una sola.
+        readonly property color fill: root.island.bg
 
-        readonly property color highlight: Qt.rgba(1, 1, 1, 0.55)   // el punto más brillante del reflejo
-        readonly property color edge: Qt.rgba(0, 0, 0, 0.34)        // el borde oscuro
-        readonly property color sheen: Qt.rgba(1, 1, 1, 0.07)       // luz interior, arriba
+        // Grosor del marco en los cuatro lados. En pantalla completa se va a 0.
+        readonly property int thickness: 6
 
-        readonly property color content: "#ffffff"
-        // La fila elegida: el acento, casi opaco, para que el texto blanco
-        // se lea encima en cualquier fondo.
-        readonly property color selection: Qt.alpha(root.colors.accent, 0.82)
-        readonly property color tile: Qt.rgba(1, 1, 1, 0.14)        // fondo de un ícono de respaldo
+        // Las esquinas de la pantalla que quedan DENTRO del marco: lo que
+        // ves del escritorio es un rectángulo redondeado.
+        readonly property int screenRadius: 14
 
-        // Golden Gate bajó el radio de las esquinas respecto a Tahoe.
-        readonly property int radius: 22
-        readonly property int gap: 10          // entre la barra y los resultados
-        readonly property int barHeight: 54
-        readonly property int barFont: 19
-        readonly property int rowHeight: 48
-        readonly property int iconSize: 34
-    }
+        // Las pestañas cerradas.
+        readonly property int wing: 14
+        readonly property int corner: 14
+        readonly property int tabPadding: 8      // del borde de la pestaña al primer botón
 
-    // Opacidad del tinte de Liquid Glass: la misma curva que el resto del
-    // vidrio (glassAlpha), con un piso. Ver `liquid` arriba.
-    function liquidAlpha(alpha: real): real {
-        return Math.max(0.26, root.glassAlpha(alpha));
+        // Un cajón de la pestaña derecha abierto (Centro de control,
+        // calendario): el ala crece y la punta toma el radio del panel.
+        readonly property int drawerWing: 20
+        readonly property int drawerCorner: root.glass.panelRadius
+
+        // El menú del sistema, que sale del borde izquierdo.
+        readonly property int menuCorner: 18
+
+        // El panel de notificaciones: el borde derecho engorda esto, de
+        // arriba abajo, y las ventanas se apartan lo mismo.
+        readonly property int notificationsWidth: 372
+
+        // Los cajones de abajo (Spotlight, portapapeles): esquinas más
+        // redondas que las pestañas, y se meten 2 px en el marco para que
+        // no quede costura entre las dos ventanas.
+        readonly property int bottomCorner: 26
+        readonly property int overlap: 2
+
+        // Spotlight: crece al centro desde un tope de 220 de ancho.
+        readonly property int spotlightClosedWidth: 220
+        readonly property int spotlightWidth: 640
+        readonly property int spotlightMaxList: 420
+
+        // El portapapeles, en la esquina.
+        readonly property int clipboardWidth: 360
+        readonly property int clipboardHeight: 352
+
+        // El aire entre la orilla de un cajón o panel y lo que lleva dentro.
+        readonly property int inset: 14
+
+        // Escondida, la barra deja esta tira para volver a destaparla.
+        readonly property int revealStrip: 2
+
+        // Los botones encima del negro.
+        readonly property color hover: root.glass.hover
+        readonly property color active: Qt.rgba(1, 1, 1, 0.16)
+
+        // El rebote: los mismos dos muelles que la isla (abrir rebasa un
+        // poco y vuelve; cerrar no rebasa). Lo de en medio, para el
+        // contenido, que entra cuando el cajón ya casi terminó de abrirse.
+        readonly property int openDuration: root.island.openDuration
+        readonly property real openOvershoot: root.island.openOvershoot
+        readonly property int closeDuration: root.island.closeDuration
+        readonly property int slideDuration: 250   // esconderse y destaparse
     }
 
     // Ventanas de aplicación (Ajustes), estilo macOS Golden Gate: claras u
@@ -347,6 +357,7 @@ Singleton {
             web: "\ue0e8",         // globe
             link: "\ue102",        // link
             command: "\ue181",     // terminal
+            code: "\ue093",        // code
             enter: "\ue0a1"        // corner-down-left
         })
 
@@ -425,17 +436,22 @@ Singleton {
     }
 
     readonly property QtObject island: QtObject {
-        // Cerrada y abierta: las medidas reales de Boring Notch.
-        readonly property int minWidth: 185
+        // Cerrada y abierta. Las medidas INCLUYEN las alas. Con el marco, las
+        // alas pasaron a ser las de las pestañas (Theme.frame.wing), así que
+        // el total creció justo lo que crecieron ellas: el ancho entre las
+        // dos curvas sigue siendo el de Boring Notch (173 cerrada, 602
+        // abierta) y, abierta, el alto que queda debajo de las alas también
+        // (171). Las vistas de los ocupantes no se enteran del cambio.
+        readonly property int minWidth: 201
         readonly property int closedHeight: 32
-        readonly property int openWidth: 640
-        readonly property int openHeight: 190
+        readonly property int openWidth: 648
+        readonly property int openHeight: 194
 
         // Las de arriba son las alas (cóncavas), las de abajo el cuerpo.
         // Los cuatro valores crecen al desplegarse.
-        readonly property int closedTopRadius: 6
+        readonly property int closedTopRadius: 14
         readonly property int closedBottomRadius: 14
-        readonly property int openTopRadius: 19
+        readonly property int openTopRadius: 23
         readonly property int openBottomRadius: 24
 
         // La carátula: 20/4 plegada; desplegada, grande como en el
@@ -468,7 +484,7 @@ Singleton {
         readonly property int peekSplit: 16       // nombre → lo de la derecha
         readonly property int peekIconGap: 6      // ícono → texto, a la derecha
         readonly property int peekText: 12
-        readonly property int peekMaxWidth: 460   // más allá, el nombre se corta
+        readonly property int peekMaxWidth: 476   // más allá, el nombre se corta (alas incluidas)
 
         readonly property color bg: "#000000"
         readonly property color fg: "#f2f2f7"

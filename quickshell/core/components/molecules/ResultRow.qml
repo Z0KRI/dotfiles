@@ -11,7 +11,7 @@
 //   entry.detail                  un dato a la derecha (la fecha de un
 //                                 archivo) cuando la fila NO está elegida
 //
-// Apariencia (de fábrica, la del tema; sobre vidrio, la de Theme.liquid):
+// Apariencia (de fábrica, la del tema; en Spotlight, blanco sobre el negro del marco):
 //   contentColor     títulos; el subtítulo y lo de la derecha, más tenues
 //   selectionColor   el fondo de la fila elegida
 //   selectedContent  el texto encima de ese fondo

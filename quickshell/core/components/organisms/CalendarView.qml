@@ -14,6 +14,9 @@ Item {
     property var locale: Qt.locale()
     property date today: new Date()
 
+    // Texto. El del tema por defecto; en el marco va en blanco, sobre negro.
+    property color contentColor: Theme.colors.baseContent
+
     // Mes que se está viendo (month: 0 a 11).
     property int year: root.today.getFullYear()
     property int month: root.today.getMonth()
@@ -58,17 +61,18 @@ Item {
             Label {
                 Layout.fillWidth: true
                 text: root.title
+                color: root.contentColor
                 font.weight: Font.Bold
             }
 
             BarItem {
                 onClicked: root.shift(-1)
-                Label { text: "‹" }
+                Label { text: "‹"; color: root.contentColor }
             }
 
             BarItem {
                 onClicked: root.shift(1)
-                Label { text: "›" }
+                Label { text: "›"; color: root.contentColor }
             }
         }
 
@@ -83,6 +87,7 @@ Item {
                     width: root.cellSize
                     horizontalAlignment: Text.AlignHCenter
                     text: root.locale.dayName((root.locale.firstDayOfWeek + index) % 7, Locale.NarrowFormat)
+                    color: root.contentColor
                     opacity: 0.6
                     font.pixelSize: 11
                 }
@@ -119,12 +124,13 @@ Item {
 
                         anchors.centerIn: parent
                         text: cell.modelData.day
+                        color: root.contentColor
                         opacity: cell.modelData.inMonth ? 1 : 0.35
                         font.weight: cell.modelData.isToday ? Font.Bold : Font.Normal
                     }
 
                     // Solo hoy cambia de color (para verse sobre el acento).
-                    // Al dejar de ser hoy, se restaura el color del tema.
+                    // Al dejar de ser hoy, vuelve a contentColor.
                     Binding {
                         target: dayLabel
                         property: "color"

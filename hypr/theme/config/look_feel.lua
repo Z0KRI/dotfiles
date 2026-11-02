@@ -10,8 +10,8 @@
 
 hl.config({
     general = {
-        gaps_in  = 5,
-        gaps_out = 10,
+        gaps_in  = 3,
+        gaps_out = 2,
 
         border_size = 0,
 
@@ -53,8 +53,9 @@ hl.config({
             color        = 0xee1a1a1a,
         },
 
-        -- Desenfoque de lo translúcido: Spotlight (layer_rule en
-        -- workspace_windows_rules.lua) y las ventanas con transparencia.
+        -- Desenfoque de las ventanas con transparencia (la barra lateral de
+        -- Ajustes, una terminal translúcida). La shell es negra y opaca:
+        -- no tiene reglas de capa (ver workspace_windows_rules.lua).
         -- Más pasadas = más difuso: macOS 27 subió la difusión detrás del
         -- vidrio para que el texto se lea mejor. Cada pasada cuesta GPU; si
         -- notas tirones, baja passes a 2.

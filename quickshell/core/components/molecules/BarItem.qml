@@ -1,5 +1,6 @@
 // MOLÉCULA: botón de la barra. Círculo si solo lleva un ícono,
 // cápsula si lleva texto. Estados: normal, hover y activo.
+// Va sobre el negro del marco: los dos estados son luz blanca encima.
 // Usa handlers (no MouseArea) para convivir con el detector de la barra.
 
 import QtQuick
@@ -14,7 +15,8 @@ Surface {
     // Los elementos que solo informan pueden apagarlo.
     property bool interactive: true
 
-    // Seleccionado. Ej.: la lupa mientras el launcher está abierto.
+    // Seleccionado. Ej.: la lupa mientras el launcher está abierto, o el
+    // ícono del Centro de control con su cajón abierto.
     property bool active: false
 
     // Hacia afuera, por si algo lo necesita (tooltips más adelante).
@@ -33,12 +35,12 @@ Surface {
     // Prioridad: activo gana a hover. "Apagado" es alfa 0 del mismo color.
     color: {
         if (root.active)
-            return Theme.glass.active;
+            return Theme.frame.active;
 
         if (root.interactive && hover.hovered)
-            return Theme.glass.hover;
+            return Theme.frame.hover;
 
-        return Qt.alpha(Theme.glass.hover, 0);
+        return Qt.alpha(Theme.frame.hover, 0);
     }
 
     Behavior on color {

@@ -1,5 +1,8 @@
 // Menú del logo de Arch: sesión y equipo, al estilo del menú Apple.
 // Declara QUÉ opciones hay; lo que hace cada una vive en domain.
+//
+// Sale del borde izquierdo del marco, a media pantalla, como una pestaña
+// acostada (BarFrame lo pone en el cajón `sidePanel`).
 
 import QtQuick
 import Quickshell
@@ -10,18 +13,23 @@ import qs.core.components.templates
 import qs.domain.session
 import qs.domain.settings
 
-DropdownWindow {
+FrameDrawer {
     id: root
 
-    // El botón de la barra al que se pega el menú.
-    required property Item anchorItem
-    anchor.item: root.anchorItem
+    panelWidth: 250
+    padding: 10
 
-    menuWidth: 250
+    // root.run(acción) cierra el menú y luego la ejecuta (viene de FrameDrawer).
 
-    // root.run(acción) cierra el menú y luego la ejecuta (viene de DropdownWindow).
+    // Las filas de este menú: más altas que las de un menú normal (como en el
+    // lienzo) y en blanco, sobre el negro del marco.
+    component Entry: MenuItem {
+        implicitHeight: 32
+        radius: 9
+        contentColor: Theme.glass.content
+    }
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.info
         text: "Acerca de este equipo"
         onTriggered: root.run(() => SettingsControl.open("about"))
@@ -29,7 +37,7 @@ DropdownWindow {
 
     Separator {}
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.settings
         text: "Ajustes del sistema…"
         shortcut: "Super ,"
@@ -38,7 +46,7 @@ DropdownWindow {
 
     Separator {}
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.forceQuit
         text: "Forzar salida"
         onTriggered: root.run(() => SessionActions.forceQuit())
@@ -46,19 +54,19 @@ DropdownWindow {
 
     Separator {}
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.moon
         text: "Reposo"
         onTriggered: root.run(() => SessionActions.suspend())
     }
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.restart
         text: "Reiniciar"
         onTriggered: root.run(() => SessionActions.reboot())
     }
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.power
         text: "Apagar equipo"
         onTriggered: root.run(() => SessionActions.powerOff())
@@ -66,13 +74,13 @@ DropdownWindow {
 
     Separator {}
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.lock
         text: "Bloquear pantalla"
         onTriggered: root.run(() => SessionActions.lock())
     }
 
-    MenuItem {
+    Entry {
         icon: Theme.systemIcons.logout
         text: "Cerrar sesión de " + SessionActions.userName
         onTriggered: root.run(() => SessionActions.logout())

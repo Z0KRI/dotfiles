@@ -120,19 +120,11 @@ hl.window_rule({
 -- Spotlight. Se reconocen por su namespace, el WlrLayershell.namespace de cada
 -- ventana de qs. Ref: https://wiki.hypr.land/Configuring/Basics/Window-Rules/
 
--- Spotlight: el desenfoque de su Liquid Glass. QML no puede ver lo que hay
--- detrás de su ventana, así que el desenfoque lo pone Hyprland.
---
--- La ventana de Spotlight cubre TODA la pantalla (para cerrar con un clic
--- afuera) y casi toda es transparente. ignore_alpha hace que Hyprland solo
--- desenfoque donde el píxel tiene más alfa que eso: el vidrio (nunca baja de
--- 0.26, ver Theme.liquid) sí, el resto de la pantalla no. Si lo subes por
--- encima de 0.26, el vidrio más transparente del deslizador de Ajustes deja
--- de desenfocar.
-hl.layer_rule({
-    name  = "spotlight-glass",
-    match = { namespace = "z0-launcher" },
-
-    blur         = true,
-    ignore_alpha = 0.2,
-})
+-- Hoy no hay reglas de capa: la barra, la isla, Spotlight y el portapapeles
+-- son negros y opacos, así que no hay nada translúcido que desenfocar.
+-- Los namespaces, por si un día agregas una:
+--   z0-frame      el marco (barra, menús, Centro de control, notificaciones)
+--   z0-reserve    lo que aparta las ventanas del marco (invisible)
+--   z0-island     la isla
+--   z0-launcher   Spotlight
+--   z0-clipboard  el portapapeles

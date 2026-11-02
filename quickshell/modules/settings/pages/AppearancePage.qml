@@ -1,8 +1,9 @@
 // Ajustes › Apariencia: modo, color de acento y Liquid Glass.
 //
-// La vista previa del vidrio usa tu BarGroup de verdad, no un dibujo: mueves
-// el deslizador y ves la barra tal como va a quedar, porque es la misma
-// pieza leyendo los mismos colores del tema.
+// La vista previa del vidrio es una barra lateral de Ajustes en miniatura,
+// con el mismo color del tema (Theme.window.sidebar): mueves el deslizador y
+// la ves cambiar. Es lo único que sigue siendo vidrio; el marco y todo lo que
+// sale de él es negro, como la isla.
 
 import QtQuick
 import qs.core.theme
@@ -80,10 +81,11 @@ SettingsPage {
 
     SettingsGroup {
         header: "Liquid Glass"
-        footer: "Cambia qué tan transparente es el vidrio de la barra, el Centro de "
-                + "control, los menús, Spotlight y esta barra lateral. En medio queda como siempre."
+        footer: "Cambia qué tan transparente es esta barra lateral. En medio queda como "
+                + "siempre. El marco de la pantalla y lo que sale de él (los menús, el Centro "
+                + "de control, las notificaciones, Spotlight y el portapapeles) es negro, como la isla."
 
-        // Vista previa: un "fondo de pantalla" y tu barra encima.
+        // Vista previa: un "fondo de pantalla" y una barra lateral encima.
         Item {
             width: parent.width
             height: 92
@@ -119,37 +121,47 @@ SettingsPage {
                     color: Qt.rgba(0, 0, 0, 0.25)
                 }
 
-                BarGroup {
-                    anchors.centerIn: parent
+                // Una barra lateral de Ajustes en miniatura, con su color.
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 170
+                    radius: 9
+                    color: Theme.window.sidebar
 
-                    BarItem {
-                        interactive: false
+                    Column {
+                        x: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
 
-                        Icon {
-                            icon: Theme.systemIcons.arch.icon
-                            ink: Theme.systemIcons.arch.ink
-                            color: Theme.glass.content
-                            font.family: Theme.systemIcons.arch.family
-                        }
-                    }
+                        Repeater {
+                            model: [
+                                { glyph: Theme.systemIcons.settings, text: "Apariencia" },
+                                { glyph: Theme.systemIcons.bell, text: "Notificaciones" }
+                            ]
 
-                    BarItem {
-                        interactive: false
+                            Row {
+                                id: sample
 
-                        Label {
-                            text: "Ajustes"
-                            color: Theme.glass.content
-                            font.weight: Font.ExtraBold
-                        }
-                    }
+                                required property var modelData
 
-                    BarItem {
-                        interactive: false
+                                spacing: 8
 
-                        Icon {
-                            icon: Theme.systemIcons.controlCenter
-                            size: 14
-                            color: Theme.glass.content
+                                Icon {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    icon: sample.modelData.glyph
+                                    size: 13
+                                    color: Theme.window.text
+                                }
+
+                                Label {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: sample.modelData.text
+                                    color: Theme.window.text
+                                    font.pixelSize: Theme.window.fontBody
+                                }
+                            }
                         }
                     }
                 }

@@ -44,6 +44,12 @@ Item {
     // PANTALLA, no de la ventana de la isla.
     property real originX: 0
 
+    // Lo que baja la isla desde el borde: el grosor del marco. La isla
+    // cuelga del marco como una pestaña más; sus alas empiezan donde
+    // termina la franja de arriba, y su cuerpo llega a la misma altura que
+    // las pestañas. En pantalla completa, sin marco, es 0: cuelga del borde.
+    property real topInset: 0
+
     // ── el hueco que la barra tiene que respetar ──────────────────
     //
     // Se calcula con el tamaño de DESTINO y no con el animado: si siguiera la
@@ -54,7 +60,7 @@ Item {
             return Qt.rect(0, 0, 0, 0)
 
         const w = root.occupant.currentWidth + root.hitPadding * 2
-        const h = Math.max(root.occupant.currentHeight + root.hitPadding, 48)
+        const h = root.topInset + Math.max(root.occupant.currentHeight + root.hitPadding, 48)
 
         return Qt.rect(root.originX + Math.round((root.width - w) / 2), 0, w, h)
     }
@@ -86,7 +92,7 @@ Item {
         y: 0
 
         width: shape.width + root.hitPadding * 2
-        height: shape.height + root.hitPadding
+        height: root.topInset + shape.height + root.hitPadding
 
         HoverHandler {
             id: zoneHover
@@ -99,10 +105,11 @@ Item {
 
             x: root.hitPadding
 
-            // Escondida, se va por arriba fuera de la pantalla. Este es el
-            // estado POR DEFECTO de esta island: no hay píldora de reposo, así
-            // que nadie la ocupa la mayor parte del tiempo.
-            y: root.shown ? 0 : -(height + 8)
+            // Escondida, se va por arriba fuera de la pantalla (por detrás
+            // del marco, que es del mismo negro: parece que se mete en él).
+            // Este es el estado POR DEFECTO de esta island: no hay píldora de
+            // reposo, así que nadie la ocupa la mayor parte del tiempo.
+            y: root.shown ? root.topInset : -(height + 8)
 
             // El item mide el notch entero, alas incluidas.
             width: root.occupant ? root.occupant.currentWidth : Theme.island.minWidth

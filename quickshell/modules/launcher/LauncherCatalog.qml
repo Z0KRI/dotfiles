@@ -17,14 +17,14 @@ import qs.core.theme
 Singleton {
     id: root
 
-    // Los chips, en el orden de sus atajos (Super + 1, 2, 3).
+    // Los chips, como en el lienzo: Todo, Apps, Archivos.
     readonly property var modes: [
-        { value: "apps", glyph: Theme.systemIcons.launcher.apps, label: "Aplicaciones",
+        { value: "all", glyph: Theme.systemIcons.launcher.all, label: "Todo",
+          placeholder: "Buscar en Spotlight" },
+        { value: "apps", glyph: Theme.systemIcons.launcher.apps, label: "Apps",
           placeholder: "Buscar aplicaciones" },
         { value: "files", glyph: Theme.systemIcons.launcher.files, label: "Archivos",
-          placeholder: "Buscar archivos" },
-        { value: "clipboard", glyph: Theme.systemIcons.launcher.clipboard, label: "Portapapeles",
-          placeholder: "Buscar en el portapapeles" }
+          placeholder: "Buscar archivos" }
     ]
 
     function find(mode) {
@@ -35,17 +35,18 @@ Singleton {
         return root.find(mode)?.placeholder ?? "Buscar en Spotlight";
     }
 
-    // El modo del atajo con número (Super + 1 → Aplicaciones), o "".
+    // Los atajos con número, los de siempre: Super + 1 Aplicaciones, + 2
+    // Archivos, + 3 el portapapeles (que ya no es un modo: abre su panel).
+    readonly property var numbered: ["apps", "files", "clipboard"]
+
     function modeForNumber(number) {
-        return root.modes[number - 1]?.value ?? "";
+        return root.numbered[number - 1] ?? "";
     }
 
     readonly property var glyphs: ({
         app: Theme.systemIcons.launcher.apps,
         file: Theme.systemIcons.launcher.file,
         folder: Theme.systemIcons.launcher.files,
-        clip: Theme.systemIcons.launcher.text,
-        image: Theme.systemIcons.launcher.image,
         url: Theme.systemIcons.launcher.link,
         web: Theme.systemIcons.launcher.web,
         command: Theme.systemIcons.launcher.command
@@ -54,8 +55,6 @@ Singleton {
     readonly property var hints: ({
         open: "Abrir",
         "switch": "Ir a la ventana",
-        paste: "Pegar",
-        copy: "Copiar",
         search: "Buscar",
         run: "Ejecutar"
     })

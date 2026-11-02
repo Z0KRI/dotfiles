@@ -1,12 +1,14 @@
 // Ajustes › Spotlight: qué busca la búsqueda general, con qué buscador va a
-// la web, qué hace el portapapeles al elegir, el historial con el que se
-// ordenan las apps, y los atajos (solo informativos: viven en tu config de
-// Hyprland y en el propio panel).
+// la web, qué hace el portapapeles al elegir (su panel es aparte, pero se
+// configura aquí, junto a Spotlight), el historial con el que se ordenan las
+// apps, y los atajos (solo informativos: viven en tu config de Hyprland y en
+// el propio panel).
 
 import QtQuick
 import qs.core.theme
 import qs.core.components.molecules
 import qs.core.components.organisms
+import qs.domain.clipboard
 import qs.domain.launcher
 
 SettingsPage {
@@ -20,7 +22,7 @@ SettingsPage {
         icon: Theme.systemIcons.search
         tint: "#8e8e93"
         title: "Spotlight"
-        description: "Busca apps, archivos, tu portapapeles y la web desde el teclado."
+        description: "Busca apps, archivos y la web desde el teclado. El portapapeles tiene su propio panel, en la esquina."
     }
 
     SettingsGroup {
@@ -50,8 +52,8 @@ SettingsPage {
 
     SettingsGroup {
         header: "Portapapeles"
-        footer: "Con Ctrl + Enter solo se copia, aunque esto esté activado. "
-                + "Shift + Supr borra una entrada del historial."
+        footer: "Se abre con Super + Shift + V (o Super + 3 desde Spotlight). Con Ctrl + Enter "
+                + "solo se copia, aunque esto esté activado. Shift + Supr borra una entrada."
 
         ToggleRow {
             title: "Pegar al elegir"
@@ -113,7 +115,12 @@ SettingsPage {
         }
 
         SettingsRow {
-            title: "Abrir otra ventana · Mostrar en carpeta · Solo copiar"
+            title: "Abrir otra ventana · Mostrar en carpeta"
+            value: "Ctrl + Enter"
+        }
+
+        SettingsRow {
+            title: "Solo copiar (en el portapapeles)"
             value: "Ctrl + Enter"
         }
 

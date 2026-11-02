@@ -7,21 +7,19 @@ pragma Singleton
 //
 // MODELO + MAPPERS: la forma común de un resultado de Spotlight.
 //
-// Una app, un archivo, una entrada del portapapeles y una búsqueda web no se
-// parecen en nada: cada fuente trae sus propios campos. La lista de Spotlight
+// Una app, un archivo, un comando y una búsqueda web no se parecen en nada: cada fuente trae sus propios campos. La lista de Spotlight
 // solo sabe dibujar una cosa. Así que cada fuente pasa por su mapper (las
 // funciones de abajo) y sale con la misma forma:
 //
 //   {
-//     kind:     "app" | "file" | "folder" | "clip" | "image" | "url" | "web"
-//               | "command" | "header" | "notice"
+//     kind:     "app" | "file" | "folder" | "url" | "web" | "command"
+//               | "header" | "notice"
 //     key:      único en la lista (para no confundir dos filas)
 //     title:    el texto principal
 //     subtitle: el texto gris de abajo ("" si no hay)
 //     icon:     nombre de ícono del tema ("" si no hay), como Icon= de un .desktop
 //     image:    ruta de una imagen para usar de miniatura ("" si no es imagen)
-//     action:   qué pasa con Enter: "open" | "switch" | "paste" | "copy"
-//               | "search" | "run"
+//     action:   qué pasa con Enter: "open" | "switch" | "search" | "run"
 //     modified: fecha en segundos (archivos), 0 en lo demás
 //     target:   el objeto original de la fuente, para cuando lo elijas
 //   }
@@ -129,41 +127,6 @@ Singleton {
         if (root.isImage(name))
             return "image-x-generic";
         return root.fileIcons[root.extension(name)] ?? "text-x-generic";
-    }
-
-    // ── Portapapeles ─────────────────────────────────────────────
-    function clip(entry, pastes) {
-        // cliphist describe las imágenes así: "[[ binary data 23 KiB png 800x600 ]]".
-        // La expresión va aquí adentro y no en una propiedad: una propiedad
-        // `var` convierte la expresión regular a un tipo de Qt y pierde exec().
-        const binary = /^\[\[ binary data (.+) ([a-z0-9]+) (\d+)x(\d+) \]\]$/i.exec(entry.preview);
-
-        if (binary) {
-            return {
-                kind: "image",
-                key: "clip:" + entry.id,
-                title: "Imagen " + binary[2].toUpperCase(),
-                subtitle: binary[3] + " × " + binary[4] + " · " + binary[1],
-                icon: "image-x-generic",
-                image: "",
-                action: pastes ? "paste" : "copy",
-                modified: 0,
-                target: entry
-            };
-        }
-
-        // Una sola línea: los saltos y tabuladores se vuelven espacios.
-        return {
-            kind: "clip",
-            key: "clip:" + entry.id,
-            title: entry.preview.replace(/\s+/g, " ").trim() || " ",
-            subtitle: "",
-            icon: "",
-            image: "",
-            action: pastes ? "paste" : "copy",
-            modified: 0,
-            target: entry
-        };
     }
 
     // ── Web y comandos ───────────────────────────────────────────

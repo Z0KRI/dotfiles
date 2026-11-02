@@ -8,8 +8,8 @@ pragma Singleton
 // mañana aparece otro puente con otro formato, se añade un caso en
 // NotificationTypes y las vistas no se tocan.
 //
-// La island es un consumidor de esto, no su dueña. El día que exista el centro
-// de control, lee `history` desde aquí y no hay que mover nada.
+// La island es un consumidor de esto, no su dueña. El panel de notificaciones
+// del marco es el otro: lee `history` desde aquí.
 //
 // Una distinción que conviene no perder: pasar a la siguiente NO es descartar.
 // `dismiss()` le dice a la aplicación "el usuario la cerró" y la destruye; la
@@ -93,10 +93,10 @@ Singleton {
 
     // ── el historial ──────────────────────────────────────────────
     //
-    // De la más nueva a la más vieja, y ya tipado: el centro de control lo
-    // leerá de aquí y pintará igual que la island. Cada entrada lleva su
+    // De la más nueva a la más vieja, y ya tipado: el panel de notificaciones
+    // lo lee de aquí y pinta igual que la island. Cada entrada lleva su
     // `source`, que es la notificación de verdad, para poder descartarla o
-    // invocar sus acciones.
+    // invocar sus acciones, y `arrived`: cuándo llegó (ver `arrivals`).
     //
     // Sale de la lista del servidor, así que se poda solo: lo descartado
     // desaparece. Lo que entra lo decide `keep`, no `transient` — las del
@@ -112,10 +112,27 @@ Singleton {
 
             const entry = NotificationTypes.classify(item)
             if (entry.keep)
-                out.push(entry)
+                out.push(Object.assign(entry, {
+                    arrived: root.arrivals[item.id] || 0
+                }))
         }
 
         return out
+    }
+
+    // Cuándo llegó cada una, por su id del bus (en milisegundos, como
+    // Date.now()). El bus no lo dice: se apunta al recibirla. Las que se
+    // reemiten al recargar `qs` no tienen hora (0): llegaron antes de que
+    // esta shell existiera, y el panel no les inventa una.
+    //
+    // Se reemplaza el objeto entero en cada cambio: si solo le agregas una
+    // clave, nadie se entera y el historial no se vuelve a calcular.
+    property var arrivals: ({})
+
+    function noteArrival(notification): void {
+        const next = Object.assign({}, root.arrivals);
+        next[notification.id] = Date.now();
+        root.arrivals = next;
     }
 
     readonly property int count: root.history.length
@@ -172,6 +189,8 @@ Singleton {
     function receive(notification): void {
         if (!notification)
             return;
+
+        root.noteArrival(notification);
 
         const typed = NotificationTypes.classify(notification);
 
@@ -363,6 +382,54 @@ Singleton {
             root.invoke(root.defaultAction);
     }
 
+    // ── una entrada del historial ─────────────────────────────────
+    //
+    // El panel trabaja con entradas (`history`), no con la que enseña la
+    // isla. Si resulta que es esa misma, se pasa por las de arriba para que
+    // la isla se entere y pase a la siguiente.
+
+    // El usuario la cerró: se destruye y sale del historial.
+    function dismissEntry(entry): void {
+        const notification = entry ? entry.source : null;
+        if (!notification)
+            return;
+
+        if (notification === root.current) {
+            root.dismissCurrent();
+            return;
+        }
+
+        root.queue = root.queue.filter(item => item !== notification);
+        notification.dismiss();
+    }
+
+    // Tocar la tarjeta: su acción "default" (abrir la conversación, la app).
+    // Devuelve false si no tiene, y entonces no pasa nada.
+    function openEntry(entry): bool {
+        const notification = entry ? entry.source : null;
+        if (!notification)
+            return false;
+
+        const list = notification.actions || [];
+        let action = null;
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i] && list[i].identifier === "default")
+                action = list[i];
+        }
+
+        if (!action)
+            return false;
+
+        if (notification === root.current) {
+            root.invoke(action);
+            return true;
+        }
+
+        root.queue = root.queue.filter(item => item !== notification);
+        action.invoke();
+        return true;
+    }
+
     // ── mantenimiento ─────────────────────────────────────────────
     //
     // Una aplicación puede cerrar su propia notificación en cualquier momento.
@@ -374,6 +441,19 @@ Singleton {
         root.queue = root.queue.filter(function (item) {
             return item && all.indexOf(item) !== -1;
         });
+
+        // Las horas de las que ya no existen, fuera: si no, el mapa crecería
+        // con cada notificación de la sesión.
+        const alive = {};
+        let dropped = false;
+        for (const id in root.arrivals) {
+            if (all.some(item => item && String(item.id) === id))
+                alive[id] = root.arrivals[id];
+            else
+                dropped = true;
+        }
+        if (dropped)
+            root.arrivals = alive;
 
         if (root.hasCurrent && all.indexOf(root.current) === -1)
             root.advance();

@@ -1,52 +1,92 @@
-// La barra de menús: una por monitor. Cuándo se esconde, si empuja ventanas
-// o si se ve sólida lo decide BarVisibility; aquí solo se conecta.
+// La barra de menús, ahora como marco: una figura negra alrededor de cada
+// pantalla con dos pestañas arriba (ver BarFrame). Una por monitor.
+//
+// Cada pantalla lleva dos cosas:
+//   - el marco (BarFrame): lo que se ve y se toca. No aparta ventanas.
+//   - cuatro EdgeReserve: lo que aparta las ventanas, un borde cada una.
+//
+// Cuándo hay marco, cuándo se esconden las pestañas, si se empujan ventanas
+// y si la franja se ve sólida lo decide BarVisibility; aquí solo se conecta.
+//
+// Por IPC, el panel de notificaciones (en el monitor enfocado):
+//   qs ipc call notifications toggle|open|close
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.core.theme
 import qs.core.components.templates
 import qs.domain.desktop
-import qs.domain.island
+import qs.domain.notifications
 
 Scope {
     id: root
 
+    IpcHandler {
+        target: "notifications"
+
+        function toggle(): void {
+            NotificationCenter.toggleHere();
+        }
+        function open(): void {
+            NotificationCenter.openHere();
+        }
+        function close(): void {
+            NotificationCenter.close();
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 
-        BarWindow {
-            id: window
+        Scope {
+            id: perScreen
 
             required property var modelData
-            screen: window.modelData
 
-            autoHide: BarVisibility.autoHide(window.modelData)
-            reserveSpace: BarVisibility.reserveSpace(window.modelData)
-            aboveFullscreen: BarVisibility.aboveFullscreen(window.modelData)
-            solid: BarVisibility.solid(window.modelData)
+            // Lo que se aparta en cada borde. Con marco, su grosor en los
+            // cuatro lados; arriba, además, la barra, salvo cuando se esconde
+            // sola (entonces se encima sobre las ventanas, como antes).
+            readonly property int reserveSide: BarVisibility.framed(perScreen.modelData)
+                ? Theme.frame.thickness
+                : 0
+            readonly property int reserveTop: perScreen.reserveSide
+                + (BarVisibility.reserveSpace(perScreen.modelData) ? Theme.glass.barHeight : 0)
 
-            keepRevealed: barContent.popupOpen
+            // A la derecha, además, el panel de notificaciones mientras está
+            // abierto en esta pantalla: las ventanas se angostan y Hyprland
+            // las reacomoda con su animación, en vez de quedar debajo.
+            readonly property int reserveRight: perScreen.reserveSide
+                + (NotificationCenter.isOpenOn(perScreen.modelData.name)
+                   ? Theme.frame.notificationsWidth
+                   : 0)
 
-            // ── El hueco de la isla ───────────────────────────────
-            //
-            // La isla vive en este mismo borde y, en pantalla completa, esta
-            // barra sube a la capa overlay y le queda por encima. Restarle su
-            // hueco es lo que hace que el ratón le llegue sin depender de quién
-            // quede encima ni del orden en que se construyeron las superficies.
-            //
-            // Solo en la pantalla donde la isla se está dibujando: hay una
-            // barra por monitor y un solo rectángulo, así que sin esta pregunta
-            // la otra barra se agujerearía el centro para nada.
-            readonly property bool islandHere: IslandState.open
-                && IslandState.screenName === window.modelData.name
+            BarFrame {
+                screen: perScreen.modelData
+            }
 
-            cutout: window.islandHere ? IslandState.bodyRect : Qt.rect(0, 0, 0, 0)
+            EdgeReserve {
+                screen: perScreen.modelData
+                edge: "top"
+                size: perScreen.reserveTop
+            }
 
-            BarContent {
-                id: barContent
+            EdgeReserve {
+                screen: perScreen.modelData
+                edge: "left"
+                size: perScreen.reserveSide
+            }
 
-                width: parent.width
-                screen: window.modelData
-                solid: window.solid
+            EdgeReserve {
+                screen: perScreen.modelData
+                edge: "right"
+                size: perScreen.reserveRight
+            }
+
+            EdgeReserve {
+                screen: perScreen.modelData
+                edge: "bottom"
+                size: perScreen.reserveSide
             }
         }
     }

@@ -2,11 +2,14 @@
 // verdad para el atajo (IPC), el botón de la lupa en la barra y el propio
 // panel.
 //
-// Los modos son los chips de Spotlight en macOS Tahoe:
+// Los modos son los chips de Spotlight:
 //   all        la búsqueda general (Super + Espacio): apps, archivos y web
 //   apps       solo aplicaciones
 //   files      solo archivos
-//   clipboard  el historial del portapapeles
+//
+// El portapapeles salió de aquí: es su propio panel (ClipboardControl), y
+// los dos comparten el borde de abajo, así que abrir uno cierra el otro
+// (esa regla vive en ClipboardControl).
 //
 // Reglas:
 //   - Abrir sin modo es abrir la búsqueda general.
@@ -20,7 +23,7 @@ import Quickshell
 Singleton {
     id: root
 
-    readonly property var modes: ["all", "apps", "files", "clipboard"]
+    readonly property var modes: ["all", "apps", "files"]
 
     property bool shown: false
     property string mode: "all"
@@ -41,7 +44,7 @@ Singleton {
             root.open();
     }
 
-    // Abrir directo en un modo (atajos de Hyprland, p. ej. el portapapeles).
+    // Abrir directo en un modo (atajos de Hyprland, p. ej. Launchpad → apps).
     function openMode(mode): void {
         if (root.modes.indexOf(mode) < 0)
             mode = "all";

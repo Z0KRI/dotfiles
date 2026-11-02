@@ -2,6 +2,9 @@
 // Cuadrícula de dos columnas; el texto de Wi-Fi y Bluetooth y el botón
 // redondo de Sonido abren su detalle. Los detalles terminan en un botón a su
 // sección de Ajustes, y el panel en "Ajustes del sistema…", como en macOS.
+//
+// Crece desde la pestaña derecha del marco (BarFrame lo pone en el cajón
+// `rightPanel`): no tiene fondo propio, su fondo es el negro del marco.
 
 import QtQuick
 import Quickshell
@@ -21,23 +24,18 @@ import qs.domain.notifications
 import qs.domain.phone
 import qs.domain.settings
 
-DropdownWindow {
+FrameDrawer {
     id: root
 
-    required property Item anchorItem
-    anchor.item: root.anchorItem
-
-    alignRight: true
     padding: 14
-    menuWidth: 340
-    panelColor: Theme.glass.panel
-    panelBorder: Theme.glass.border
-    panelRadius: Theme.glass.panelRadius
+    // Arriba ya está el aire de la pestaña: el contenido empieza justo debajo.
+    topPadding: 6
+    panelWidth: 340
 
     // ── Medidas de la cuadrícula ────────────────────────────
     readonly property int cellGap: 10
     readonly property int cellHeight: 60
-    readonly property int fullWidth: root.menuWidth - root.padding * 2
+    readonly property int fullWidth: root.panelWidth - root.padding * 2
     readonly property int halfWidth: (root.fullWidth - root.cellGap) / 2
     readonly property int tallHeight: root.cellHeight * 2 + root.cellGap
 
@@ -65,7 +63,7 @@ DropdownWindow {
     // Buscar redes solo mientras ves la lista de Wi-Fi. Con start/stop y no
     // con un sí/no: Ajustes también puede estar buscando, y cerrar este panel
     // no debe apagarle la búsqueda.
-    readonly property bool wantsScan: root.visible && root.page === "wifi"
+    readonly property bool wantsScan: root.open && root.page === "wifi"
     onWantsScanChanged: {
         if (root.wantsScan)
             WifiControl.startScan();
@@ -73,19 +71,22 @@ DropdownWindow {
             WifiControl.stopScan();
     }
 
-    // El panel se crea al abrirse y se destruye al cerrarse (BarContent).
-    // Lo que enciende al abrirse lo apaga al cerrarse, y por si lo destruyen
-    // abierto (desconectar el monitor), también al morir.
+    // El panel se crea al abrirse y se destruye al terminar de cerrarse
+    // (BarFrame). Lo que enciende al abrirse lo apaga al cerrarse, y por si
+    // lo destruyen abierto (desconectar el monitor, o pasar directo al
+    // calendario), también al morir.
     property bool watching: false
 
-    onVisibleChanged: {
-        if (root.visible) {
-            root.page = "home";
-            if (!root.watching) {
-                PhoneService.watch();
-                root.watching = true;
-            }
-        } else if (root.watching) {
+    onOpened: {
+        root.page = "home";
+        if (!root.watching) {
+            PhoneService.watch();
+            root.watching = true;
+        }
+    }
+
+    onClosed: {
+        if (root.watching) {
             PhoneService.unwatch();
             root.watching = false;
         }

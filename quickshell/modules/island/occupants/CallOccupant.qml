@@ -24,13 +24,16 @@ IslandOccupant {
 
     active: Calls.ongoing
 
-    contentWidth: 210
+    // El cuerpo más las dos alas: si cambian las alas (Theme.island), el
+    // cuerpo se queda igual.
+    contentWidth: 198 + Theme.island.closedTopRadius * 2
     contentHeight: Theme.island.closedHeight
 
     expandable: true
     expandOnHover: true
     expandedWidth: Theme.island.openWidth
-    expandedHeight: 168
+    // Debajo de las alas quedan 149 px, como antes del marco.
+    expandedHeight: 149 + Theme.island.openTopRadius
 
     readonly property color green: "#30d158"
 

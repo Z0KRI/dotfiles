@@ -1,5 +1,5 @@
-// Ajustes › Barra de menús: cuándo se oculta, en qué escritorios nunca, y
-// qué muestra (la app activa y el reloj).
+// Ajustes › Barra de menús: cuándo se ocultan las pestañas del marco, en qué
+// escritorios nunca, y qué muestran (la app activa y el reloj).
 
 import QtQuick
 import qs.core.components.molecules
@@ -18,10 +18,11 @@ SettingsPage {
 
     readonly property string hideNote: {
         if (BarVisibility.mode === "always")
-            return "La barra aparece al acercar el mouse al borde de arriba, y no empuja las ventanas.";
+            return "Las pestañas se guardan en el marco y salen como barra al acercar el mouse "
+                 + "al borde de arriba. No empujan las ventanas; el marco sí.";
         if (BarVisibility.mode === "fullscreen")
-            return "Se oculta solo cuando una app está en pantalla completa.";
-        return "Siempre visible, también sobre las apps en pantalla completa.";
+            return "Se ocultan solo cuando una app está en pantalla completa (ahí el marco se va).";
+        return "Siempre visibles, también sobre las apps en pantalla completa.";
     }
 
     SettingsGroup {

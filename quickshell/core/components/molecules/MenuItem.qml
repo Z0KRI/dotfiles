@@ -14,6 +14,10 @@ Surface {
     property string shortcut: ""
     property string badge: ""
 
+    // Texto e ícono. El del tema por defecto; los menús del marco lo ponen
+    // en blanco, porque van sobre negro.
+    property color contentColor: Theme.colors.baseContent
+
     signal triggered()
 
     // En una lista vertical, ocupa todo el ancho por defecto.
@@ -47,6 +51,7 @@ Surface {
                 anchors.centerIn: parent
                 icon: root.icon
                 size: 14
+                color: root.contentColor
                 visible: root.icon !== ""
             }
         }
@@ -54,6 +59,7 @@ Surface {
         Label {
             Layout.fillWidth: true
             text: root.text
+            color: root.contentColor
             elide: Text.ElideRight
         }
 
@@ -69,6 +75,7 @@ Surface {
                 id: badgeLabel
                 anchors.centerIn: parent
                 text: root.badge
+                color: root.contentColor
                 font.pixelSize: 11
             }
         }
@@ -76,6 +83,7 @@ Surface {
         Label {
             visible: root.shortcut !== ""
             text: root.shortcut
+            color: root.contentColor
             opacity: 0.6
         }
     }

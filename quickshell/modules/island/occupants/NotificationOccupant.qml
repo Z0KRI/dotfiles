@@ -35,7 +35,8 @@ IslandOccupant {
 
     readonly property bool isCall: Notifications.kind === "call"
 
-    contentWidth: root.isCall ? 280 : root.toastWidth
+    // Una llamada: 268 de cuerpo más las dos alas.
+    contentWidth: root.isCall ? 268 + Theme.island.closedTopRadius * 2 : root.toastWidth
     contentHeight: Theme.island.closedHeight
 
     expandable: true
