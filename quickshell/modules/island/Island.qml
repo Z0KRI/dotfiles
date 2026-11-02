@@ -17,7 +17,7 @@ Scope {
     id: root
 
     // Añadir un ocupante es declararlo y sumarlo a esta lista.
-    readonly property list<QtObject> occupants: [notification, call, airpods, keyboard, volume, brightness, player]
+    readonly property list<QtObject> occupants: [notification, call, airpods, keyboard, phone, volume, brightness, player]
 
     NotificationOccupant {
         id: notification
@@ -33,6 +33,10 @@ Scope {
 
     KeyboardOccupant {
         id: keyboard
+    }
+
+    PhoneOccupant {
+        id: phone
     }
 
     VolumeOccupant {
@@ -54,8 +58,8 @@ Scope {
     // Usa `effectivePriority` y no `priority`: un ocupante desplegado se sube
     // solo por encima de todos mientras lo estés usando.
     //
-    // Un ocupante apagado en Ajustes (volumen, brillo, música, AirPods o
-    // teclado) no compite: sigue vivo y sabiendo su estado, solo que no se le
+    // Un ocupante apagado en Ajustes (volumen, brillo, música, AirPods,
+    // teclado o iPhone) no compite: sigue vivo y sabiendo su estado, solo que no se le
     // da la isla.
     readonly property var winner: {
         let best = null

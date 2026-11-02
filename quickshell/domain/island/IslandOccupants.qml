@@ -21,6 +21,7 @@ Singleton {
     readonly property bool player: PreferencesRepository.islandPlayer
     readonly property bool airpods: PreferencesRepository.islandAirPods
     readonly property bool keyboard: PreferencesRepository.islandKeyboard
+    readonly property bool phone: PreferencesRepository.islandPhone
     readonly property bool brightness: PreferencesRepository.islandBrightness
     readonly property bool expandOnHover: PreferencesRepository.islandExpandOnHover
 
@@ -40,6 +41,8 @@ Singleton {
             return root.airpods;
         if (name === "keyboard")
             return root.keyboard;
+        if (name === "phone")
+            return root.phone;
         if (name === "brightness")
             return root.brightness;
         return true;
@@ -59,6 +62,10 @@ Singleton {
 
     function setKeyboard(on): void {
         PreferencesRepository.islandKeyboard = on;
+    }
+
+    function setPhone(on): void {
+        PreferencesRepository.islandPhone = on;
     }
 
     function setBrightness(on): void {

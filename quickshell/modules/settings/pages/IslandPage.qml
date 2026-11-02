@@ -18,7 +18,7 @@ SettingsPage {
         tint: "#1c1c1e"
         title: "Isla dinámica"
         description: "La píldora del borde de arriba: el volumen y el brillo al cambiarlos, "
-                     + "tus AirPods y tu teclado, lo que suena y lo que te llega."
+                     + "tus AirPods, tu teclado y tu iPhone, lo que suena y lo que te llega."
     }
 
     SettingsGroup {
@@ -62,6 +62,14 @@ SettingsPage {
             subtitle: "Al conectar un teclado Bluetooth, con su batería, y cuando le queda poca."
             checked: IslandOccupants.keyboard
             onToggled: IslandOccupants.setKeyboard(!IslandOccupants.keyboard)
+        }
+
+        ToggleRow {
+            glyph: Theme.systemIcons.device.phone
+            title: "iPhone"
+            subtitle: "Al conectarse tu iPhone, con su batería."
+            checked: IslandOccupants.phone
+            onToggled: IslandOccupants.setPhone(!IslandOccupants.phone)
         }
 
         SettingsRow {

@@ -91,7 +91,7 @@ Singleton {
             {
                 id: "island", title: "Isla dinámica", tint: "#1c1c1e",
                 icon: Theme.systemIcons.island,
-                keywords: "isla notch musica volumen brillo reproductor airpods teclado"
+                keywords: "isla notch musica volumen brillo reproductor airpods teclado iphone telefono"
             },
             {
                 id: "spotlight", title: "Spotlight", tint: "#8e8e93",

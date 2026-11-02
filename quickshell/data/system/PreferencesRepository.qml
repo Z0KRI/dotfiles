@@ -54,6 +54,7 @@ Singleton {
     property alias islandPlayer: adapter.islandPlayer
     property alias islandAirPods: adapter.islandAirPods
     property alias islandKeyboard: adapter.islandKeyboard
+    property alias islandPhone: adapter.islandPhone
     property alias islandBrightness: adapter.islandBrightness
     property alias islandExpandOnHover: adapter.islandExpandOnHover
 
@@ -116,6 +117,7 @@ Singleton {
             property bool islandPlayer: true
             property bool islandAirPods: true
             property bool islandKeyboard: true
+            property bool islandPhone: true
             property bool islandBrightness: true
             property bool islandExpandOnHover: true
 
