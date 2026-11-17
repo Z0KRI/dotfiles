@@ -363,13 +363,18 @@ FrameDrawer {
                     required property var modelData
                     readonly property var network: root.wifiByName[networkRow.modelData] ?? null
 
-                    contentColor: Theme.glass.content
-                    icon: networkRow.network ? Theme.systemIcons.wifi[networkRow.network.level] : ""
-                    text: networkRow.modelData
-                    subtitle: networkRow.network ? networkRow.network.detail : ""
-                    trailingIcon: !networkRow.network || networkRow.network.open ? "" : Theme.systemIcons.lock
-                    selected: networkRow.network ? networkRow.network.connected : false
-                    onTriggered: WifiControl.choose(networkRow.modelData)
+                contentColor: Theme.glass.content
+                icon: Theme.systemIcons.wifi[modelData.level]
+                text: modelData.name
+                subtitle: modelData.detail
+                trailingIcon: modelData.open ? "" : Theme.systemIcons.lock
+                selected: modelData.connected
+                // Si la red pide contraseña, la hoja para escribirla está
+                // en Ajustes › Wi-Fi: se abre ahí.
+                onTriggered: {
+                    WifiControl.choose(modelData.name);
+                    if (WifiControl.passwordNeededFor !== "")
+                        root.openSettings("wifi");
                 }
             }
         }
@@ -377,18 +382,6 @@ FrameDrawer {
         SectionLabel {
             visible: WifiControl.powered && WifiControl.networks.length === 0
             text: "Buscando redes…"
-        }
-
-        Label {
-            visible: WifiControl.passwordNeededFor !== ""
-            width: parent.width
-            wrapMode: Text.WordWrap
-            color: Theme.glass.content
-            font.pixelSize: Theme.font.small
-            topPadding: 6
-            text: "«" + WifiControl.passwordNeededFor + "» pide contraseña. "
-                  + "Conéctate una vez desde Ajustes de Wi-Fi › Configuración avanzada; "
-                  + "después podrás hacerlo desde aquí."
         }
 
         Item { width: 1; height: 6 }
@@ -607,4 +600,5 @@ FrameDrawer {
             }
         }
     }
+    } 
 }

@@ -9,6 +9,7 @@
 // adentro necesita el foco (un campo de texto), que lo pida después.
 
 import QtQuick
+import Quickshell.Widgets
 import qs.core.theme
 
 Item {
@@ -18,6 +19,13 @@ Item {
 
     property bool shown: false
     property int cardWidth: 360
+    // Una hoja con grupos adentro (los detalles de una red) usa el color del
+    // fondo de la ventana, para que los grupos se distingan de la tarjeta.
+    property color cardColor: Theme.window.group
+    // El aire entre la tarjeta y lo de adentro. Con 0, lo de adentro llega a
+    // los bordes (una hoja con su propia barra lateral); la tarjeta recorta
+    // sus esquinas redondeadas.
+    property int padding: 20
 
     signal returnPressed()
     signal escapePressed()
@@ -51,16 +59,17 @@ Item {
         }
     }
 
-    Rectangle {
+    ClippingRectangle {
         id: card
 
         anchors.centerIn: parent
         width: root.cardWidth
-        height: column.implicitHeight + 40
+        height: column.implicitHeight + root.padding * 2
         radius: 16
-        color: Theme.window.group
+        color: root.cardColor
         border.width: 1
         border.color: Theme.window.groupBorder
+        contentUnderBorder: true
 
         scale: root.shown ? 1 : 0.94
 
@@ -78,7 +87,7 @@ Item {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 20
+            anchors.margins: root.padding
             spacing: 10
         }
     }

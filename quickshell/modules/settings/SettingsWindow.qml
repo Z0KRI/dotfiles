@@ -15,6 +15,7 @@ import qs.core.components.organisms
 import qs.core.components.templates
 import qs.domain.settings
 import qs.domain.desktop
+import qs.domain.network
 import qs.modules.settings.pages
 
 AppWindow {
@@ -31,9 +32,15 @@ AppWindow {
     readonly property var current: SettingsCatalog.find(SettingsControl.section)
                                    ?? SettingsCatalog.find("about")
 
+    // El título de la barra. En Red es el nombre del servicio (como en
+    // macOS, que ahí enseña "USB 10/100/1000 LAN"), no el de la sección.
+    readonly property string heading: root.current.id === "network" && EthernetControl.current
+        ? EthernetControl.current.name : root.current.title
+
     readonly property var pages: ({
         wifi: wifiPage,
         bluetooth: bluetoothPage,
+        network: networkPage,
         iphone: phonePage,
         notifications: notificationsPage,
         sound: soundPage,
@@ -74,7 +81,7 @@ AppWindow {
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
 
-            text: root.current.title
+            text: root.heading
             color: Theme.window.text
             font.pixelSize: Theme.window.fontTitle
             font.weight: Font.Bold
@@ -92,6 +99,10 @@ AppWindow {
     // "¿Conservar esta configuración de pantalla?": si cierras Ajustes, el
     // dominio igual revierte al llegar a 0.
     // El emparejamiento de Bluetooth: si cierras Ajustes, se cancela.
+    // Las de Wi-Fi (detalles, contraseña y "¿Eliminar?"): igual, se cancelan.
+    //
+    // El orden importa: las de más abajo en la lista quedan ENCIMA. Por eso
+    // "¿Eliminar la red?" va después de los detalles, que es desde donde se pide.
     overlay: [
         ConfirmSheet {
             anchors.fill: parent
@@ -110,11 +121,78 @@ AppWindow {
 
         PairingSheet {
             anchors.fill: parent
+        },
+
+        WifiDetailsSheet {
+            anchors.fill: parent
+        },
+
+        WifiPasswordSheet {
+            anchors.fill: parent
+        },
+
+        EthernetDetailsSheet {
+            anchors.fill: parent
+        },
+
+        ConfirmSheet {
+            id: deleteSheet
+
+            anchors.fill: parent
+
+            property string service: ""
+
+            shown: EthernetControl.deleting !== ""
+            onShownChanged: {
+                if (deleteSheet.shown)
+                    deleteSheet.service = EthernetControl.find(EthernetControl.deleting)?.name ?? "";
+            }
+            Component.onDestruction: EthernetControl.cancelDelete()
+
+            icon: Theme.systemIcons.ethernet
+            tint: "#8e8e93"
+            title: "¿Eliminar el servicio «" + deleteSheet.service + "»?"
+            message: "Se borra su configuración guardada (IP, DNS, proxy) y se desconecta. "
+                     + "Al activarlo de nuevo, NetworkManager crea una conexión nueva con DHCP."
+            rejectText: "Cancelar"
+            acceptText: "Eliminar"
+            destructive: true
+            onAccepted: EthernetControl.confirmDelete()
+            onRejected: EthernetControl.cancelDelete()
+        },
+
+        ConfirmSheet {
+            id: forgetSheet
+
+            anchors.fill: parent
+
+            // El nombre se recuerda para que no se borre del texto mientras
+            // la hoja se desvanece.
+            property string network: ""
+
+            shown: WifiControl.forgetting !== ""
+            onShownChanged: {
+                if (forgetSheet.shown)
+                    forgetSheet.network = WifiControl.forgetting;
+            }
+            Component.onDestruction: WifiControl.cancelForget()
+
+            icon: Theme.systemIcons.wifi.high
+            tint: "#0a84ff"
+            title: "¿Eliminar la red Wi-Fi «" + forgetSheet.network + "»?"
+            message: "Este equipo ya no se conectará solo a esta red. Para volver a usarla "
+                     + "tendrás que escribir su contraseña."
+            rejectText: "Cancelar"
+            acceptText: "Eliminar"
+            destructive: true
+            onAccepted: WifiControl.confirmForget()
+            onRejected: WifiControl.cancelForget()
         }
     ]
 
     Component { id: wifiPage; WifiPage {} }
     Component { id: bluetoothPage; BluetoothPage {} }
+    Component { id: networkPage; NetworkPage {} }
     Component { id: phonePage; PhonePage {} }
     Component { id: notificationsPage; NotificationsPage {} }
     Component { id: soundPage; SoundPage {} }
