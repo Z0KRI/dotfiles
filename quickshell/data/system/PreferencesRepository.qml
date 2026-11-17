@@ -40,6 +40,7 @@ Singleton {
     property alias doNotDisturb: adapter.doNotDisturb
     property alias dndAllowCalls: adapter.dndAllowCalls
     property alias notificationBanners: adapter.notificationBanners
+    property alias notificationDedupe: adapter.notificationDedupe
     property alias notificationApps: adapter.notificationApps
 
     // ── Barra de menús ──────────────────────────────────────
@@ -102,6 +103,7 @@ Singleton {
             property bool doNotDisturb: false
             property bool dndAllowCalls: true
             property bool notificationBanners: true
+            property bool notificationDedupe: true
 
             // Una entrada por app que te ha notificado:
             // { name: "WhatsApp", phone: true, allowed: true }

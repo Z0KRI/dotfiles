@@ -200,6 +200,11 @@ Singleton {
 
         const verdict = NotificationSettings.decide(typed);
 
+        // Una app apagada no cuenta para las repetidas: si silenciaste Zen,
+        // su copia no debe llevarse por delante la del iPhone.
+        if (verdict !== "drop" && root.absorb(notification, typed, verdict))
+            return;
+
         if (verdict === "show") {
             root.show(notification);
             return;
@@ -210,6 +215,64 @@ Singleton {
         // advance(): si nadie la cierra, se queda viva para siempre.
         if (verdict === "drop")
             notification.expire();
+    }
+
+    // ── repetidas ─────────────────────────────────────────────────
+    //
+    // El mismo mensaje por la computadora y por el iPhone (Duplicates dice
+    // cuándo lo son). Se queda la de la computadora, llegue primero o
+    // después: es la que al tocarla abre la conversación. La del iPhone se
+    // expira, así que tampoco sale en el historial.
+    //
+    // Devuelve true si ya se hizo cargo de la notificación y receive() no
+    // tiene que hacer nada más con ella.
+    function absorb(notification, typed, verdict): bool {
+        const twin = Duplicates.twinOf(typed);
+
+        if (!twin) {
+            if (Duplicates.eligible(typed))
+                Duplicates.note(typed);
+            return false;
+        }
+
+        // Cada copia se empareja una vez: si te escriben "ok" dos veces, la
+        // segunda del iPhone busca a la segunda de la computadora.
+        Duplicates.forget(twin);
+
+        // Llega la del iPhone y la computadora ya avisó: sobra.
+        if (typed.fromPhone) {
+            notification.expire();
+            return true;
+        }
+
+        // Llega la de la computadora y la del iPhone se adelantó. Si todavía
+        // se está enseñando o espera turno, la de la computadora toma su
+        // lugar, sin volver a empezar. Primero se pone la nueva y después se
+        // expira la vieja, por lo mismo que en dismissCurrent().
+        if (verdict === "show" && twin === root.current) {
+            root.current = notification;
+            twin.expire();
+            return true;
+        }
+
+        if (verdict === "show" && root.queue.indexOf(twin) !== -1) {
+            root.queue = root.queue.map(item => item === twin ? notification : item);
+            twin.expire();
+            return true;
+        }
+
+        // La del iPhone ya se enseñó: no se enseña otra vez. En el historial
+        // se queda una sola — la de la computadora si es de las que se
+        // guardan, y si no, la del iPhone que ya estaba. Y si la del iPhone
+        // ya la cerraste, la copia tampoco se guarda.
+        const alive = NotificationRepository.all.indexOf(twin) !== -1;
+
+        if (alive && typed.keep)
+            twin.expire();
+        else
+            notification.expire();
+
+        return true;
     }
 
     function show(notification): void {

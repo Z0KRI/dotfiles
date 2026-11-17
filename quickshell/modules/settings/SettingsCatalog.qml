@@ -52,7 +52,7 @@ Singleton {
             {
                 id: "notifications", title: "Notificaciones", tint: "#ff3b30",
                 icon: Theme.systemIcons.bell,
-                keywords: "no molestar foco concentracion avisos apps historial"
+                keywords: "no molestar foco concentracion avisos apps historial repetidas duplicadas"
             },
             {
                 id: "sound", title: "Sonido", tint: "#ff2d55",

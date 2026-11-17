@@ -54,6 +54,18 @@ SettingsPage {
     }
 
     SettingsGroup {
+        footer: "Si el mismo mensaje llega por la computadora y por el iPhone, solo "
+                + "se queda el de la computadora."
+
+        ToggleRow {
+            glyph: Theme.systemIcons.mirror
+            title: "Omitir repetidas del iPhone"
+            checked: Duplicates.enabled
+            onToggled: Duplicates.setEnabled(!Duplicates.enabled)
+        }
+    }
+
+    SettingsGroup {
         header: "Apps"
         footer: "Una app aparece aquí la primera vez que te notifica. Apagada, lo que "
                 + "mande no sale ni se guarda."
