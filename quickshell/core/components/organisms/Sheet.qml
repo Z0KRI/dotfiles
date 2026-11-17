@@ -18,6 +18,9 @@ Item {
 
     property bool shown: false
     property int cardWidth: 360
+    // Una hoja con grupos adentro (los detalles de una red) usa el color del
+    // fondo de la ventana, para que los grupos se distingan de la tarjeta.
+    property color cardColor: Theme.window.group
 
     signal returnPressed()
     signal escapePressed()
@@ -58,7 +61,7 @@ Item {
         width: root.cardWidth
         height: column.implicitHeight + 40
         radius: 16
-        color: Theme.window.group
+        color: root.cardColor
         border.width: 1
         border.color: Theme.window.groupBorder
 

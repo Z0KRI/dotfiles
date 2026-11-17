@@ -4,6 +4,12 @@
 //   - Derecha: un valor en gris (value) y lo que le pongas dentro: un
 //     interruptor, un botón, un deslizador...
 //   - Con `navigates` lleva la flecha › y toda la fila es clicable.
+//   - `indent` deja el hueco del ícono aunque no haya ícono, para que en una
+//     lista donde solo algunas filas lo llevan (la palomita de la red
+//     conectada) todos los títulos queden alineados.
+//   - `dot` pone un punto de color antes del subtítulo ("● Conectada").
+//   - `hovered` dice si el ratón está encima, sea clicable o no: sirve para
+//     enseñar un botón solo al pasar por la fila.
 //
 // La línea divisoria la dibuja la propia fila, arriba, solo si NO es la
 // primera de su grupo. "¿Soy la primera?" se responde con y > 0: en una Column
@@ -30,6 +36,10 @@ Item {
     property string subtitle: ""
     property string value: ""
 
+    property bool indent: false
+    property color dot: "transparent"
+    readonly property bool hovered: anyHover.hovered
+
     property bool navigates: false
     property bool clickable: root.navigates
 
@@ -41,7 +51,8 @@ Item {
     implicitHeight: Math.max(Theme.window.rowHeight, texts.implicitHeight + 18, trailing.implicitHeight + 16)
     opacity: root.enabled ? 1 : 0.45
 
-    readonly property bool hasLeading: root.icon !== "" || root.glyph !== ""
+    readonly property bool hasIcon: root.icon !== "" || root.glyph !== ""
+    readonly property bool hasLeading: root.hasIcon || root.indent
     readonly property real textLeft: root.hasLeading ? leading.x + leading.width + 10 : 12
 
     Rectangle {
@@ -60,7 +71,7 @@ Item {
     Item {
         id: leading
 
-        visible: root.hasLeading
+        visible: root.hasIcon
         anchors.left: parent.left
         anchors.leftMargin: 10
         anchors.verticalCenter: parent.verticalCenter
@@ -103,14 +114,33 @@ Item {
             font.pixelSize: Theme.window.fontBody
         }
 
-        Label {
+        Item {
             width: parent.width
+            height: caption.implicitHeight
             visible: root.subtitle !== ""
-            text: root.subtitle
-            color: Theme.window.textMuted
-            font.pixelSize: Theme.window.fontCaption
-            wrapMode: Text.WordWrap
-            maximumLineCount: 3
+
+            Rectangle {
+                id: statusDot
+
+                visible: root.dot.a > 0
+                anchors.verticalCenter: parent.verticalCenter
+                width: 8
+                height: 8
+                radius: 4
+                color: root.dot
+            }
+
+            Label {
+                id: caption
+
+                x: statusDot.visible ? statusDot.width + 5 : 0
+                width: parent.width - x
+                text: root.subtitle
+                color: Theme.window.textMuted
+                font.pixelSize: Theme.window.fontCaption
+                wrapMode: Text.WordWrap
+                maximumLineCount: 3
+            }
         }
     }
 
@@ -149,6 +179,10 @@ Item {
         id: hover
         enabled: root.clickable
         cursorShape: Qt.PointingHandCursor
+    }
+
+    HoverHandler {
+        id: anyHover
     }
 
     TapHandler {

@@ -342,25 +342,19 @@ FrameDrawer {
                 subtitle: modelData.detail
                 trailingIcon: modelData.open ? "" : Theme.systemIcons.lock
                 selected: modelData.connected
-                onTriggered: WifiControl.choose(modelData.name)
+                // Si la red pide contraseña, la hoja para escribirla está
+                // en Ajustes › Wi-Fi: se abre ahí.
+                onTriggered: {
+                    WifiControl.choose(modelData.name);
+                    if (WifiControl.passwordNeededFor !== "")
+                        root.openSettings("wifi");
+                }
             }
         }
 
         SectionLabel {
             visible: WifiControl.powered && WifiControl.networks.length === 0
             text: "Buscando redes…"
-        }
-
-        Label {
-            visible: WifiControl.passwordNeededFor !== ""
-            width: parent.width
-            wrapMode: Text.WordWrap
-            color: Theme.glass.content
-            font.pixelSize: Theme.font.small
-            topPadding: 6
-            text: "«" + WifiControl.passwordNeededFor + "» pide contraseña. "
-                  + "Conéctate una vez desde Ajustes de Wi-Fi › Configuración avanzada; "
-                  + "después podrás hacerlo desde aquí."
         }
 
         Item { width: 1; height: 6 }

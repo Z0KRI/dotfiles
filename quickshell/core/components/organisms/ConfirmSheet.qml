@@ -16,6 +16,8 @@ Sheet {
     property string message: ""
     property string acceptText: "Aceptar"
     property string rejectText: "Cancelar"
+    // Para borrar u olvidar: el botón de aceptar va en rojo, no en azul.
+    property bool destructive: false
 
     signal accepted()
     signal rejected()
@@ -67,7 +69,8 @@ Sheet {
 
         PushButton {
             width: 140
-            primary: true
+            primary: !root.destructive
+            destructive: root.destructive
             text: root.acceptText
             onClicked: root.accepted()
         }

@@ -15,6 +15,7 @@ import qs.core.components.organisms
 import qs.core.components.templates
 import qs.domain.settings
 import qs.domain.desktop
+import qs.domain.network
 import qs.modules.settings.pages
 
 AppWindow {
@@ -92,6 +93,10 @@ AppWindow {
     // "¿Conservar esta configuración de pantalla?": si cierras Ajustes, el
     // dominio igual revierte al llegar a 0.
     // El emparejamiento de Bluetooth: si cierras Ajustes, se cancela.
+    // Las de Wi-Fi (detalles, contraseña y "¿Eliminar?"): igual, se cancelan.
+    //
+    // El orden importa: las de más abajo en la lista quedan ENCIMA. Por eso
+    // "¿Eliminar la red?" va después de los detalles, que es desde donde se pide.
     overlay: [
         ConfirmSheet {
             anchors.fill: parent
@@ -110,6 +115,42 @@ AppWindow {
 
         PairingSheet {
             anchors.fill: parent
+        },
+
+        WifiDetailsSheet {
+            anchors.fill: parent
+        },
+
+        WifiPasswordSheet {
+            anchors.fill: parent
+        },
+
+        ConfirmSheet {
+            id: forgetSheet
+
+            anchors.fill: parent
+
+            // El nombre se recuerda para que no se borre del texto mientras
+            // la hoja se desvanece.
+            property string network: ""
+
+            shown: WifiControl.forgetting !== ""
+            onShownChanged: {
+                if (forgetSheet.shown)
+                    forgetSheet.network = WifiControl.forgetting;
+            }
+            Component.onDestruction: WifiControl.cancelForget()
+
+            icon: Theme.systemIcons.wifi.high
+            tint: "#0a84ff"
+            title: "¿Eliminar la red Wi-Fi «" + forgetSheet.network + "»?"
+            message: "Este equipo ya no se conectará solo a esta red. Para volver a usarla "
+                     + "tendrás que escribir su contraseña."
+            rejectText: "Cancelar"
+            acceptText: "Eliminar"
+            destructive: true
+            onAccepted: WifiControl.confirmForget()
+            onRejected: WifiControl.cancelForget()
         }
     ]
 
