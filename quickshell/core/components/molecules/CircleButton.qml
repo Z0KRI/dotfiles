@@ -9,6 +9,8 @@ Rectangle {
     id: root
 
     property string icon: ""
+    // En vez de ícono, una letra o signo: el "?" de ayuda.
+    property string text: ""
 
     signal clicked()
 
@@ -21,7 +23,17 @@ Rectangle {
     border.width: 1.5
     border.color: Theme.window.textMuted
 
+    Label {
+        anchors.centerIn: parent
+        visible: root.text !== ""
+        text: root.text
+        color: Theme.window.textMuted
+        font.pixelSize: 12
+        font.weight: Font.DemiBold
+    }
+
     Icon {
+        visible: root.icon !== ""
         anchors.centerIn: parent
         icon: root.icon
         size: 12

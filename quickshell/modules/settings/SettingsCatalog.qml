@@ -43,6 +43,12 @@ Singleton {
                 keywords: "audifonos dispositivos emparejar codigo pin teclado mouse bocina"
             },
             {
+                id: "network", title: "Red", tint: "#0a84ff",
+                icon: Theme.systemIcons.globe,
+                keywords: "ethernet cable lan servicio ip dhcp router mascara subred dns "
+                          + "tcp proxy mtu mac direccion conexion alambrica"
+            },
+            {
                 id: "iphone", title: "iPhone", tint: "#30b94d",
                 icon: Theme.systemIcons.device.phone,
                 keywords: "telefono celular blueferry mensajes llamadas"

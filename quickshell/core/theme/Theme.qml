@@ -326,6 +326,9 @@ Singleton {
         // Wi-Fi: el botón de "más" de cada red y la ruedita de "buscando".
         readonly property string more: "\ue0b6"           // ellipsis
         readonly property string spinner: "\ue109"        // loader
+        // Red (cable): el servicio, la sección y el botón de ayuda.
+        readonly property string ethernet: "\ue61f"       // chevrons-left-right-ellipsis
+        readonly property string globe: "\ue0e8"          // globe
         readonly property string upDown: "\ue211"         // chevrons-up-down
         readonly property string xMark: "\ue1b2"          // x
         readonly property string minus: "\ue11c"          // minus

@@ -32,9 +32,15 @@ AppWindow {
     readonly property var current: SettingsCatalog.find(SettingsControl.section)
                                    ?? SettingsCatalog.find("about")
 
+    // El título de la barra. En Red es el nombre del servicio (como en
+    // macOS, que ahí enseña "USB 10/100/1000 LAN"), no el de la sección.
+    readonly property string heading: root.current.id === "network" && EthernetControl.current
+        ? EthernetControl.current.name : root.current.title
+
     readonly property var pages: ({
         wifi: wifiPage,
         bluetooth: bluetoothPage,
+        network: networkPage,
         iphone: phonePage,
         notifications: notificationsPage,
         sound: soundPage,
@@ -75,7 +81,7 @@ AppWindow {
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
 
-            text: root.current.title
+            text: root.heading
             color: Theme.window.text
             font.pixelSize: Theme.window.fontTitle
             font.weight: Font.Bold
@@ -125,6 +131,36 @@ AppWindow {
             anchors.fill: parent
         },
 
+        EthernetDetailsSheet {
+            anchors.fill: parent
+        },
+
+        ConfirmSheet {
+            id: deleteSheet
+
+            anchors.fill: parent
+
+            property string service: ""
+
+            shown: EthernetControl.deleting !== ""
+            onShownChanged: {
+                if (deleteSheet.shown)
+                    deleteSheet.service = EthernetControl.find(EthernetControl.deleting)?.name ?? "";
+            }
+            Component.onDestruction: EthernetControl.cancelDelete()
+
+            icon: Theme.systemIcons.ethernet
+            tint: "#8e8e93"
+            title: "¿Eliminar el servicio «" + deleteSheet.service + "»?"
+            message: "Se borra su configuración guardada (IP, DNS, proxy) y se desconecta. "
+                     + "Al activarlo de nuevo, NetworkManager crea una conexión nueva con DHCP."
+            rejectText: "Cancelar"
+            acceptText: "Eliminar"
+            destructive: true
+            onAccepted: EthernetControl.confirmDelete()
+            onRejected: EthernetControl.cancelDelete()
+        },
+
         ConfirmSheet {
             id: forgetSheet
 
@@ -156,6 +192,7 @@ AppWindow {
 
     Component { id: wifiPage; WifiPage {} }
     Component { id: bluetoothPage; BluetoothPage {} }
+    Component { id: networkPage; NetworkPage {} }
     Component { id: phonePage; PhonePage {} }
     Component { id: notificationsPage; NotificationsPage {} }
     Component { id: soundPage; SoundPage {} }

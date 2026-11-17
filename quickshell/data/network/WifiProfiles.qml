@@ -36,6 +36,10 @@ Singleton {
     // Lo que tiene la tarjeta Wi-Fi ahora mismo (ver blankLink()).
     property var link: root.blankLink()
 
+    // Lo mismo, pero de TODAS las tarjetas (Wi-Fi, Ethernet...): la lectura
+    // es una sola, `nmcli device show`. Las de cable las usa WiredRepository.
+    property var devices: []
+
     // El enlace "vacío": lo que se enseña de una red que no es la que está
     // en uso.
     readonly property var noLink: root.blankLink()
@@ -61,7 +65,12 @@ Singleton {
 
     function blankProfile(uuid) {
         return {
-            uuid: uuid, name: "",
+            uuid: uuid,
+            // name: el nombre de la red Wi-Fi (SSID). id: el nombre del
+            // perfil en NetworkManager. interfaceName: la tarjeta a la que
+            // está amarrado ("" = cualquiera). Los dos últimos importan en
+            // Ethernet, donde no hay SSID.
+            name: "", id: "", interfaceName: "",
             autoconnect: true,
             metered: false,
             // "off" (la MAC real), "fixed" (una inventada, siempre la misma
@@ -71,6 +80,7 @@ Singleton {
             // "Limitar seguimiento de dirección IP".
             ip6Privacy: false,
             ipv4Method: "auto", ipv4Address: "", ipv4Prefix: 24, ipv4Router: "",
+            dhcpClientId: "",
             ipv6Method: "auto",
             // Los que escribiste tú. Vacío = los que reparta la red.
             dns: [], searchDomains: [],
@@ -81,8 +91,16 @@ Singleton {
     }
 
     function blankLink() {
-        return { device: "", mac: "", mtu: 0, ip: "", prefix: 0, router: "", dns: [],
-                 domains: [], ip6: "", router6: "" };
+        return {
+            device: "", type: "", product: "",
+            // "connected", "connecting", "disconnected" (lista pero sin
+            // usar) o "unavailable" (sin cable, o apagada).
+            state: "unavailable",
+            // El perfil que está usando ahora ("" si ninguno).
+            connection: "", uuid: "",
+            mac: "", mtu: 0, ip: "", prefix: 0, router: "", dns: [],
+            domains: [], ip6: "", router6: ""
+        };
     }
 
     // ── leer ─────────────────────────────────────────────────────
@@ -125,7 +143,7 @@ Singleton {
     //
     // changes lleva SOLO lo que cambió, con los mismos nombres del perfil:
     //   autoconnect, metered, privateAddress, ip6Privacy, ipv6Method,
-    //   dns, searchDomains, mtu,
+    //   dns, searchDomains, mtu, dhcpClientId,
     //   ipv4:  { method, address, prefix, router }   (los cuatro juntos)
     //   proxy: { auto, pacUrl }                      (los dos juntos)
     //
@@ -184,7 +202,9 @@ Singleton {
     // ── la traducción a NetworkManager ───────────────────────────
     readonly property var macModes: ({ off: "permanent", fixed: "stable", rotating: "random" })
 
-    function argsFor(changes) {
+    // kind: la sección del perfil donde vive la MTU, que cambia con el tipo
+    // de conexión: "802-11-wireless" (Wi-Fi) u "802-3-ethernet" (cable).
+    function argsFor(changes, kind = "802-11-wireless") {
         const args = [];
 
         if (changes.autoconnect !== undefined)
@@ -207,6 +227,9 @@ Singleton {
             else
                 args.push("ipv4.method", "auto", "ipv4.addresses", "", "ipv4.gateway", "");
         }
+
+        if (changes.dhcpClientId !== undefined)
+            args.push("ipv4.dhcp-client-id", changes.dhcpClientId);
 
         if (changes.ipv6Method !== undefined)
             args.push("ipv6.method", changes.ipv6Method);
@@ -231,7 +254,7 @@ Singleton {
                       "proxy.pac-url", changes.proxy.pacUrl);
 
         if (changes.mtu !== undefined)
-            args.push("802-11-wireless.mtu", String(changes.mtu));
+            args.push(kind + ".mtu", String(changes.mtu));   // 0 = automática
 
         return args;
     }
@@ -281,19 +304,11 @@ Singleton {
         return value.split(/[,\s]+/).filter(part => part !== "");
     }
 
-    function parseProfiles(text) {
-        const found = {};
+    // Los perfiles que vienen en el texto de nmcli, en orden. Cada uno
+    // empieza con la línea `uuid:...` que pone el lector.
+    function parseBlocks(text) {
+        const found = [];
         let current = null;
-        let ownDns = [];
-
-        const close = () => {
-            if (!current || current.name === "")
-                return;
-            current.dns = ownDns;
-            // Si dos perfiles son de la misma red, se queda el primero.
-            if (found[current.name] === undefined)
-                found[current.name] = current;
-        };
 
         for (const line of text.split("\n")) {
             if (line === "")
@@ -303,59 +318,79 @@ Singleton {
             const value = raw === "--" ? "" : raw;
 
             if (key === "uuid") {
-                close();
                 current = root.blankProfile(value);
-                ownDns = [];
-            } else if (!current) {
-                continue;
-            } else if (key === "802-11-wireless.ssid") {
-                current.name = value;
-            } else if (key === "connection.autoconnect") {
-                current.autoconnect = value === "yes";
-            } else if (key === "connection.metered") {
-                current.metered = value === "yes";
-            } else if (key === "802-11-wireless.cloned-mac-address") {
-                current.privateAddress = value === "stable" ? "fixed"
-                                       : (value === "random" ? "rotating" : "off");
-            } else if (key === "802-11-wireless.mtu") {
-                current.mtu = parseInt(value) || 0;   // "auto" → 0
-            } else if (key === "ipv6.ip6-privacy") {
-                current.ip6Privacy = parseInt(value) > 0;   // "2 (enabled, ...)"
-            } else if (key === "ipv4.method") {
-                current.ipv4Method = value;
-            } else if (key === "ipv4.addresses") {
-                const address = /^([\d.]+)\/(\d+)/.exec(value);
-                if (address) {
-                    current.ipv4Address = address[1];
-                    current.ipv4Prefix = parseInt(address[2]);
-                }
-            } else if (key === "ipv4.gateway") {
-                current.ipv4Router = value;
-            } else if (key === "ipv4.dns" || key === "ipv6.dns") {
-                ownDns = ownDns.concat(root.listOf(value));
-            } else if (key === "ipv4.dns-search") {
-                current.searchDomains = root.listOf(value);
-            } else if (key === "ipv6.method") {
-                current.ipv6Method = value;
-            } else if (key === "proxy.method") {
-                current.proxyAuto = value === "auto";
-            } else if (key === "proxy.pac-url") {
-                current.pacUrl = value;
-            } else if (key === "802-1x.eap") {
-                current.eap = value;
-            } else if (key === "802-1x.identity") {
-                current.identity = value;
+                found.push(current);
+            } else if (current) {
+                root.readField(current, key, value);
             }
         }
 
-        close();
         return found;
     }
 
-    // `nmcli device show` contesta un bloque por tarjeta; interesa el de Wi-Fi.
-    function parseLink(text) {
+    // Una línea `clave:valor` de un perfil, puesta en su campo.
+    function readField(current, key, value): void {
+        if (key === "802-11-wireless.ssid") {
+            current.name = value;
+        } else if (key === "connection.id") {
+            current.id = value;
+        } else if (key === "connection.interface-name") {
+            current.interfaceName = value;
+        } else if (key === "connection.autoconnect") {
+            current.autoconnect = value === "yes";
+        } else if (key === "connection.metered") {
+            current.metered = value === "yes";
+        } else if (key === "802-11-wireless.cloned-mac-address") {
+            current.privateAddress = value === "stable" ? "fixed"
+                                   : (value === "random" ? "rotating" : "off");
+        } else if (key === "802-11-wireless.mtu" || key === "802-3-ethernet.mtu") {
+            current.mtu = parseInt(value) || 0;   // "auto" → 0
+        } else if (key === "ipv6.ip6-privacy") {
+            current.ip6Privacy = parseInt(value) > 0;   // "2 (enabled, ...)"
+        } else if (key === "ipv4.method") {
+            current.ipv4Method = value;
+        } else if (key === "ipv4.addresses") {
+            const address = /^([\d.]+)\/(\d+)/.exec(value);
+            if (address) {
+                current.ipv4Address = address[1];
+                current.ipv4Prefix = parseInt(address[2]);
+            }
+        } else if (key === "ipv4.gateway") {
+            current.ipv4Router = value;
+        } else if (key === "ipv4.dhcp-client-id") {
+            current.dhcpClientId = value;
+        } else if (key === "ipv4.dns" || key === "ipv6.dns") {
+            current.dns = current.dns.concat(root.listOf(value));
+        } else if (key === "ipv4.dns-search") {
+            current.searchDomains = root.listOf(value);
+        } else if (key === "ipv6.method") {
+            current.ipv6Method = value;
+        } else if (key === "proxy.method") {
+            current.proxyAuto = value === "auto";
+        } else if (key === "proxy.pac-url") {
+            current.pacUrl = value;
+        } else if (key === "802-1x.eap") {
+            current.eap = value;
+        } else if (key === "802-1x.identity") {
+            current.identity = value;
+        }
+    }
+
+    // Los de Wi-Fi, por nombre de red. Si dos perfiles son de la misma red,
+    // se queda el primero.
+    function parseProfiles(text) {
+        const found = {};
+        for (const profile of root.parseBlocks(text)) {
+            if (profile.name !== "" && found[profile.name] === undefined)
+                found[profile.name] = profile;
+        }
+        return found;
+    }
+
+    // `nmcli device show` contesta un bloque por tarjeta.
+    function parseDevices(text) {
+        const found = [];
         let current = null;
-        let wifi = null;
 
         for (const line of text.split("\n")) {
             const [key, raw] = root.split(line);
@@ -364,11 +399,23 @@ Singleton {
             if (key === "GENERAL.DEVICE") {
                 current = root.blankLink();
                 current.device = value;
+                found.push(current);
             } else if (!current) {
                 continue;
             } else if (key === "GENERAL.TYPE") {
-                if (value === "wifi" && !wifi)
-                    wifi = current;
+                current.type = value;
+            } else if (key === "GENERAL.PRODUCT") {
+                current.product = value;
+            } else if (key === "GENERAL.STATE") {
+                // "100 (connected)": el número es lo estable entre idiomas.
+                const code = parseInt(value) || 0;
+                current.state = code === 100 ? "connected"
+                              : (code >= 40 && code < 100 ? "connecting"
+                              : (code === 30 ? "disconnected" : "unavailable"));
+            } else if (key === "GENERAL.CONNECTION") {
+                current.connection = value;
+            } else if (key === "GENERAL.CON-UUID") {
+                current.uuid = value;
             } else if (key === "GENERAL.HWADDR") {
                 current.mac = value.toLowerCase();
             } else if (key === "GENERAL.MTU") {
@@ -395,7 +442,7 @@ Singleton {
             }
         }
 
-        return wifi ?? root.blankLink();
+        return found;
     }
 
     function parseHost(text) {
@@ -455,13 +502,15 @@ Singleton {
     Process {
         id: linkReader
 
-        command: ["nmcli", "-t", "-f",
-                  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,"
-                  + "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP4.DOMAIN,IP6.ADDRESS,IP6.GATEWAY",
-                  "device", "show"]
+        // Secciones enteras y no campo por campo: un nombre de campo que
+        // tu versión de nmcli no conozca tiraría toda la lectura.
+        command: ["nmcli", "-t", "-f", "GENERAL,IP4,IP6", "device", "show"]
 
         stdout: StdioCollector {
-            onStreamFinished: root.link = root.parseLink(this.text)
+            onStreamFinished: {
+                root.devices = root.parseDevices(this.text);
+                root.link = root.devices.find(device => device.type === "wifi") ?? root.blankLink();
+            }
         }
     }
 
