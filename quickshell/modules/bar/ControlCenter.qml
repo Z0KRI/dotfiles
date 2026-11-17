@@ -71,6 +71,25 @@ FrameDrawer {
             WifiControl.stopScan();
     }
 
+    // La lista de redes, como la quiere un Repeater que no se reconstruya.
+    //
+    // `WifiControl.networks` es un arreglo NUEVO en cada búsqueda. Puesto tal
+    // cual como modelo, el Repeater borra y vuelve a crear todas las filas: la
+    // lista se queda en cero un instante y el desplazamiento regresa al
+    // principio cada pocos segundos. Con los nombres como modelo (ScriptModel
+    // solo agrega o quita lo que cambió) las filas se quedan, y cada una busca
+    // su red en `wifiByName`. Es el mismo arreglo que en NotificationPanel.
+    readonly property var wifiNames: WifiControl.powered
+        ? WifiControl.networks.map(network => network.name)
+        : []
+
+    readonly property var wifiByName: {
+        const map = {};
+        for (const network of WifiControl.networks)
+            map[network.name] = network;
+        return map;
+    }
+
     // El panel se crea al abrirse y se destruye al terminar de cerrarse
     // (BarFrame). Lo que enciende al abrirse lo apaga al cerrarse, y por si
     // lo destruyen abierto (desconectar el monitor, o pasar directo al
@@ -330,19 +349,28 @@ FrameDrawer {
             text: "Redes"
         }
 
-        Repeater {
-            model: WifiControl.powered ? WifiControl.networks : []
+        // Con tope de alto: en un edificio salen 30 redes y el cajón llegaba
+        // al piso. El modelo son los nombres (ver `wifiNames` arriba).
+        ScrollList {
+            Repeater {
+                model: ScriptModel {
+                    values: root.wifiNames
+                }
 
-            ChoiceRow {
-                required property var modelData
+                ChoiceRow {
+                    id: networkRow
 
-                contentColor: Theme.glass.content
-                icon: Theme.systemIcons.wifi[modelData.level]
-                text: modelData.name
-                subtitle: modelData.detail
-                trailingIcon: modelData.open ? "" : Theme.systemIcons.lock
-                selected: modelData.connected
-                onTriggered: WifiControl.choose(modelData.name)
+                    required property var modelData
+                    readonly property var network: root.wifiByName[networkRow.modelData] ?? null
+
+                    contentColor: Theme.glass.content
+                    icon: networkRow.network ? Theme.systemIcons.wifi[networkRow.network.level] : ""
+                    text: networkRow.modelData
+                    subtitle: networkRow.network ? networkRow.network.detail : ""
+                    trailingIcon: !networkRow.network || networkRow.network.open ? "" : Theme.systemIcons.lock
+                    selected: networkRow.network ? networkRow.network.connected : false
+                    onTriggered: WifiControl.choose(networkRow.modelData)
+                }
             }
         }
 
@@ -386,29 +414,31 @@ FrameDrawer {
             text: "Dispositivos"
         }
 
-        Repeater {
-            model: BluetoothControl.powered ? BluetoothControl.devices : []
+        ScrollList {
+            Repeater {
+                model: BluetoothControl.powered ? BluetoothControl.devices : []
 
-            ChoiceRow {
-                required property var modelData
+                ChoiceRow {
+                    required property var modelData
 
-                // Tus AirPods conectados (con LibrePods) abren su página, como
-                // en macOS; para desconectarlos hay un botón ahí dentro.
-                readonly property bool airpods: AirPods.owns(modelData) && AirPods.controllable
+                    // Tus AirPods conectados (con LibrePods) abren su página, como
+                    // en macOS; para desconectarlos hay un botón ahí dentro.
+                    readonly property bool airpods: AirPods.owns(modelData) && AirPods.controllable
 
-                contentColor: Theme.glass.content
-                icon: Theme.systemIcons.device[modelData.kind]
-                text: modelData.name
-                subtitle: airpods && AirPods.modeLabel !== ""
-                    ? modelData.detail + " · " + AirPods.modeLabel
-                    : modelData.detail
-                trailingIcon: airpods ? Theme.systemIcons.chevronRight : ""
-                selected: modelData.connected
-                onTriggered: {
-                    if (airpods)
-                        root.openAirPods("bluetooth");
-                    else
-                        BluetoothControl.toggleDevice(modelData.address);
+                    contentColor: Theme.glass.content
+                    icon: Theme.systemIcons.device[modelData.kind]
+                    text: modelData.name
+                    subtitle: airpods && AirPods.modeLabel !== ""
+                        ? modelData.detail + " · " + AirPods.modeLabel
+                        : modelData.detail
+                    trailingIcon: airpods ? Theme.systemIcons.chevronRight : ""
+                    selected: modelData.connected
+                    onTriggered: {
+                        if (airpods)
+                            root.openAirPods("bluetooth");
+                        else
+                            BluetoothControl.toggleDevice(modelData.address);
+                    }
                 }
             }
         }
@@ -437,17 +467,19 @@ FrameDrawer {
             text: "Salida"
         }
 
-        Repeater {
-            model: Audio.outputs
+        ScrollList {
+            Repeater {
+                model: Audio.outputs
 
-            ChoiceRow {
-                required property var modelData
+                ChoiceRow {
+                    required property var modelData
 
-                contentColor: Theme.glass.content
-                icon: Theme.systemIcons.device[modelData.kind]
-                text: modelData.label
-                selected: modelData.selected
-                onTriggered: Audio.selectOutput(modelData.id)
+                    contentColor: Theme.glass.content
+                    icon: Theme.systemIcons.device[modelData.kind]
+                    text: modelData.label
+                    selected: modelData.selected
+                    onTriggered: Audio.selectOutput(modelData.id)
+                }
             }
         }
 

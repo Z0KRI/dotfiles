@@ -148,6 +148,11 @@ Singleton {
         readonly property int drawerWing: 20
         readonly property int drawerCorner: root.glass.panelRadius
 
+        // Tope de alto de una lista dentro de un cajón (redes Wi-Fi,
+        // dispositivos): de ahí en adelante la lista se desplaza en vez de
+        // estirar el cajón hasta el piso.
+        readonly property int drawerMaxList: 320
+
         // El menú del sistema, que sale del borde izquierdo.
         readonly property int menuCorner: 18
 
