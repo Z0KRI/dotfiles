@@ -1,12 +1,22 @@
-// La hoja de detalles de una red Wi-Fi (el "Detalles…" de macOS):
-// conectarse sola, dirección Wi-Fi privada, datos reducidos, y la IP, el
-// router y los DNS si es la red en uso. Abajo: Olvidar esta red…, Cancelar
-// y Aceptar.
+pragma ComponentBehavior: Bound
+
+// (Bound: los delegados de los Repeater pueden leer los id de afuera,
+// como `root`, y qmllint lo sabe. A cambio, lo de cada delegado se pide
+// con su id: `fila.modelData`, no `modelData` a secas desde un hijo.)
+
+// La hoja de detalles de una red Wi-Fi, igual que el "Detalles…" de macOS:
+// a la izquierda la red y sus apartados (TCP/IP, DNS, WINS, 802.1X, Proxies,
+// Hardware); a la derecha lo del apartado elegido; abajo "Olvidar esta
+// red…", Cancelar y Aceptar.
 //
-// Patrón BORRADOR: los interruptores no tocan nada todavía. Al abrir se
-// copian los valores reales a `draft`; cada control cambia el borrador, y
-// solo Aceptar se lo entrega al dominio (que manda a NetworkManager lo que
-// de verdad cambió). Cancelar es simplemente cerrar: el borrador se tira.
+// Patrón BORRADOR: nada de lo que tocas cambia la red todavía. Al abrir se
+// copian los valores reales a `draft`; cada control cambia el borrador con
+// set(), y solo Aceptar se lo entrega al dominio, que lo revisa y manda a
+// NetworkManager lo que de verdad cambió. Cancelar es simplemente cerrar: el
+// borrador se tira. Por eso puedes pasear por los apartados sin miedo.
+//
+// `info` es lo que solo se lee (la IP de ahora, la MAC...) y se sigue
+// actualizando con la hoja abierta; el borrador no, para no pisarte.
 
 import QtQuick
 import qs.core.theme
@@ -19,58 +29,95 @@ Sheet {
     id: root
 
     shown: WifiControl.details !== null
-    cardWidth: 480
+    cardWidth: 700
+    padding: 0
     cardColor: Theme.window.background
+
+    // El apartado a la vista: "network", "tcpip", "dns", "wins", "8021x",
+    // "proxies" o "hardware".
+    property string tab: "network"
+
+    readonly property var tabs: [
+        { id: "tcpip", title: "TCP/IP" },
+        { id: "dns", title: "DNS" },
+        { id: "wins", title: "WINS" },
+        { id: "8021x", title: "802.1X" },
+        { id: "proxies", title: "Proxies" },
+        { id: "hardware", title: "Hardware" }
+    ]
 
     // Lo último que se enseñó: mientras la hoja se desvanece, `details` ya es
     // null y los textos no deben quedarse en blanco.
     property var info: ({
-        name: "", connected: false, status: "", level: "none", security: "", saved: false,
-        address: "", ip: "", router: "", dns: ""
+        name: "", connected: false, status: "", level: "none", security: "", enterprise: false,
+        saved: false, loaded: false, address: "",
+        ipv6Addresses: [], ipv6Router: "", liveDns: [], hostname: "", workgroup: "", winsServer: "", eap: "", identity: "", liveMtu: 0
     })
 
-    property bool autoJoin: true
-    property string privateAddress: "off"
-    property bool lowData: false
+    property var draft: ({
+        autoJoin: true, privateAddress: "off", lowData: false, limitTracking: false,
+        ipv4Method: "auto", ipv4Address: "", ipv4Mask: "", ipv4Router: "", ipv6Method: "auto",
+        dnsServers: [], searchDomains: [],
+        proxyDiscovery: false, proxyPac: false, pacUrl: "",
+        mtuAuto: true, mtu: 1500
+    })
+
+    // Sin perfil guardado (o mientras llegan sus ajustes) no hay qué editar.
+    readonly property bool editable: root.info.saved && root.info.loaded
+    readonly property bool manualIp: root.draft.ipv4Method === "manual"
 
     readonly property var addressModes: [
-        { value: "off", label: "No" },
+        { value: "off", label: "Desactivada" },
         { value: "fixed", label: "Fija" },
         { value: "rotating", label: "Rotativa" }
     ]
 
-    readonly property var addressHelp: ({
-        off: "Usa la dirección real de tu tarjeta. La red siempre te reconoce.",
-        fixed: "Una dirección inventada, siempre la misma en esta red: te reconoce aquí, "
-               + "pero no te pueden seguir de una red a otra.",
-        rotating: "Una dirección nueva cada vez que te conectas. Algunas redes te pedirán "
-                  + "iniciar sesión de nuevo."
-    })
+    readonly property var ipv4Modes: [
+        { value: "auto", label: "Usando DHCP" },
+        { value: "manual", label: "Manualmente" },
+        { value: "disabled", label: "Desactivado" }
+    ]
+
+    readonly property var ipv6Modes: [
+        { value: "auto", label: "Automáticamente" },
+        { value: "link-local", label: "Solo enlace local" },
+        { value: "disabled", label: "Desactivado" }
+    ]
+
+    readonly property var mtuModes: [
+        { value: true, label: "Automáticamente" },
+        { value: false, label: "Manualmente" }
+    ]
+
+    // Cambia una cosa del borrador. Se crea un objeto nuevo a propósito: QML
+    // solo se entera de que `draft` cambió si se le asigna otro objeto.
+    function set(key: string, value: var): void {
+        const next = Object.assign({}, root.draft);
+        next[key] = value;
+        root.draft = next;
+    }
 
     function load(): void {
         const details = WifiControl.details;
+        const next = {};
+        for (const key of WifiControl.editableKeys)
+            next[key] = details[key];
+
         root.info = details;
-        root.autoJoin = details.autoJoin;
-        root.privateAddress = details.privateAddress;
-        root.lowData = details.lowData;
+        root.draft = next;
     }
 
     function accept(): void {
-        WifiControl.saveDetails({
-            autoJoin: root.autoJoin,
-            privateAddress: root.privateAddress,
-            lowData: root.lowData
-        });
+        WifiControl.saveDetails(root.draft);
     }
 
     onShownChanged: {
-        if (root.shown)
+        if (root.shown) {
+            root.tab = "network";
             root.load();
+        }
     }
 
-    // Con la hoja abierta siguen llegando datos (la IP, o el perfil recién
-    // leído). Se refresca lo que solo se lee; el borrador no, salvo que el
-    // perfil apenas aparezca.
     Connections {
         target: WifiControl
 
@@ -79,9 +126,11 @@ Sheet {
             if (!details)
                 return;
 
-            const firstProfile = !root.info.saved && details.saved;
+            // Cuando por fin llegan los ajustes del perfil, el borrador se
+            // vuelve a copiar (antes solo tenía valores de relleno).
+            const arrived = !(root.info.saved && root.info.loaded) && details.saved && details.loaded;
             root.info = details;
-            if (firstProfile)
+            if (arrived)
                 root.load();
         }
     }
@@ -91,149 +140,579 @@ Sheet {
     onReturnPressed: root.accept()
     onEscapePressed: WifiControl.closeDetails()
 
-    // ── La red ───────────────────────────────────────────────
-    Row {
+    // Un apartado de la barra lateral.
+    component TabItem: Rectangle {
+        id: item
+
+        property string title: ""
+        property bool current: false
+
+        signal picked()
+
         width: parent.width
-        spacing: 12
+        height: 28
+        radius: 7
+        color: item.current ? Theme.colors.accent : (itemHover.hovered ? Theme.window.hover : "transparent")
 
-        SymbolTile {
-            id: tile
-
-            size: 36
-            icon: Theme.systemIcons.wifi[root.info.level] ?? Theme.systemIcons.wifi.high
-            tint: "#0a84ff"
+        Label {
+            x: 10
+            anchors.verticalCenter: parent.verticalCenter
+            text: item.title
+            color: item.current ? "white" : Theme.window.text
+            font.pixelSize: Theme.window.fontBody
         }
 
-        Column {
-            width: parent.width - tile.width - parent.spacing
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
+        HoverHandler {
+            id: itemHover
+        }
 
-            Label {
-                width: parent.width
-                text: root.info.name
-                color: Theme.window.text
-                font.pixelSize: Theme.window.fontTitle
-                font.weight: Font.Bold
-            }
+        TapHandler {
+            onTapped: item.picked()
+        }
+    }
 
-            Row {
-                spacing: 5
+    Item {
+        width: parent.width
+        height: 480
 
+        // ── Barra lateral ────────────────────────────────────
+        Rectangle {
+            id: sidebar
+
+            width: 200
+            height: parent.height
+            color: Theme.window.control
+
+            Column {
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: 2
+
+                // La red: el primer apartado, con su estado.
                 Rectangle {
-                    visible: root.info.connected
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: Theme.colors.success
+                    id: networkItem
+
+                    readonly property bool current: root.tab === "network"
+
+                    width: parent.width
+                    height: 44
+                    radius: 8
+                    color: networkItem.current ? Theme.colors.accent
+                                               : (networkHover.hovered ? Theme.window.hover : "transparent")
+
+                    SymbolTile {
+                        id: tile
+
+                        x: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 28
+                        icon: Theme.systemIcons.wifi[root.info.level] ?? Theme.systemIcons.wifi.high
+                        tint: "#0a84ff"
+                    }
+
+                    Column {
+                        anchors.left: tile.right
+                        anchors.leftMargin: 8
+                        anchors.right: parent.right
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 1
+
+                        Label {
+                            width: parent.width
+                            text: root.info.name
+                            color: networkItem.current ? "white" : Theme.window.text
+                            font.pixelSize: Theme.window.fontBody
+                            font.weight: Font.DemiBold
+                        }
+
+                        Row {
+                            spacing: 5
+
+                            Rectangle {
+                                visible: root.info.connected
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 7
+                                height: 7
+                                radius: 3.5
+                                color: Theme.colors.success
+                            }
+
+                            Label {
+                                text: root.info.connected ? root.info.status : "No conectada"
+                                color: networkItem.current ? Qt.rgba(1, 1, 1, 0.85) : Theme.window.textMuted
+                                font.pixelSize: Theme.window.fontCaption
+                            }
+                        }
+                    }
+
+                    HoverHandler {
+                        id: networkHover
+                    }
+
+                    TapHandler {
+                        onTapped: root.tab = "network"
+                    }
                 }
 
+                Item {
+                    width: 1
+                    height: 4
+                }
+
+                Repeater {
+                    model: root.tabs
+
+                    TabItem {
+                        id: entry
+
+                        required property var modelData
+
+                        title: entry.modelData.title
+                        current: root.tab === entry.modelData.id
+                        onPicked: root.tab = entry.modelData.id
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            x: sidebar.width
+            width: 1
+            height: parent.height
+            color: Theme.window.separator
+        }
+
+        // ── El apartado elegido ──────────────────────────────
+        Flickable {
+            id: flick
+
+            anchors.left: sidebar.right
+            anchors.leftMargin: 1
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: bar.top
+            contentWidth: width
+            contentHeight: pane.implicitHeight + 32
+            boundsBehavior: Flickable.StopAtBounds
+            clip: true
+
+            // Al cambiar de apartado se empieza desde arriba.
+            Connections {
+                target: root
+
+                function onTabChanged() {
+                    flick.contentY = 0;
+                }
+            }
+
+            Column {
+                id: pane
+
+                x: 16
+                y: 16
+                width: flick.width - 32
+                spacing: 14
+
+                // Red que no está guardada: se puede ver, no ajustar.
                 Label {
-                    text: root.info.connected ? root.info.status
-                                              : (root.info.saved ? "Conocida · no conectada" : "No conectada")
+                    visible: !root.info.saved
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    text: "Esta red no está guardada en este equipo. Conéctate una vez y podrás cambiar sus ajustes."
                     color: Theme.window.textMuted
                     font.pixelSize: Theme.window.fontCaption + 1
                 }
+
+                // ── La red ───────────────────────────────────
+                Column {
+                    visible: root.tab === "network"
+                    width: parent.width
+                    spacing: 14
+                    enabled: root.editable
+
+                    SettingsGroup {
+                        ToggleRow {
+                            title: "Conectarse automáticamente a esta red"
+                            checked: root.draft.autoJoin
+                            onToggled: root.set("autoJoin", !root.draft.autoJoin)
+                        }
+                    }
+
+                    SettingsGroup {
+                        SettingsRow {
+                            title: "Dirección Wi-Fi privada"
+                            subtitle: "Una dirección privada reduce el rastreo de tu equipo por parte de "
+                                      + "los operadores de redes Wi-Fi. La fija deja que esta red te "
+                                      + "reconozca y reduce el rastreo entre redes; la rotativa cambia "
+                                      + "en cada conexión."
+
+                            PopupButton {
+                                options: root.addressModes
+                                current: root.draft.privateAddress
+                                onSelected: value => root.set("privateAddress", value)
+                            }
+                        }
+
+                        SettingsRow {
+                            title: "Dirección Wi-Fi"
+                            value: root.info.address !== "" ? root.info.address : "—"
+                        }
+                    }
+
+                    SettingsGroup {
+                        ToggleRow {
+                            title: "Modo de datos reducidos"
+                            subtitle: "Ayuda a reducir el uso de datos de tu equipo en las redes Wi-Fi "
+                                      + "que elijas: las apps que lo respetan evitan descargas grandes."
+                            checked: root.draft.lowData
+                            onToggled: root.set("lowData", !root.draft.lowData)
+                        }
+
+                        ToggleRow {
+                            title: "Limitar el rastreo de dirección IP"
+                            subtitle: "Usa direcciones IPv6 temporales, que cambian cada cierto tiempo, "
+                                      + "para que los sitios no te sigan por tu dirección."
+                            checked: root.draft.limitTracking
+                            onToggled: root.set("limitTracking", !root.draft.limitTracking)
+                        }
+                    }
+                }
+
+                // ── TCP/IP ───────────────────────────────────
+                Column {
+                    visible: root.tab === "tcpip"
+                    width: parent.width
+                    spacing: 14
+                    enabled: root.editable
+
+                    SettingsGroup {
+                        SettingsRow {
+                            title: "Configurar IPv4"
+
+                            PopupButton {
+                                options: root.ipv4Modes
+                                current: root.draft.ipv4Method
+                                onSelected: value => root.set("ipv4Method", value)
+                            }
+                        }
+
+                        FieldRow {
+                            visible: root.draft.ipv4Method !== "disabled"
+                            title: "Dirección IP"
+                            text: root.draft.ipv4Address
+                            placeholder: "192.168.1.10"
+                            editable: root.manualIp
+                            onEdited: text => root.set("ipv4Address", text)
+                        }
+
+                        FieldRow {
+                            visible: root.draft.ipv4Method !== "disabled"
+                            title: "Máscara de subred"
+                            text: root.draft.ipv4Mask
+                            placeholder: "255.255.255.0"
+                            editable: root.manualIp
+                            onEdited: text => root.set("ipv4Mask", text)
+                        }
+
+                        FieldRow {
+                            visible: root.draft.ipv4Method !== "disabled"
+                            title: "Router"
+                            text: root.draft.ipv4Router
+                            placeholder: "192.168.1.1"
+                            editable: root.manualIp
+                            onEdited: text => root.set("ipv4Router", text)
+                        }
+                    }
+
+                    SettingsGroup {
+                        visible: root.draft.ipv4Method === "auto" && root.info.connected
+
+                        SettingsRow {
+                            title: "Concesión DHCP"
+                            subtitle: "Pide de nuevo la dirección al router. La conexión se corta un momento."
+
+                            PushButton {
+                                text: "Renovar concesión DHCP"
+                                onClicked: WifiControl.renewLease()
+                            }
+                        }
+                    }
+
+                    SettingsGroup {
+                        SettingsRow {
+                            title: "Configurar IPv6"
+
+                            PopupButton {
+                                options: root.ipv6Modes
+                                current: root.draft.ipv6Method
+                                onSelected: value => root.set("ipv6Method", value)
+                            }
+                        }
+
+                        SettingsRow {
+                            visible: root.info.ipv6Router !== ""
+                            title: "Router"
+                            value: root.info.ipv6Router
+                        }
+
+                        Repeater {
+                            model: root.info.ipv6Addresses
+
+                            SettingsRow {
+                                id: address6
+
+                                required property var modelData
+
+                                title: "Dirección IPv6"
+                                value: address6.modelData
+                            }
+                        }
+                    }
+                }
+
+                // ── DNS ──────────────────────────────────────
+                Column {
+                    visible: root.tab === "dns"
+                    width: parent.width
+                    spacing: 14
+                    enabled: root.editable
+
+                    EditableList {
+                        header: "Servidores DNS"
+                        values: root.draft.dnsServers
+                        fallback: root.info.liveDns
+                        placeholder: "1.1.1.1"
+                        onEdited: values => root.set("dnsServers", values)
+                    }
+
+                    Label {
+                        width: parent.width
+                        leftPadding: 4
+                        wrapMode: Text.WordWrap
+                        text: root.draft.dnsServers.length === 0
+                            ? "En gris, los que dio el router. Agrega uno con + para usar los tuyos."
+                            : "Se usan solo estos; los del router se ignoran."
+                        color: Theme.window.textMuted
+                        font.pixelSize: Theme.window.fontCaption
+                    }
+
+                    EditableList {
+                        header: "Dominios de búsqueda"
+                        values: root.draft.searchDomains
+                        placeholder: "ejemplo.local"
+                        onEdited: values => root.set("searchDomains", values)
+                    }
+                }
+
+                // ── WINS ─────────────────────────────────────
+                Column {
+                    visible: root.tab === "wins"
+                    width: parent.width
+                    spacing: 14
+
+                    SettingsGroup {
+                        footer: "En Linux, WINS no es parte de la conexión: el nombre NetBIOS, el grupo "
+                                + "de trabajo y los servidores WINS son de Samba y se ponen en "
+                                + "/etc/samba/smb.conf, para todas las redes a la vez."
+
+                        SettingsRow {
+                            title: "Nombre NetBIOS"
+                            value: root.info.hostname !== "" ? root.info.hostname.toUpperCase().slice(0, 15) : "—"
+                        }
+
+                        SettingsRow {
+                            title: "Grupo de trabajo"
+                            value: root.info.workgroup || "—"
+                        }
+
+                        SettingsRow {
+                            title: "Servidores WINS"
+                            value: root.info.winsServer || "—"
+                        }
+                    }
+                }
+
+                // ── 802.1X ───────────────────────────────────
+                Column {
+                    visible: root.tab === "8021x"
+                    width: parent.width
+                    spacing: 14
+
+                    SettingsGroup {
+                        footer: root.info.enterprise || root.info.eap !== ""
+                            ? "Los perfiles 802.1X (usuario, certificados) se editan con nm-connection-editor o nmtui."
+                            : "Esta red no usa 802.1X: entra con contraseña"
+                              + (root.info.security === "Ninguna" ? " o sin ella" : "") + ", sin usuario ni certificado."
+
+                        SettingsRow {
+                            title: "Seguridad"
+                            value: root.info.security
+                        }
+
+                        SettingsRow {
+                            title: "Autenticación"
+                            value: root.info.eap !== "" ? root.info.eap.toUpperCase() : "Ninguna"
+                        }
+
+                        SettingsRow {
+                            visible: root.info.identity !== ""
+                            title: "Identidad"
+                            value: root.info.identity
+                        }
+                    }
+                }
+
+                // ── Proxies ──────────────────────────────────
+                Column {
+                    visible: root.tab === "proxies"
+                    width: parent.width
+                    spacing: 14
+                    enabled: root.editable
+
+                    // NetworkManager tiene un solo modo automático: sin URL
+                    // lo descubre (WPAD) y con URL usa ese archivo. Por eso
+                    // encender uno apaga el otro.
+                    SettingsGroup {
+                        ToggleRow {
+                            title: "Detección automática de proxy"
+                            checked: root.draft.proxyDiscovery
+                            onToggled: {
+                                const on = !root.draft.proxyDiscovery;
+                                root.set("proxyDiscovery", on);
+                                if (on)
+                                    root.set("proxyPac", false);
+                            }
+                        }
+                    }
+
+                    SettingsGroup {
+                        footer: "Los proxies fijos (web, web seguro, SOCKS) en Linux no van por red: "
+                                + "se ponen en cada app o con las variables http_proxy y https_proxy."
+
+                        ToggleRow {
+                            title: "Configuración automática de proxy"
+                            checked: root.draft.proxyPac
+                            onToggled: {
+                                const on = !root.draft.proxyPac;
+                                root.set("proxyPac", on);
+                                if (on)
+                                    root.set("proxyDiscovery", false);
+                            }
+                        }
+
+                        FieldRow {
+                            visible: root.draft.proxyPac
+                            title: "URL"
+                            text: root.draft.pacUrl
+                            placeholder: "http://ejemplo.com/proxy.pac"
+                            fieldWidth: 280
+                            onEdited: text => root.set("pacUrl", text)
+                        }
+                    }
+                }
+
+                // ── Hardware ─────────────────────────────────
+                Column {
+                    visible: root.tab === "hardware"
+                    width: parent.width
+                    spacing: 14
+                    enabled: root.editable
+
+                    SettingsGroup {
+                        SettingsRow {
+                            title: "Dirección MAC"
+                            value: root.info.address !== "" ? root.info.address : "—"
+                        }
+
+                        SettingsRow {
+                            title: "Configurar"
+
+                            PopupButton {
+                                options: root.mtuModes
+                                current: root.draft.mtuAuto
+                                onSelected: value => root.set("mtuAuto", value)
+                            }
+                        }
+
+                        SettingsRow {
+                            visible: root.draft.mtuAuto
+                            title: "MTU"
+                            value: "Estándar (" + (root.info.liveMtu || 1500) + ")"
+                        }
+
+                        FieldRow {
+                            visible: !root.draft.mtuAuto
+                            title: "MTU"
+                            text: String(root.draft.mtu)
+                            placeholder: "1500"
+                            fieldWidth: 90
+                            onEdited: text => root.set("mtu", text)
+                        }
+                    }
+                }
             }
         }
-    }
 
-    // ── Ajustes del perfil ───────────────────────────────────
-    SettingsGroup {
-        visible: root.info.saved
+        // ── Abajo: olvidar, cancelar y aceptar ───────────────
+        Item {
+            id: bar
 
-        ToggleRow {
-            title: "Conectarse automáticamente a esta red"
-            checked: root.autoJoin
-            onToggled: root.autoJoin = !root.autoJoin
-        }
-
-        SettingsRow {
-            title: "Dirección Wi-Fi privada"
-            subtitle: root.addressHelp[root.privateAddress] ?? ""
-
-            SegmentedControl {
-                options: root.addressModes
-                current: root.privateAddress
-                onSelected: value => root.privateAddress = value
-            }
-        }
-
-        SettingsRow {
-            visible: root.info.address !== ""
-            title: "Dirección Wi-Fi"
-            value: root.info.address
-        }
-
-        ToggleRow {
-            title: "Modo de datos reducidos"
-            subtitle: "Marca la red como de datos limitados: las apps que lo respetan "
-                      + "evitan descargas grandes."
-            checked: root.lowData
-            onToggled: root.lowData = !root.lowData
-        }
-    }
-
-    // ── La conexión ──────────────────────────────────────────
-    SettingsGroup {
-        SettingsRow {
-            title: "Seguridad"
-            value: root.info.security
-        }
-
-        SettingsRow {
-            visible: root.info.ip !== ""
-            title: "Dirección IP"
-            value: root.info.ip
-        }
-
-        SettingsRow {
-            visible: root.info.router !== ""
-            title: "Router"
-            value: root.info.router
-        }
-
-        SettingsRow {
-            visible: root.info.dns !== ""
-            title: "DNS"
-            value: root.info.dns
-        }
-    }
-
-    Item {
-        width: 1
-        height: 2
-    }
-
-    Item {
-        width: parent.width
-        height: buttons.height
-
-        PushButton {
-            visible: root.info.saved
-            anchors.left: parent.left
-            text: "Olvidar esta red…"
-            onClicked: WifiControl.askForget(root.info.name)
-        }
-
-        Row {
-            id: buttons
-
+            anchors.left: flick.left
             anchors.right: parent.right
-            spacing: 10
+            anchors.bottom: parent.bottom
+            height: buttons.height + 28 + (problem.visible ? problem.implicitHeight + 8 : 0)
 
-            PushButton {
-                width: 90
-                text: "Cancelar"
-                onClicked: WifiControl.closeDetails()
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Theme.window.separator
+            }
+
+            Label {
+                id: problem
+
+                visible: WifiControl.detailsError !== ""
+                x: 16
+                y: 10
+                width: parent.width - 32
+                wrapMode: Text.WordWrap
+                text: WifiControl.detailsError
+                color: Theme.window.destructive
+                font.pixelSize: Theme.window.fontCaption + 1
             }
 
             PushButton {
-                width: 90
-                primary: true
-                text: "Aceptar"
-                onClicked: root.accept()
+                visible: root.info.saved
+                x: 16
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 14
+                text: "Olvidar esta red…"
+                onClicked: WifiControl.askForget(root.info.name)
+            }
+
+            Row {
+                id: buttons
+
+                anchors.right: parent.right
+                anchors.rightMargin: 16
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 14
+                spacing: 10
+
+                PushButton {
+                    width: 84
+                    text: "Cancelar"
+                    onClicked: WifiControl.closeDetails()
+                }
+
+                PushButton {
+                    width: 84
+                    primary: true
+                    text: "Aceptar"
+                    onClicked: root.accept()
+                }
             }
         }
     }
